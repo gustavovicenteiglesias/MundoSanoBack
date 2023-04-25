@@ -279,7 +279,7 @@ public class ExportControler {
                             antecedentesAppsRepo.save(antecedentesApps);
                         }
                     }
-                    case ("antecedentes_amacss")->{
+                    case ("antecedentes_macs")->{
                         for (int j = 0; j < valores.size(); j++) {
                             AntecedentesMacsEntity antecedentesMacs=new AntecedentesMacsEntity();
                             List valor = (List) valores.get(j);
@@ -300,6 +300,7 @@ public class ExportControler {
             response.put("success", true);
             return response;
         } catch (Exception e) {
+            response.put("success",false);
             response.put("error", e.toString());
         }
         return response;
