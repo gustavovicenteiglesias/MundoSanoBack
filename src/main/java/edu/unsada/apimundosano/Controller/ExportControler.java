@@ -1,20 +1,20 @@
 package edu.unsada.apimundosano.Controller;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.unsada.apimundosano.models.*;
 import edu.unsada.apimundosano.repositorio.*;
 
+import edu.unsada.apimundosano.service.*;
 import edu.unsada.apimundosano.utilidades.JsonSqlite;
 import edu.unsada.apimundosano.utilidades.JsonTable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.Date;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 
 @CrossOrigin(origins = "*")
@@ -44,6 +44,12 @@ public class ExportControler {
 
     @Autowired
     private AntecedentesMacsRepo antecedentesMacsRepo;
+
+    @Autowired
+    private SyncTableRepo syncTableRepo;
+
+    @Autowired
+    private EtmisPersonasRepo etmisPersonasRepo;
 
     @GetMapping("/persona")
     public HashMap<String, Object> getAllPersonas() {
@@ -287,7 +293,7 @@ public class ExportControler {
                             antecedentesMacs.setIdAntecedente((Integer) valor.get(0));
                             antecedentesMacs.setIdMac((Integer) valor.get(1));
                             antecedentesMacs.setLastModified((Integer) valor.get(3));
-                            antecedentesMacs.setSqlDelete((Integer) valor.get(2));
+                            antecedentesMacs.setSqlDeleted((Integer) valor.get(2));
 
                             System.out.println(antecedentesMacs.toString());
                             antecedentesMacsRepo.save(antecedentesMacs);
@@ -305,6 +311,288 @@ public class ExportControler {
         }
         return response;
     }
+    @GetMapping("/data/json2")
+    public Map<String, Object> getData() {
+        Iterable<PersonasEntity> data = personasRepo.findAll();
+        Iterable<ControlesEntity> dataControles=controlesRepo.findAll();
+        Iterable<ControlEmbarazoEntity> dataControlEmbarazo=controlEmbarazoRepo.findAll();
 
+        Iterable<InmunizacionesControlEntity> dataInmunizacionesControl=inmunizacionesControlRepo.findBYLast(syncTableRepo.buscarUltimoLast());
+
+        Iterable<LaboratoriosRealizadosEntity> dataLaboratorioRealizado=laboratoriosRealizadosRepo.findBYLast(syncTableRepo.buscarUltimoLast());
+        Iterable<UbicacionesEntity> dataUbicaciones=ubicacionesRepo.findAll();
+        Iterable<AntecedentesEntity> dataAntecedentes=antecedentesRepo.findAll();
+        Iterable<AntecedentesAppsEntity>  dataAntecedentesApss=antecedentesAppsRepo.findAll();
+        Iterable<AntecedentesMacsEntity> dataAtecedentesMacs=antecedentesMacsRepo.findAll();
+
+        List<Object> row = new ArrayList<>();
+        Map<String, Object> json= new HashMap<>();
+
+        Map<String, Object> table = new HashMap<>();
+        Map<String, Object> tableControles = new HashMap<>();
+        Map<String,Object>  tableControlEmbarazo=new HashMap<>();
+        Map<String,Object> tableInmunizacionesControl=new HashMap<>();
+        Map<String,Object> tableLaboratorioRealizados=new HashMap<>();
+        Map<String,Object> tableUbicaciones=new HashMap<>();
+        Map<String,Object> tableAntecedentes=new HashMap<>();
+        Map<String,Object> tableAntecedentesApps=new HashMap<>();
+        Map<String,Object> tableAntecedentesMacs=new HashMap<>();
+
+        PersonaSrevice ps=new PersonaSrevice();
+        ControlesService cs=new ControlesService();
+        ControlEmbarazoService ce=new ControlEmbarazoService();
+        InmunizacionesControlService ic= new InmunizacionesControlService();
+        LaboratoriosRealizadosService lr=new LaboratoriosRealizadosService();
+        UbicacionesService ub=new UbicacionesService();
+        AntecedentesService an=new AntecedentesService();
+        AntecedentesApps aapps=new AntecedentesApps();
+        AntededentesMacs amacs=new AntededentesMacs();
+
+        List<List<Object>> valuesPersonas= ps.valuesPersonas(data) ;
+        List<List<Object>> valuesControles=cs.valuesControles(dataControles);
+        List<List<Object>> valuesControlEmbarazo=ce.valuesControlEmbarazo(dataControlEmbarazo);
+        List<List<Object>>  valuesInmunizacionesControl=ic.InmunizacionesControl(dataInmunizacionesControl);
+        List<List<Object>> valuesLaboratotiosRealizados=lr.LaboratoriosRealizados(dataLaboratorioRealizado);
+        List<List<Object>> valuesUbicaciones=ub.UbicacionesValues(dataUbicaciones);
+        List<List<Object>> valuesAntecedentes=an.AntecedentesValues(dataAntecedentes);
+        List<List<Object>> valuesAntedentesApps=aapps.AntecedentesAppsValues(dataAntecedentesApss);
+        List<List<Object>> valuesAntecedentesMacs=amacs.AntecedentesMacsValues(dataAtecedentesMacs);
+        /*
+        *
+        * Arma el primer nivel del json
+        *
+        */
+        json.put("database", "triplefrontera");
+        json.put("version" ,2);
+        //json.put("overwrite",true);
+        json.put("encrypted", false);
+        json.put("mode","partial");
+        /*
+         *Tabla personas
+        */
+        table.put("name", "personas");
+        table.put("values", valuesPersonas);
+        row.add(table);
+
+
+        /*
+        *Tabla controles
+        */
+        tableControles.put("name", "controles");
+       tableControles.put("values", valuesControles);
+        row.add(tableControles);
+
+        /*
+        *Tabla contol embarazo
+         */
+        tableControlEmbarazo.put("name", "control_embarazo");
+        tableControlEmbarazo.put("values",valuesControlEmbarazo);
+        row.add(tableControlEmbarazo);
+
+        /*
+        *Tabla inmunizaciones_control
+         */
+        tableInmunizacionesControl.put("name","inmunizaciones_control");
+        tableInmunizacionesControl.put("values",valuesInmunizacionesControl);
+        row.add(tableInmunizacionesControl);
+
+        /*
+        *Tabla laboratorios_realizados
+         */
+        tableLaboratorioRealizados.put("name","laboratorios_realizados");
+        tableLaboratorioRealizados.put("values",valuesLaboratotiosRealizados);
+        row.add(tableLaboratorioRealizados);
+
+        /*
+        *Tabla ubicaciones
+         */
+        tableUbicaciones.put("name","ubicaciones");
+        tableUbicaciones.put("values",valuesUbicaciones);
+        row.add(tableUbicaciones);
+
+        /*
+        *Tabla antecedentes
+         */
+        tableAntecedentes.put("name","antecedentes");
+        tableAntecedentes.put("values",valuesAntecedentes);
+        row.add(tableAntecedentes);
+        /*
+        *Tabla antecedentes_apss
+         */
+        tableAntecedentesApps.put("name","antecedentes_apps");
+        tableAntecedentesApps.put("values",valuesAntedentesApps);
+        row.add(tableAntecedentesApps);
+
+        /*
+        *Table antecedentes_macs
+         */
+        tableAntecedentesMacs.put("name","antecedentes_macs");
+        tableAntecedentesMacs.put("values",valuesAntecedentesMacs);
+        row.add(tableAntecedentesMacs);
+
+        json.put("tables",row);
+
+        return json;
+    }
+    @GetMapping("/data/json3")
+    public Map<String, Object> getDataall() {
+        Iterable<PersonasEntity> data = personasRepo.findAll();
+        Iterable<ControlesEntity> dataControles=controlesRepo.findAll();
+        Iterable<ControlEmbarazoEntity> dataControlEmbarazo=controlEmbarazoRepo.findAll();
+
+        Iterable<InmunizacionesControlEntity> dataInmunizacionesControl=inmunizacionesControlRepo.findAll();
+
+        Iterable<LaboratoriosRealizadosEntity> dataLaboratorioRealizado=laboratoriosRealizadosRepo.findAll();
+        Iterable<UbicacionesEntity> dataUbicaciones=ubicacionesRepo.findAll();
+        Iterable<AntecedentesEntity> dataAntecedentes=antecedentesRepo.findAll();
+        Iterable<AntecedentesAppsEntity>  dataAntecedentesApss=antecedentesAppsRepo.findAll();
+        Iterable<AntecedentesMacsEntity> dataAtecedentesMacs=antecedentesMacsRepo.findAll();
+        Iterable<EtmisPersonasEntity> dataEtmis=etmisPersonasRepo.findAll();
+
+        List<Object> row = new ArrayList<>();
+        Map<String, Object> json= new HashMap<>();
+
+        Map<String, Object> table = new HashMap<>();
+        Map<String, Object> tableControles = new HashMap<>();
+        Map<String,Object>  tableControlEmbarazo=new HashMap<>();
+        Map<String,Object> tableInmunizacionesControl=new HashMap<>();
+        Map<String,Object> tableLaboratorioRealizados=new HashMap<>();
+        Map<String,Object> tableUbicaciones=new HashMap<>();
+        Map<String,Object> tableAntecedentes=new HashMap<>();
+        Map<String,Object> tableAntecedentesApps=new HashMap<>();
+        Map<String,Object> tableAntecedentesMacs=new HashMap<>();
+        Map<String,Object> tableEtmisPersonas=new HashMap<>();
+
+        PersonaSrevice ps=new PersonaSrevice();
+        ControlesService cs=new ControlesService();
+        ControlEmbarazoService ce=new ControlEmbarazoService();
+        InmunizacionesControlService ic= new InmunizacionesControlService();
+        LaboratoriosRealizadosService lr=new LaboratoriosRealizadosService();
+        UbicacionesService ub=new UbicacionesService();
+        AntecedentesService an=new AntecedentesService();
+        AntecedentesApps aapps=new AntecedentesApps();
+        AntededentesMacs amacs=new AntededentesMacs();
+        EtmisPersonasService ep=new EtmisPersonasService();
+
+        List<List<Object>> valuesPersonas= ps.valuesPersonas(data) ;
+        List<List<Object>> valuesControles=cs.valuesControles(dataControles);
+        List<List<Object>> valuesControlEmbarazo=ce.valuesControlEmbarazo(dataControlEmbarazo);
+        List<List<Object>>  valuesInmunizacionesControl=ic.InmunizacionesControl(dataInmunizacionesControl);
+        List<List<Object>> valuesLaboratotiosRealizados=lr.LaboratoriosRealizados(dataLaboratorioRealizado);
+        List<List<Object>> valuesUbicaciones=ub.UbicacionesValues(dataUbicaciones);
+        List<List<Object>> valuesAntecedentes=an.AntecedentesValues(dataAntecedentes);
+        List<List<Object>> valuesAntedentesApps=aapps.AntecedentesAppsValues(dataAntecedentesApss);
+        List<List<Object>> valuesAntecedentesMacs=amacs.AntecedentesMacsValues(dataAtecedentesMacs);
+        List<List<Object>> valuesEtmisPersonas=ep.EtmisPersonasValues(dataEtmis);
+
+        /*
+         *
+         * Arma el primer nivel del json
+         *
+         */
+        json.put("database", "triplefrontera");
+        json.put("version" ,2);
+        //json.put("overwrite",true);
+        json.put("encrypted", false);
+        json.put("mode","partial");
+        /*
+         *Tabla personas
+         */
+        table.put("name", "personas");
+        table.put("values", valuesPersonas);
+        row.add(table);
+
+
+        /*
+         *Tabla controles
+         */
+        tableControles.put("name", "controles");
+        tableControles.put("values", valuesControles);
+        row.add(tableControles);
+
+        /*
+         *Tabla contol embarazo
+         */
+        tableControlEmbarazo.put("name", "control_embarazo");
+        tableControlEmbarazo.put("values",valuesControlEmbarazo);
+        row.add(tableControlEmbarazo);
+
+        /*
+         *Tabla inmunizaciones_control
+         */
+        tableInmunizacionesControl.put("name","inmunizaciones_control");
+        tableInmunizacionesControl.put("values",valuesInmunizacionesControl);
+        row.add(tableInmunizacionesControl);
+
+        /*
+         *Tabla laboratorios_realizados
+         */
+        tableLaboratorioRealizados.put("name","laboratorios_realizados");
+        tableLaboratorioRealizados.put("values",valuesLaboratotiosRealizados);
+        row.add(tableLaboratorioRealizados);
+
+        /*
+         *Tabla ubicaciones
+         */
+        tableUbicaciones.put("name","ubicaciones");
+        tableUbicaciones.put("values",valuesUbicaciones);
+        row.add(tableUbicaciones);
+
+        /*
+         *Tabla antecedentes
+         */
+        tableAntecedentes.put("name","antecedentes");
+        tableAntecedentes.put("values",valuesAntecedentes);
+        row.add(tableAntecedentes);
+        /*
+         *Tabla antecedentes_apss
+         */
+        tableAntecedentesApps.put("name","antecedentes_apps");
+        tableAntecedentesApps.put("values",valuesAntedentesApps);
+        row.add(tableAntecedentesApps);
+
+        /*
+         *Table antecedentes_macs
+         */
+        tableAntecedentesMacs.put("name","antecedentes_macs");
+        tableAntecedentesMacs.put("values",valuesAntecedentesMacs);
+        row.add(tableAntecedentesMacs);
+
+        /*
+         *Table etmispersonas
+         */
+        tableEtmisPersonas.put("name","etmis_personas");
+        tableEtmisPersonas.put("values",valuesEtmisPersonas);
+        row.add(tableEtmisPersonas);
+
+        json.put("tables",row);
+
+        return json;
+    }
+    @GetMapping("/data/json")
+    public ResponseEntity<String> getDataAsJson() throws JsonProcessingException {
+        Iterable<PersonasEntity> data = personasRepo.findAll();
+        ObjectMapper objectMapper = new ObjectMapper();
+        String dataJson = objectMapper.writeValueAsString(data);
+        return ResponseEntity.ok(dataJson);
+    }
+    @PostMapping("/sync_date")
+    public HashMap<String, Object> last(@RequestBody SyncTableEntity sync){
+        HashMap<String, Object> response=new HashMap<>();
+        SyncTableEntity sync_table=new SyncTableEntity();
+        System.out.println(sync.toString());
+
+        try {
+            sync_table.setSyncDate(sync.getSyncDate());
+            syncTableRepo.save(sync_table);
+            response.put("success",true);
+
+        }
+        catch (Exception e){
+            response.put("error", e.toString());
+
+        }
+        return  response;
+    }
 
 }

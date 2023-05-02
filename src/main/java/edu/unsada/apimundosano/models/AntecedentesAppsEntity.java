@@ -19,7 +19,7 @@ public class AntecedentesAppsEntity {
     @Column(name = "last_modified")
     private int lastModified;
     @Basic
-    @Column(name = "sql_delete")
+    @Column(name = "sql_deleted")
     private Integer sqlDelete;
 
     public int getIdAntecedente() {

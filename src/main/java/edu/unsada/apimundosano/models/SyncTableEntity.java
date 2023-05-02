@@ -48,4 +48,12 @@ public class SyncTableEntity {
         result = 31 * result + (syncDate != null ? syncDate.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "SyncTableEntity{" +
+                "id=" + id +
+                ", syncDate=" + syncDate +
+                '}';
+    }
 }

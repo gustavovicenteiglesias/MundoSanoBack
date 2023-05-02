@@ -2,6 +2,8 @@ package edu.unsada.apimundosano.models;
 
 import jakarta.persistence.*;
 
+import java.util.Objects;
+
 @Entity
 @Table(name = "antecedentes_macs", schema = "tripleconlast", catalog = "")
 @IdClass(AntecedentesMacsEntityPK.class)
@@ -18,8 +20,8 @@ public class AntecedentesMacsEntity {
     @Column(name = "last_modified")
     private int lastModified;
     @Basic
-    @Column(name = "sql_delete")
-    private Integer sqlDelete;
+    @Column(name = "sql_deleted")
+    private Integer sqlDeleted;
 
     public int getIdAntecedente() {
         return idAntecedente;
@@ -46,36 +48,25 @@ public class AntecedentesMacsEntity {
     }
 
 
-    public Integer getSqlDelete() {
-        return sqlDelete;
+    public Integer getSqlDeleted() {
+        return sqlDeleted;
     }
 
-    public void setSqlDelete(Integer sqlDelete) {
-        this.sqlDelete = sqlDelete;
+    public void setSqlDeleted(Integer sqlDeleted) {
+        this.sqlDeleted = sqlDeleted;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         AntecedentesMacsEntity that = (AntecedentesMacsEntity) o;
-
-        if (idAntecedente != that.idAntecedente) return false;
-        if (idMac != that.idMac) return false;
-        if (lastModified != that.lastModified) return false;
-        if (sqlDelete != that.sqlDelete) return false;
-
-        return true;
+        return idAntecedente == that.idAntecedente && idMac == that.idMac && lastModified == that.lastModified && Objects.equals(sqlDeleted, that.sqlDeleted);
     }
 
     @Override
     public int hashCode() {
-        int result = idAntecedente;
-        result = 31 * result + idMac;
-        result = 31 * result + lastModified;
-        result = 31 * result + (int) sqlDelete;
-        return result;
+        return Objects.hash(idAntecedente, idMac, lastModified, sqlDeleted);
     }
 
     @Override
@@ -84,7 +75,7 @@ public class AntecedentesMacsEntity {
                 "idAntecedente=" + idAntecedente +
                 ", idMac=" + idMac +
                 ", lastModified=" + lastModified +
-                ", sqlDelete=" + sqlDelete +
+                ", sqlDeleted=" + sqlDeleted +
                 '}';
     }
 }
