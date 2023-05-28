@@ -222,7 +222,7 @@ public class ExportControler {
                             laboratoriosRealizados.setIdEtmi((Integer) valor.get(7));
                             laboratoriosRealizados.setSqlDeleted((Integer) valor.get(8));
                             laboratoriosRealizados.setLastModified((Integer) valor.get(9));
-                            laboratoriosRealizados.setId((Integer) valor.get(10)) ;
+
 
                             laboratoriosRealizadosRepo.save(laboratoriosRealizados);
                             System.out.println(laboratoriosRealizados.toString());

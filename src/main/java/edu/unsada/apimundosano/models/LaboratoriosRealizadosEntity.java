@@ -47,9 +47,7 @@ public class LaboratoriosRealizadosEntity {
     @Column(name = "last_modified")
     private Integer lastModified;
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Id
-    @Column(name = "id")
-    private int id;
+
     @ManyToOne
     @JoinColumn(name = "id_persona", referencedColumnName = "id_persona", nullable = false,insertable=false, updatable=false)
 
@@ -230,11 +228,5 @@ public class LaboratoriosRealizadosEntity {
                 '}';
     }
 
-    public int getId() {
-        return id;
-    }
 
-    public void setId(int id) {
-        this.id = id;
-    }
 }
