@@ -5,20 +5,27 @@ import java.io.Serializable;
 
 public class InmunizacionesControlEntityPK implements Serializable {
     @Column(name = "id_persona")
+
     @Id
 
     private int idPersona;
     @Column(name = "id_control")
+
     @Id
 
     private int idControl;
     @Column(name = "id_inmunizacion")
+
     @Id
 
     private int idInmunizacion;
 
     public int getIdPersona() {
         return idPersona;
+    }
+
+    public void setIdPersona(Integer idPersona) {
+        this.idPersona = idPersona;
     }
 
     public void setIdPersona(int idPersona) {
@@ -29,12 +36,20 @@ public class InmunizacionesControlEntityPK implements Serializable {
         return idControl;
     }
 
+    public void setIdControl(Integer idControl) {
+        this.idControl = idControl;
+    }
+
     public void setIdControl(int idControl) {
         this.idControl = idControl;
     }
 
     public int getIdInmunizacion() {
         return idInmunizacion;
+    }
+
+    public void setIdInmunizacion(Integer idInmunizacion) {
+        this.idInmunizacion = idInmunizacion;
     }
 
     public void setIdInmunizacion(int idInmunizacion) {

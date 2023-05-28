@@ -9,13 +9,16 @@ import java.util.Objects;
 @IdClass(InmunizacionesControlEntityPK.class)
 public class InmunizacionesControlEntity {
 
+
     @Id
     @Column(name = "id_persona")
     private Integer idPersona;
 
+
     @Id
     @Column(name = "id_control")
     private Integer idControl;
+
 
     @Id
     @Column(name = "id_inmunizacion")
@@ -74,6 +77,7 @@ public class InmunizacionesControlEntity {
     public Integer getSqlDeleted() {
         return sqlDeleted;
     }
+
 
     public void setSqlDeleted(Integer sqlDeleted) {
         this.sqlDeleted = sqlDeleted;

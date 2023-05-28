@@ -7,6 +7,7 @@ import java.util.Collection;
 @Table(name = "control_embarazo", schema = "tripleconlast", catalog = "")
 public class ControlEmbarazoEntity {
 
+
     @Id
     @Column(name = "id_control_embarazo")
     private int idControlEmbarazo;
@@ -55,10 +56,10 @@ public class ControlEmbarazoEntity {
     @OneToMany(mappedBy = "controlEmbarazoByIdControlEmbarazo")
     private Collection<ControlEmbPatologicoEntity> controlEmbPatologicosByIdControlEmbarazo;
     @ManyToOne
-    @JoinColumn(name = "id_control", referencedColumnName = "id_control", nullable = false,insertable=false, updatable=false)
+ @JoinColumn(name = "id_control", referencedColumnName = "id_control", nullable = false,insertable=false, updatable=false)
     private ControlesEntity controlesByIdControl;
     @ManyToOne
-    @JoinColumn(name = "motivo", referencedColumnName = "id_motivo",insertable=false, updatable=false)
+   @JoinColumn(name = "motivo", referencedColumnName = "id_motivo",insertable=false, updatable=false)
     private MotivosDerivacionEntity motivosDerivacionByMotivo;
 
     public int getIdControlEmbarazo() {
@@ -161,6 +162,8 @@ public class ControlEmbarazoEntity {
         return derivada;
     }
 
+
+
     public void setDerivada(Integer derivada) {
         this.derivada = derivada;
     }
@@ -168,6 +171,8 @@ public class ControlEmbarazoEntity {
     public Integer getSqlDeleted() {
         return sqlDeleted;
     }
+
+
 
     public void setSqlDeleted(Integer sqlDeleted) {
         this.sqlDeleted = sqlDeleted;

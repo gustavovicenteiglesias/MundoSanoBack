@@ -6,11 +6,11 @@ import jakarta.persistence.*;
 @Table(name = "embarazos_patologias", schema = "tripleconlast", catalog = "")
 @IdClass(EmbarazosPatologiasEntityPK.class)
 public class EmbarazosPatologiasEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     @Id
     @Column(name = "id_control_embarazo_patologico")
     private int idControlEmbarazoPatologico;
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     @Id
     @Column(name = "id_patologia_embarazo")
     private int idPatologiaEmbarazo;
@@ -21,10 +21,10 @@ public class EmbarazosPatologiasEntity {
     @Column(name = "last_modified")
     private Integer lastModified;
     @ManyToOne
-    @JoinColumn(name = "id_control_embarazo_patologico", referencedColumnName = "id_control_emb_patologico", nullable = false,insertable=false, updatable=false)
+    @JoinColumn(name = "id_control_embarazo_patologico", referencedColumnName = "id_control_emb_patologico", nullable = false, insertable = false, updatable = false)
     private ControlEmbPatologicoEntity controlEmbPatologicoByIdControlEmbarazoPatologico;
     @ManyToOne
-    @JoinColumn(name = "id_patologia_embarazo", referencedColumnName = "id_patologia_embarazo", nullable = false,insertable=false, updatable=false)
+   @JoinColumn(name = "id_patologia_embarazo", referencedColumnName = "id_patologia_embarazo", nullable = false, insertable = false, updatable = false)
     private PatologiasEmbarazosEntity patologiasEmbarazosByIdPatologiaEmbarazo;
 
     public int getIdControlEmbarazoPatologico() {

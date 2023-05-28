@@ -2,21 +2,32 @@ package edu.unsada.apimundosano.models;
 
 import javax.persistence.*;
 
+@jakarta.persistence.Entity
 @Entity
 @Table(name = "origenes", schema = "tripleconlast", catalog = "")
+@jakarta.persistence.Table(name = "origenes", schema = "tripleconlast", catalog = "")
 public class OrigenesEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
+    @jakarta.persistence.Id
+
     @Id
     @Column(name = "id_origen")
+    @jakarta.persistence.Column(name = "id_origen")
     private int idOrigen;
+    @jakarta.persistence.Basic
     @Basic
     @Column(name = "nombre")
+    @jakarta.persistence.Column(name = "nombre")
     private String nombre;
+    @jakarta.persistence.Basic
     @Basic
     @Column(name = "sql_deleted")
+    @jakarta.persistence.Column(name = "sql_deleted")
     private Byte sqlDeleted;
+    @jakarta.persistence.Basic
     @Basic
     @Column(name = "last_modified")
+    @jakarta.persistence.Column(name = "last_modified")
     private Integer lastModified;
 
     public int getIdOrigen() {

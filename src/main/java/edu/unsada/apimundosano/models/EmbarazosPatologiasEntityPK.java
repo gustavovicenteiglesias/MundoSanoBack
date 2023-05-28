@@ -6,11 +6,11 @@ import java.io.Serializable;
 public class EmbarazosPatologiasEntityPK implements Serializable {
     @Column(name = "id_control_embarazo_patologico")
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     private int idControlEmbarazoPatologico;
     @Column(name = "id_patologia_embarazo")
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     private int idPatologiaEmbarazo;
 
     public int getIdControlEmbarazoPatologico() {

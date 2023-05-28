@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "control_rn", schema = "tripleconlast", catalog = "")
 public class ControlRnEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     @Id
     @Column(name = "id_control_rn")
     private int idControlRn;
@@ -61,7 +61,7 @@ public class ControlRnEntity {
     @Column(name = "last_modified")
     private Integer lastModified;
     @ManyToOne
-    @JoinColumn(name = "id_control", referencedColumnName = "id_control", nullable = false,insertable=false, updatable=false)
+ @JoinColumn(name = "id_control", referencedColumnName = "id_control", nullable = false,insertable=false, updatable=false)
     private ControlesEntity controlesByIdControl;
 
     public int getIdControlRn() {

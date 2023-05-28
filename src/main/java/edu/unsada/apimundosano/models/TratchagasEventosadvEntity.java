@@ -17,7 +17,9 @@ public class TratchagasEventosadvEntity {
     @Basic
     @Column(name = "last_modified")
     private Integer lastModified;
+    @Basic
     @Id
+    @Column(name = "id")
     private Long id;
 
     public int getIdTratamientoChagas() {
@@ -76,11 +78,15 @@ public class TratchagasEventosadvEntity {
         return result;
     }
 
-    public void setId(Long id) {
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
         this.id = id;
     }
 
-    public Long getId() {
-        return id;
+    public void setId(Long id) {
+        this.id = id;
     }
 }

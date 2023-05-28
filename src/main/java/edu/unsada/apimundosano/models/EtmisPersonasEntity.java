@@ -6,15 +6,15 @@ import jakarta.persistence.*;
 @Table(name = "etmis_personas", schema = "tripleconlast", catalog = "")
 @IdClass(EtmisPersonasEntityPK.class)
 public class EtmisPersonasEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     @Id
     @Column(name = "id_persona")
     private int idPersona;
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     @Id
     @Column(name = "id_etmi")
     private int idEtmi;
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     @Id
     @Column(name = "id_control")
     private int idControl;
@@ -31,10 +31,10 @@ public class EtmisPersonasEntity {
     @JoinColumn(name = "id_persona", referencedColumnName = "id_persona", nullable = false,insertable=false, updatable=false)
     private PersonasEntity personasByIdPersona;
     @ManyToOne
-    @JoinColumn(name = "id_etmi", referencedColumnName = "id_etmi", nullable = false,insertable=false, updatable=false)
+@JoinColumn(name = "id_etmi", referencedColumnName = "id_etmi", nullable = false,insertable=false, updatable=false)
     private EtmisEntity etmisByIdEtmi;
     @ManyToOne
-    @JoinColumn(name = "id_control", referencedColumnName = "id_control", nullable = false,insertable=false, updatable=false)
+    @JoinColumn(name = "id_control", referencedColumnName = "id_control", nullable = false, insertable = false, updatable = false)
     private ControlesEntity controlesByIdControl;
 
     public int getIdPersona() {

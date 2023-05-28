@@ -13,6 +13,8 @@ import java.util.Collection;
 @Table(name = "personas", schema = "tripleconlast", catalog = "")
 public class PersonasEntity {
 
+
+
     @Id
     @Column(name = "id_persona")
     private int idPersona;
@@ -168,10 +170,11 @@ public class PersonasEntity {
         this.madre = madre;
     }
 
-
     public Integer getAlta() {
         return alta;
     }
+
+
 
     public void setAlta(Integer alta) {
         this.alta = alta;
@@ -181,6 +184,8 @@ public class PersonasEntity {
         return nacidoVivo;
     }
 
+
+
     public void setNacidoVivo(Integer nacidoVivo) {
         this.nacidoVivo = nacidoVivo;
     }
@@ -188,6 +193,8 @@ public class PersonasEntity {
     public Integer getSqlDeleted() {
         return sqlDeleted;
     }
+
+
 
     public void setSqlDeleted(Integer sqlDeleted) {
         this.sqlDeleted = sqlDeleted;

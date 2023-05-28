@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "sync_table", schema = "tripleconlast", catalog = "")
 public class SyncTableEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     @Id
     @Column(name = "id")
     private int id;

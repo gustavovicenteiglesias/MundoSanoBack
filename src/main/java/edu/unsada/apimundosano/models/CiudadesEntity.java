@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "ciudades", schema = "tripleconlast", catalog = "")
 public class CiudadesEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     @Id
     @Column(name = "id_ciudad")
     private int idCiudad;
@@ -22,7 +22,7 @@ public class CiudadesEntity {
     @Column(name = "last_modified")
     private Integer lastModified;
     @ManyToOne
-    @JoinColumn(name = "id_provincia", referencedColumnName = "id_provincia", nullable = false,insertable=false, updatable=false)
+   @JoinColumn(name = "id_provincia", referencedColumnName = "id_provincia", nullable = false,insertable=false, updatable=false)
     private ProvinciasEntity provinciasByIdProvincia;
 
     public int getIdCiudad() {

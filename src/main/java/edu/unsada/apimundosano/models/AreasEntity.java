@@ -6,7 +6,7 @@ import java.util.Collection;
 @Entity
 @Table(name = "areas", schema = "tripleconlast", catalog = "")
 public class AreasEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     @Id
     @Column(name = "id_area")
     private int idArea;
@@ -23,7 +23,7 @@ public class AreasEntity {
     @Column(name = "last_modified")
     private Integer lastModified;
     @ManyToOne
-    @JoinColumn(name = "id_pais", referencedColumnName = "id_pais", nullable = false,insertable=false, updatable=false)
+   @JoinColumn(name = "id_pais", referencedColumnName = "id_pais", nullable = false,insertable=false, updatable=false)
     private PaisesEntity paisesByIdPais;
     @OneToMany(mappedBy = "areasByIdArea")
     private Collection<ParajesEntity> parajesByIdArea;

@@ -5,10 +5,12 @@ import java.io.Serializable;
 
 public class AntecedentesAppsEntityPK implements Serializable {
 
+
     @Id
     @Column(name = "id_antecedente")
 
     private int idAntecedente;
+
 
     @Id
     @Column(name = "id_app")

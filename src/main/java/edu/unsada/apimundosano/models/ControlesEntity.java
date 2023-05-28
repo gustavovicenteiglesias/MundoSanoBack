@@ -9,6 +9,8 @@ import java.util.Collection;
 @Table(name = "controles", schema = "tripleconlast", catalog = "")
 public class ControlesEntity {
 
+
+
     @Id
     @Column(name = "id_control")
     private int idControl;
@@ -77,7 +79,8 @@ public class ControlesEntity {
     private Collection<ControlRnEntity> controlRnsByIdControl;
     @JsonIgnore
     @ManyToOne
-    @JoinColumn(name = "id_persona", referencedColumnName = "id_persona", nullable = false,insertable=false, updatable=false)
+    //@JoinColumns({@JoinColumn(name = "id_persona", referencedColumnName = "id_persona", nullable = false), @JoinColumn(name = "id_persona", referencedColumnName = "id_persona", nullable = false)})
+   @JoinColumn(name = "id_persona", referencedColumnName = "id_persona", nullable = false,insertable=false, updatable=false)
     private PersonasEntity personasByIdPersona;
     @JsonIgnore
     @ManyToOne
@@ -263,6 +266,8 @@ public class ControlesEntity {
     public Integer getSqlDeleted() {
         return sqlDeleted;
     }
+
+
 
     public void setSqlDeleted(Integer sqlDeleted) {
         this.sqlDeleted = sqlDeleted;

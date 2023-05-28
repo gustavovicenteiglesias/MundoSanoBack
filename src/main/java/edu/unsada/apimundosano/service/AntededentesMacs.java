@@ -1,6 +1,5 @@
 package edu.unsada.apimundosano.service;
 
-import edu.unsada.apimundosano.models.AntecedentesAppsEntity;
 import edu.unsada.apimundosano.models.AntecedentesMacsEntity;
 
 import java.util.ArrayList;

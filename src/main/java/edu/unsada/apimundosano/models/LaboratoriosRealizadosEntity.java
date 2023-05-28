@@ -8,18 +8,22 @@ import java.sql.Date;
 @IdClass(LaboratoriosRealizadosEntityPK.class)
 public class LaboratoriosRealizadosEntity {
 
+    @Basic
     @Id
     @Column(name = "id_persona")
     private int idPersona;
 
+    @Basic
     @Id
     @Column(name = "id_control")
     private int idControl;
 
+    @Basic
     @Id
     @Column(name = "id_laboratorio")
     private int idLaboratorio;
 
+    @Basic
     @Id
     @Column(name = "trimestre")
     private Integer trimestre;
@@ -32,7 +36,7 @@ public class LaboratoriosRealizadosEntity {
     @Basic
     @Column(name = "resultado")
     private String resultado;
-
+    @Basic
     @Id
     @Column(name = "id_etmi")
     private int idEtmi;
@@ -42,15 +46,23 @@ public class LaboratoriosRealizadosEntity {
     @Basic
     @Column(name = "last_modified")
     private Integer lastModified;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @Column(name = "id")
+    private int id;
     @ManyToOne
     @JoinColumn(name = "id_persona", referencedColumnName = "id_persona", nullable = false,insertable=false, updatable=false)
+
     private PersonasEntity personasByIdPersona;
     @ManyToOne
     @JoinColumn(name = "id_control", referencedColumnName = "id_control", nullable = false,insertable=false, updatable=false)
+
     private ControlesEntity controlesByIdControl;
     @ManyToOne
     @JoinColumn(name = "id_laboratorio", referencedColumnName = "id_laboratorio", nullable = false,insertable=false, updatable=false)
+
     private LaboratoriosEntity laboratoriosByIdLaboratorio;
+
 
     public int getIdPersona() {
         return idPersona;
@@ -78,6 +90,10 @@ public class LaboratoriosRealizadosEntity {
 
     public Integer getTrimestre() {
         return trimestre;
+    }
+
+    public void setTrimestre(short trimestre) {
+        this.trimestre = (int) trimestre;
     }
 
     public void setTrimestre(Integer trimestre) {
@@ -119,6 +135,7 @@ public class LaboratoriosRealizadosEntity {
     public Integer getSqlDeleted() {
         return sqlDeleted;
     }
+
 
     public void setSqlDeleted(Integer sqlDeleted) {
         this.sqlDeleted = sqlDeleted;
@@ -211,5 +228,13 @@ public class LaboratoriosRealizadosEntity {
                 ", controlesByIdControl=" + controlesByIdControl +
                 ", laboratoriosByIdLaboratorio=" + laboratoriosByIdLaboratorio +
                 '}';
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 }

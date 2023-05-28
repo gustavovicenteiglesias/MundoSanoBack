@@ -6,7 +6,7 @@ import java.util.Collection;
 @Entity
 @Table(name = "seguimiento_chagas", schema = "tripleconlast", catalog = "")
 public class SeguimientoChagasEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     @Id
     @Column(name = "id_seguimiento_chagas")
     private int idSeguimientoChagas;

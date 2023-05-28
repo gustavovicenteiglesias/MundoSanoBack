@@ -7,6 +7,7 @@ import java.util.Collection;
 @Table(name = "inmunizaciones", schema = "tripleconlast", catalog = "")
 public class InmunizacionesEntity {
 
+
     @Id
     @Column(name = "id_inmunizacion")
     private int idInmunizacion;

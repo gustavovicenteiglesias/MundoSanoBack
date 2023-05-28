@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.unsada.apimundosano.models.*;
 import edu.unsada.apimundosano.repositorio.*;
 
+
 import edu.unsada.apimundosano.service.*;
 import edu.unsada.apimundosano.utilidades.JsonSqlite;
 import edu.unsada.apimundosano.utilidades.JsonTable;
@@ -50,6 +51,9 @@ public class ExportControler {
 
     @Autowired
     private EtmisPersonasRepo etmisPersonasRepo;
+
+    @Autowired
+    private  IdSegunDevice idSegunDeviceRepo;
 
     @GetMapping("/persona")
     public HashMap<String, Object> getAllPersonas() {
@@ -218,6 +222,7 @@ public class ExportControler {
                             laboratoriosRealizados.setIdEtmi((Integer) valor.get(7));
                             laboratoriosRealizados.setSqlDeleted((Integer) valor.get(8));
                             laboratoriosRealizados.setLastModified((Integer) valor.get(9));
+                            laboratoriosRealizados.setId((Integer) valor.get(10)) ;
 
                             laboratoriosRealizadosRepo.save(laboratoriosRealizados);
                             System.out.println(laboratoriosRealizados.toString());
@@ -524,6 +529,7 @@ public class ExportControler {
         tableInmunizacionesControl.put("values",valuesInmunizacionesControl);
         row.add(tableInmunizacionesControl);
 
+
         /*
          *Tabla laboratorios_realizados
          */
@@ -595,4 +601,55 @@ public class ExportControler {
         return  response;
     }
 
-}
+    @GetMapping("/ultimarowdevice")
+    public Map<String, Object> getLastRow() {
+        HashMap<String, Object> response = new HashMap<>();
+        try {
+            Iterable<IdsegundeviceEntity> lastrow = idSegunDeviceRepo.getLastRoe();
+            response.put("data", lastrow);
+            response.put("success", true);
+            return response;
+        } catch (Exception e) {
+            response.put("error", e.toString());
+        }
+        return response;
+    }
+    @PostMapping("/crearultimoid")
+    public HashMap<String, Object> crearUltimoidDevicw(@RequestBody IdsegundeviceEntity device){
+        HashMap<String, Object> response = new HashMap<>();
+        IdsegundeviceEntity _device=new IdsegundeviceEntity();
+
+        try {
+            _device.setIdDevice(device.getIdDevice());
+            _device.setNroDevice(device.getNroDevice());
+            _device.setMinId(device.getMinId());
+            _device.setMaxId(device.getMaxId());
+            _device.setSqlDelete(device.getSqlDelete());
+            _device.setLastModified(device.getLastModified());
+            Integer id=idSegunDeviceRepo.save(_device).getIdDevice();
+            response.put("data",id);
+            response.put("success", true);
+            return response;
+        } catch (Exception e) {
+            response.put("error", e.toString());
+        }
+        return response;
+    }
+    @GetMapping("/findbynrodevice/{parametro}")
+    public HashMap<String, Object> numero_device(@PathVariable String parametro){
+        HashMap<String, Object> response = new HashMap<>();
+
+        try {
+            Optional device=idSegunDeviceRepo.findByNroDevice(parametro);
+            response.put("data",device);
+            response.put("success", true);
+            return response;
+        } catch (Exception e) {
+            response.put("error", e.toString());
+        }
+        return response;
+    }
+    }
+
+
+

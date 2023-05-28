@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "niveles_acceso", schema = "tripleconlast", catalog = "")
 public class NivelesAccesoEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     @Id
     @Column(name = "id_nivel_acceso")
     private int idNivelAcceso;

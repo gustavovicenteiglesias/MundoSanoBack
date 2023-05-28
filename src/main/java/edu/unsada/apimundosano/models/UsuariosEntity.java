@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "usuarios", schema = "tripleconlast", catalog = "")
 public class UsuariosEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     @Id
     @Column(name = "id_usuario")
     private int idUsuario;

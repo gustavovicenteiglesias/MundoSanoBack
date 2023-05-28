@@ -21,6 +21,7 @@ public class LaboratoriosRealizadosService {
             row.add(item.getIdEtmi());
             row.add(item.getSqlDeleted());
             row.add(item.getLastModified());
+            row.add(item.getId());
             values.add(row);
         }
         return values;

@@ -8,9 +8,11 @@ import jakarta.persistence.*;
 @IdClass(AntecedentesAppsEntityPK.class)
 public class AntecedentesAppsEntity {
 
+
     @Id
     @Column(name = "id_antecedente")
     private int idAntecedente;
+
 
     @Id
     @Column(name = "id_app")
@@ -21,6 +23,7 @@ public class AntecedentesAppsEntity {
     @Basic
     @Column(name = "sql_deleted")
     private Integer sqlDelete;
+
 
     public int getIdAntecedente() {
         return idAntecedente;
@@ -87,4 +90,6 @@ public class AntecedentesAppsEntity {
         result = 31 * result + (int) sqlDelete;
         return result;
     }
+
+
 }

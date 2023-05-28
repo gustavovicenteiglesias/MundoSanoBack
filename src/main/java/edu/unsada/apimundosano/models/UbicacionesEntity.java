@@ -7,6 +7,7 @@ import java.sql.Date;
 @Table(name = "ubicaciones", schema = "tripleconlast", catalog = "")
 public class UbicacionesEntity {
 
+
     @Id
     @Column(name = "id_ubicacion")
     private int idUbicacion;
@@ -105,6 +106,7 @@ public class UbicacionesEntity {
     public Integer getSqlDeleted() {
         return sqlDeleted;
     }
+
 
     public void setSqlDeleted(Integer sqlDeleted) {
         this.sqlDeleted = sqlDeleted;

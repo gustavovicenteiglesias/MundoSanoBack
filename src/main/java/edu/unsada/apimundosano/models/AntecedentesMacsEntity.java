@@ -9,9 +9,11 @@ import java.util.Objects;
 @IdClass(AntecedentesMacsEntityPK.class)
 public class AntecedentesMacsEntity {
 
+
     @Id
     @Column(name = "id_antecedente")
     private int idAntecedente;
+
 
     @Id
     @Column(name = "id_mac")
@@ -47,10 +49,11 @@ public class AntecedentesMacsEntity {
         this.lastModified = lastModified;
     }
 
-
     public Integer getSqlDeleted() {
         return sqlDeleted;
     }
+
+
 
     public void setSqlDeleted(Integer sqlDeleted) {
         this.sqlDeleted = sqlDeleted;
