@@ -4,7 +4,7 @@ package edu.unsada.apimundosano.models;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "antecedentes_apps", schema = "tripleconlast", catalog = "")
+@Table(name = "antecedentes_apps",  catalog = "")
 @IdClass(AntecedentesAppsEntityPK.class)
 public class AntecedentesAppsEntity {
 

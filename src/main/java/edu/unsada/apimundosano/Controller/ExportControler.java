@@ -53,6 +53,9 @@ public class ExportControler {
     private EtmisPersonasRepo etmisPersonasRepo;
 
     @Autowired
+    private UsuarioRepo usuarioRepo;
+
+    @Autowired
     private  IdSegunDevice idSegunDeviceRepo;
 
     @GetMapping("/persona")
@@ -132,7 +135,7 @@ public class ExportControler {
                             personas.setSexo((String) valor.get(7));
                             personas.setMadre((Integer) valor.get(8));
                             personas.setAlta((Integer) valor.get(9));
-                            personas.setNacionalidad((Integer) valor.get(10));
+                            personas.setNacidoVivo((Integer) valor.get(10));
                             personas.setSqlDeleted((Integer) valor.get(11));
                             personas.setLastModified((Integer) valor.get(12));
                             System.out.println(personas.toString());
@@ -304,6 +307,21 @@ public class ExportControler {
                             antecedentesMacsRepo.save(antecedentesMacs);
                         }
                     }
+                    case ("etmis_personas")->{
+                        for (int j = 0; j < valores.size(); j++) {
+                            EtmisPersonasEntity etmisPersonasEntity=new EtmisPersonasEntity();
+                            List valor = (List) valores.get(j);
+
+                            etmisPersonasEntity.setIdPersona((Integer) valor.get(0));
+                            etmisPersonasEntity.setIdEtmi((Integer) valor.get(1));
+                            etmisPersonasEntity.setIdControl((Integer) valor.get(2));
+                            etmisPersonasEntity.setConfirmada((Integer) valor.get(3));
+                            etmisPersonasEntity.setLastModified((Integer) valor.get(5));
+                            etmisPersonasEntity.setSqlDeleted((Integer) valor.get(4));
+                            System.out.println(etmisPersonasEntity.toString());
+                            etmisPersonasRepo.save(etmisPersonasEntity);
+                        }
+                    }
                     default -> System.out.println("otro");
                 }
             }
@@ -329,6 +347,7 @@ public class ExportControler {
         Iterable<AntecedentesEntity> dataAntecedentes=antecedentesRepo.findAll();
         Iterable<AntecedentesAppsEntity>  dataAntecedentesApss=antecedentesAppsRepo.findAll();
         Iterable<AntecedentesMacsEntity> dataAtecedentesMacs=antecedentesMacsRepo.findAll();
+        Iterable<UsuariosEntity> dataUsuarios=usuarioRepo.findAll();
 
         List<Object> row = new ArrayList<>();
         Map<String, Object> json= new HashMap<>();
@@ -342,6 +361,7 @@ public class ExportControler {
         Map<String,Object> tableAntecedentes=new HashMap<>();
         Map<String,Object> tableAntecedentesApps=new HashMap<>();
         Map<String,Object> tableAntecedentesMacs=new HashMap<>();
+        Map<String,Object> tableUsuarios=new HashMap<>();
 
         PersonaSrevice ps=new PersonaSrevice();
         ControlesService cs=new ControlesService();
@@ -352,6 +372,7 @@ public class ExportControler {
         AntecedentesService an=new AntecedentesService();
         AntecedentesApps aapps=new AntecedentesApps();
         AntededentesMacs amacs=new AntededentesMacs();
+        UsuarioService us=new UsuarioService();
 
         List<List<Object>> valuesPersonas= ps.valuesPersonas(data) ;
         List<List<Object>> valuesControles=cs.valuesControles(dataControles);
@@ -362,12 +383,13 @@ public class ExportControler {
         List<List<Object>> valuesAntecedentes=an.AntecedentesValues(dataAntecedentes);
         List<List<Object>> valuesAntedentesApps=aapps.AntecedentesAppsValues(dataAntecedentesApss);
         List<List<Object>> valuesAntecedentesMacs=amacs.AntecedentesMacsValues(dataAtecedentesMacs);
+        List<List<Object>> valuesUsuarios=us.valuesUsuarios(dataUsuarios);
         /*
         *
         * Arma el primer nivel del json
         *
         */
-        json.put("database", "triplefrontera");
+        json.put("database", "elsoberbio");
         json.put("version" ,2);
         //json.put("overwrite",true);
         json.put("encrypted", false);
@@ -378,7 +400,12 @@ public class ExportControler {
         table.put("name", "personas");
         table.put("values", valuesPersonas);
         row.add(table);
-
+        /*
+         *Tabla usuarios
+         */
+        tableUsuarios.put("name", "usuarios");
+        tableUsuarios.put("values", valuesUsuarios);
+        row.add(tableUsuarios);
 
         /*
         *Tabla controles
@@ -453,6 +480,7 @@ public class ExportControler {
         Iterable<AntecedentesAppsEntity>  dataAntecedentesApss=antecedentesAppsRepo.findAll();
         Iterable<AntecedentesMacsEntity> dataAtecedentesMacs=antecedentesMacsRepo.findAll();
         Iterable<EtmisPersonasEntity> dataEtmis=etmisPersonasRepo.findAll();
+        Iterable<UsuariosEntity> dataUsuarios=usuarioRepo.findAll();
 
         List<Object> row = new ArrayList<>();
         Map<String, Object> json= new HashMap<>();
@@ -467,6 +495,7 @@ public class ExportControler {
         Map<String,Object> tableAntecedentesApps=new HashMap<>();
         Map<String,Object> tableAntecedentesMacs=new HashMap<>();
         Map<String,Object> tableEtmisPersonas=new HashMap<>();
+        Map<String,Object> tableUsuarios=new HashMap<>();
 
         PersonaSrevice ps=new PersonaSrevice();
         ControlesService cs=new ControlesService();
@@ -478,6 +507,7 @@ public class ExportControler {
         AntecedentesApps aapps=new AntecedentesApps();
         AntededentesMacs amacs=new AntededentesMacs();
         EtmisPersonasService ep=new EtmisPersonasService();
+        UsuarioService us=new UsuarioService();
 
         List<List<Object>> valuesPersonas= ps.valuesPersonas(data) ;
         List<List<Object>> valuesControles=cs.valuesControles(dataControles);
@@ -489,6 +519,7 @@ public class ExportControler {
         List<List<Object>> valuesAntedentesApps=aapps.AntecedentesAppsValues(dataAntecedentesApss);
         List<List<Object>> valuesAntecedentesMacs=amacs.AntecedentesMacsValues(dataAtecedentesMacs);
         List<List<Object>> valuesEtmisPersonas=ep.EtmisPersonasValues(dataEtmis);
+        List<List<Object>> valuesUsuarios=us.valuesUsuarios(dataUsuarios);
 
         /*
          *
@@ -507,7 +538,12 @@ public class ExportControler {
         table.put("values", valuesPersonas);
         row.add(table);
 
-
+        /*
+         *Tabla usuarios
+         */
+        tableUsuarios.put("name", "usuarios");
+        tableUsuarios.put("values", valuesUsuarios);
+        row.add(tableUsuarios);
         /*
          *Tabla controles
          */
