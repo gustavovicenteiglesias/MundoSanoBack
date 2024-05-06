@@ -11,6 +11,7 @@ import edu.unsada.apimundosano.service.*;
 import edu.unsada.apimundosano.utilidades.JsonSqlite;
 import edu.unsada.apimundosano.utilidades.JsonTable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -57,6 +58,18 @@ public class ExportControler {
 
     @Autowired
     private  IdSegunDevice idSegunDeviceRepo;
+
+    @Autowired
+    private PaisesRepo paisesRepo;
+
+    @Autowired
+    private AreasRepo areasRepo;
+
+    @Autowired
+    private ParajesRepo parajesRepo;
+
+    @Value("${mundosano.app.bbdd}")
+    private String bbdd;
 
     @GetMapping("/persona")
     public HashMap<String, Object> getAllPersonas() {
@@ -389,7 +402,7 @@ public class ExportControler {
         * Arma el primer nivel del json
         *
         */
-        json.put("database", "elsoberbio");
+        json.put("database", bbdd);
         json.put("version" ,2);
         //json.put("overwrite",true);
         json.put("encrypted", false);
@@ -481,6 +494,11 @@ public class ExportControler {
         Iterable<AntecedentesMacsEntity> dataAtecedentesMacs=antecedentesMacsRepo.findAll();
         Iterable<EtmisPersonasEntity> dataEtmis=etmisPersonasRepo.findAll();
         Iterable<UsuariosEntity> dataUsuarios=usuarioRepo.findAll();
+        Iterable<PaisesEntity> dataPaises=paisesRepo.findAll();
+        Iterable<AreasEntity> dataAreas=areasRepo.findAll();
+        Iterable<ParajesEntity> dataParajes=parajesRepo.findAll();
+
+
 
         List<Object> row = new ArrayList<>();
         Map<String, Object> json= new HashMap<>();
@@ -496,6 +514,10 @@ public class ExportControler {
         Map<String,Object> tableAntecedentesMacs=new HashMap<>();
         Map<String,Object> tableEtmisPersonas=new HashMap<>();
         Map<String,Object> tableUsuarios=new HashMap<>();
+        Map<String,Object> tablePaises=new HashMap<>();
+        Map<String,Object> tableAreas=new HashMap<>();
+        Map<String,Object> tableParajes=new HashMap<>();
+
 
         PersonaSrevice ps=new PersonaSrevice();
         ControlesService cs=new ControlesService();
@@ -508,6 +530,9 @@ public class ExportControler {
         AntededentesMacs amacs=new AntededentesMacs();
         EtmisPersonasService ep=new EtmisPersonasService();
         UsuarioService us=new UsuarioService();
+        PaisesService paisesServices=new PaisesService();
+        AreasService areaServices=new AreasService();
+        ParajeService parajeService=new ParajeService();
 
         List<List<Object>> valuesPersonas= ps.valuesPersonas(data) ;
         List<List<Object>> valuesControles=cs.valuesControles(dataControles);
@@ -520,13 +545,16 @@ public class ExportControler {
         List<List<Object>> valuesAntecedentesMacs=amacs.AntecedentesMacsValues(dataAtecedentesMacs);
         List<List<Object>> valuesEtmisPersonas=ep.EtmisPersonasValues(dataEtmis);
         List<List<Object>> valuesUsuarios=us.valuesUsuarios(dataUsuarios);
+        List<List<Object>> valuesPaises=paisesServices.valuesPaises(dataPaises);
+        List<List<Object>> valuesAreas=areaServices.valuesAreas(dataAreas);
+        List<List<Object>> valuesParajes=parajeService.valuesParajes(dataParajes);
 
         /*
          *
          * Arma el primer nivel del json
          *
          */
-        json.put("database", "triplefrontera");
+        json.put("database", bbdd);
         json.put("version" ,2);
         //json.put("overwrite",true);
         json.put("encrypted", false);
@@ -606,6 +634,28 @@ public class ExportControler {
         tableEtmisPersonas.put("name","etmis_personas");
         tableEtmisPersonas.put("values",valuesEtmisPersonas);
         row.add(tableEtmisPersonas);
+
+        /*
+         *Table paises
+         */
+        tablePaises.put("name","paises");
+        tablePaises.put("values",valuesPaises);
+        row.add(tablePaises);
+
+        /*
+         *Table areas
+         */
+
+        tableAreas.put("name","areas");
+        tableAreas.put("values",valuesAreas);
+        row.add((tableAreas));
+
+        /*
+         *Table parajes
+         */
+        tableParajes.put("name","parajes");
+        tableParajes.put("values",valuesParajes);
+        row.add(tableParajes);
 
         json.put("tables",row);
 
