@@ -26,7 +26,7 @@ public class EtmisPersonasEntity {
     private Integer sqlDeleted;
     @Basic
     @Column(name = "last_modified")
-    private  int  lastModified;
+    private  Integer  lastModified;
     @ManyToOne
     @JoinColumn(name = "id_persona", referencedColumnName = "id_persona", nullable = false,insertable=false, updatable=false)
     private PersonasEntity personasByIdPersona;
