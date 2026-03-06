@@ -116,11 +116,7 @@ public class ExportControler {
     @PostMapping("/sqlite")
     public HashMap<String, Object> postSqlite(@RequestBody JsonSqlite json) {
 
-        //Gson gson = new Gson();
-        //JsonSqlite jsonSqlite = gson.fromJson(json, JsonSqlite.class);
         List<JsonTable> jsonTable = json.getTables();
-
-
         HashMap<String, Object> response = new HashMap<>();
 
         try {

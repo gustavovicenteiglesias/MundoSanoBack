@@ -56,10 +56,10 @@ public class ControlEmbarazoEntity {
     @OneToMany(mappedBy = "controlEmbarazoByIdControlEmbarazo")
     private Collection<ControlEmbPatologicoEntity> controlEmbPatologicosByIdControlEmbarazo;
     @ManyToOne
- @JoinColumn(name = "id_control", referencedColumnName = "id_control", nullable = false,insertable=false, updatable=false)
+    @JoinColumn(name = "id_control", referencedColumnName = "id_control", nullable = false,insertable=false, updatable=false)
     private ControlesEntity controlesByIdControl;
     @ManyToOne
-   @JoinColumn(name = "motivo", referencedColumnName = "id_motivo",insertable=false, updatable=false)
+    @JoinColumn(name = "motivo", referencedColumnName = "id_motivo",insertable=false, updatable=false)
     private MotivosDerivacionEntity motivosDerivacionByMotivo;
 
     public int getIdControlEmbarazo() {
