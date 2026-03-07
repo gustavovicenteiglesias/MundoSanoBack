@@ -479,11 +479,21 @@ public class ExportControler {
                         continue;
                     }
 
-                    InmunizacionesControlEntity inmunizacionesControl = new InmunizacionesControlEntity();
+                    if (idInmunizacion == null) {
+                        addLog(logs, "inmunizaciones_control", idPersona, idControl, null,
+                                "inmunizacion rechazada porque id_inmunizacion es nulo o inválido", valor);
+                        continue;
+                    }
+
+                    InmunizacionesControlEntity inmunizacionesControl =
+                            inmunizacionesControlRepo
+                                    .findByIdPersonaAndIdControlAndIdInmunizacion(idPersona, idControl, idInmunizacion)
+                                    .orElseGet(InmunizacionesControlEntity::new);
+
                     inmunizacionesControl.setIdPersona(idPersona);
                     inmunizacionesControl.setIdControl(idControl);
                     inmunizacionesControl.setIdInmunizacion(idInmunizacion);
-                    inmunizacionesControl.setEstado(safeString(valor, 3));
+                    inmunizacionesControl.setEstado(safeStringNotNull(valor, 3));
                     inmunizacionesControl.setSqlDeleted(safeInt(valor, 4));
                     inmunizacionesControl.setLastModified(safeInt(valor, 5));
 
@@ -494,7 +504,6 @@ public class ExportControler {
                     addLog(logs, "inmunizaciones_control", idPersona, idControl, idInmunizacion, e.getMessage(), valor);
                 }
             }
-
             /*
              * =========================
              * 7) LABORATORIOS (dependen de persona + control)
@@ -518,14 +527,24 @@ public class ExportControler {
                         continue;
                     }
 
-                    LaboratoriosRealizadosEntity laboratoriosRealizados = new LaboratoriosRealizadosEntity();
+                    if (idLaboratorio == null) {
+                        addLog(logs, "laboratorios_realizados", idPersona, idControl, null,
+                                "laboratorio rechazado porque id_laboratorio es nulo o inválido", valor);
+                        continue;
+                    }
+
+                    LaboratoriosRealizadosEntity laboratoriosRealizados =
+                            laboratoriosRealizadosRepo
+                                    .findByIdPersonaAndIdControlAndIdLaboratorio(idPersona, idControl, idLaboratorio)
+                                    .orElseGet(LaboratoriosRealizadosEntity::new);
+
                     laboratoriosRealizados.setIdPersona(idPersona);
                     laboratoriosRealizados.setIdControl(idControl);
                     laboratoriosRealizados.setIdLaboratorio(idLaboratorio);
                     laboratoriosRealizados.setTrimestre(safeInt(valor, 3));
                     laboratoriosRealizados.setFechaRealizado(parseSqlDate(getValue(valor, 4)));
                     laboratoriosRealizados.setFechaResultados(parseSqlDate(getValue(valor, 5)));
-                    laboratoriosRealizados.setResultado(safeString(valor, 6));
+                    laboratoriosRealizados.setResultado(safeStringNotNull(valor, 6));
                     laboratoriosRealizados.setIdEtmi(safeInt(valor, 7));
                     laboratoriosRealizados.setSqlDeleted(safeInt(valor, 8));
                     laboratoriosRealizados.setLastModified(safeInt(valor, 9));
@@ -561,7 +580,17 @@ public class ExportControler {
                         continue;
                     }
 
-                    EtmisPersonasEntity etmisPersonasEntity = new EtmisPersonasEntity();
+                    if (idEtmi == null) {
+                        addLog(logs, "etmis_personas", idPersona, idControl, null,
+                                "etmi rechazada porque id_etmi es nulo o inválido", valor);
+                        continue;
+                    }
+
+                    EtmisPersonasEntity etmisPersonasEntity =
+                            etmisPersonasRepo
+                                    .findByIdPersonaAndIdEtmiAndIdControl(idPersona, idEtmi, idControl)
+                                    .orElseGet(EtmisPersonasEntity::new);
+
                     etmisPersonasEntity.setIdPersona(idPersona);
                     etmisPersonasEntity.setIdEtmi(idEtmi);
                     etmisPersonasEntity.setIdControl(idControl);
@@ -576,7 +605,6 @@ public class ExportControler {
                     addLog(logs, "etmis_personas", idPersona, idControl, idEtmi, e.getMessage(), valor);
                 }
             }
-
             /*
              * =========================
              * 9) ANTECEDENTES_APPS (dependen de antecedente)
