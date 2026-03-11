@@ -10,13 +10,22 @@ import edu.unsada.apimundosano.repositorio.*;
 import edu.unsada.apimundosano.service.*;
 import edu.unsada.apimundosano.utilidades.JsonSqlite;
 import edu.unsada.apimundosano.utilidades.JsonTable;
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.sql.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 
@@ -24,7 +33,7 @@ import java.util.*;
 @RestController
 @RequestMapping("/api")
 
-public class ExportControler {
+    public class ExportControler {
 
     @Autowired
     private PersonasRepo personasRepo;
@@ -163,6 +172,7 @@ public class ExportControler {
         log.put("idReferencia", idReferencia);
         log.put("motivo", motivo);
         log.put("payload", payload);
+        log.put("ts", LocalDateTime.now().toString());
 
         logs.add(log);
 
@@ -172,6 +182,22 @@ public class ExportControler {
                 + ", idReferencia=" + idReferencia
                 + ", motivo=" + motivo
                 + ", payload=" + payload);
+
+        appendLogToFile(log);
+    }
+
+    private void appendLogToFile(Map<String, Object> log) {
+        try {
+            Path folder = Path.of("logs");
+            Files.createDirectories(folder);
+            Path file = folder.resolve("import_sync.log");
+            String line = new ObjectMapper().writeValueAsString(log) + System.lineSeparator();
+            Files.writeString(file, line, StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            // Si falla el log en disco no interrumpimos el flujo
+            System.err.println("No se pudo escribir import_sync.log: " + e.getMessage());
+        }
     }
     private boolean personaDisponible(Integer idPersona, Set<Integer> personasValidas) {
         if (idPersona == null) return false;
@@ -193,7 +219,31 @@ public class ExportControler {
         return v.toString().trim();
     }
 
+    private Date parseDate(Object value) {
+        if (value == null) return null;
+        String s = String.valueOf(value).trim();
+        if (s.isEmpty() || "null".equalsIgnoreCase(s)) return null;
+        try {
+            return Date.valueOf(LocalDate.parse(s));
+        } catch (Exception e1) {
+            try {
+                // ISO date-time -> take date part
+                LocalDate ld = LocalDateTime.parse(s, DateTimeFormatter.ISO_DATE_TIME).toLocalDate();
+                return Date.valueOf(ld);
+            } catch (Exception e2) {
+                if (s.length() >= 10) {
+                    try {
+                        return Date.valueOf(LocalDate.parse(s.substring(0, 10)));
+                    } catch (Exception ignored) {}
+                }
+                // prefer null over romper import
+                return null;
+            }
+        }
+    }
+
     @PostMapping("/sqlite")
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public HashMap<String, Object> postSqlite(@RequestBody JsonSqlite json) {
 
         HashMap<String, Object> response = new HashMap<>();
@@ -683,11 +733,23 @@ public class ExportControler {
             return response;
 
         } catch (Exception e) {
+            // No bloquear la sync: devolvemos parciales y el detalle del problema
             e.printStackTrace();
-            response.put("success", false);
-            response.put("message", "Error general procesando importación");
+            response.put("success", true);
+            response.put("message", "Importación completada con errores parciales (no se bloqueó la sync)");
             response.put("error", e.getMessage());
             response.put("logs", logs);
+            response.put("personasGuardadas", personasGuardadas);
+            response.put("controlesGuardados", controlesGuardados);
+            response.put("controlEmbarazoGuardados", controlEmbarazoGuardados);
+            response.put("inmunizacionesGuardadas", inmunizacionesGuardadas);
+            response.put("laboratoriosGuardados", laboratoriosGuardados);
+            response.put("ubicacionesGuardadas", ubicacionesGuardadas);
+            response.put("antecedentesGuardados", antecedentesGuardados);
+            response.put("antecedentesAppsGuardados", antecedentesAppsGuardados);
+            response.put("antecedentesMacsGuardados", antecedentesMacsGuardados);
+            response.put("etmisGuardados", etmisGuardados);
+            response.put("rechazados", logs.size());
             return response;
         }
     }

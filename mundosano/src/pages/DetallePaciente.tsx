@@ -65,83 +65,112 @@ const DetallePaciente: React.FC = () => {
     let hoy = moment();
     let sqlite = useSQLite()
     const history = useHistory()
+
+    const isControlObsoleto = (ctrl: any, antecedentes: any): { cerrar: boolean, fechaFin: string | null } => {
+        const hoy = moment();
+        const fechaControl = ctrl?.fecha ? moment(ctrl.fecha) : null;
+        const fum = antecedentes?.fum ? moment(antecedentes.fum) : null;
+        const fpp = antecedentes?.fpp ? moment(antecedentes.fpp) : null;
+
+        // reglas de cierre
+        if (fpp) {
+            const limiteFpp = fpp.clone().add(42, 'days');
+            if (limiteFpp.isBefore(hoy)) return { cerrar: true, fechaFin: fpp.format('YYYY-MM-DD') };
+        }
+        if (fum) {
+            const limiteFum = fum.clone().add(46, 'weeks');
+            if (limiteFum.isBefore(hoy)) return { cerrar: true, fechaFin: limiteFum.format('YYYY-MM-DD') };
+        }
+        if (fechaControl && fechaControl.isBefore(hoy.clone().subtract(365, 'days'))) {
+            return { cerrar: true, fechaFin: fechaControl.format('YYYY-MM-DD') };
+        }
+        return { cerrar: false, fechaFin: null };
+    };
+
+    const cerrarEmbarazoLocal = async (db: SQLiteDBConnection, ctrl: any, antecedentes: any) => {
+        const evalClose = isControlObsoleto(ctrl, antecedentes);
+        if (!evalClose.cerrar) return false;
+        const fechaFin = evalClose.fechaFin || moment().format('YYYY-MM-DD');
+        await db.execute(`UPDATE controles SET id_estado=2, fecha_fin_embarazo='${fechaFin}', last_modified=${Math.floor(Date.now()/1000)} WHERE id_control=${ctrl.id_control}`);
+        return true;
+    };
     
-    useEffect(() => {
-        setShowDetalle(true)
-        const testDatabaseCopyFromAssets = async (): Promise<any> => {
-            try {
-                const dbdb = async () => {
-                    const ret = await sqlite.checkConnectionsConsistency();
-                    const isConn = (await sqlite.isConnection(NOMBRE_BB_DD)).result;
-                    var db: SQLiteDBConnection
-                    if (ret.result && isConn) {
-                        return db = await sqlite.retrieveConnection(NOMBRE_BB_DD);
-                    } else {
-                        return db = await sqlite.createConnection(NOMBRE_BB_DD);
-                    }
+    const loadPaciente = async (): Promise<boolean> => {
+        try {
+            const dbdb = async () => {
+                const ret = await sqlite.checkConnectionsConsistency();
+                const isConn = (await sqlite.isConnection(NOMBRE_BB_DD)).result;
+                var db: SQLiteDBConnection
+                if (ret.result && isConn) {
+                    return db = await sqlite.retrieveConnection(NOMBRE_BB_DD);
+                } else {
+                    return db = await sqlite.createConnection(NOMBRE_BB_DD);
                 }
-                const db = await dbdb()
-                await db.open();
-                //pacientes controles, ultimo control, antecedentes y ubicacion
-                let res: any = await db.query(`SELECT * FROM controles WHERE id_persona=${paciente.id_persona} ORDER BY fecha DESC`);
-
-                let respantecedente: any = await db.query(`SELECT a.*, s.id_app,m.id_mac FROM antecedentes a LEFT JOIN antecedentes_apps s ON a.id_antecedente=s.id_antecedente LEFT JOIN antecedentes_macs m ON a.id_antecedente=m.id_antecedente WHERE a.id_persona=${paciente.id_persona}`)
-                let respUbicacion: any = await db.query(`SELECT pa.nombre AS pais,a.nombre AS area, p.nombre AS paraje FROM ubicaciones u INNER JOIN parajes p ON u.id_paraje=p.id_paraje INNER JOIN areas a ON p.id_area=a.id_area INNER JOIN paises pa ON a.id_pais=pa.id_pais WHERE u.id_persona=${paciente.id_persona}`)
-
-                // setPaciente({ ...paciente, antecedentes: respantecedente.values[0], ubicacion: respUbicacion.values[0] })
-                const laboratorio = async () => {
-
-                    await res.values.map(async (data: any, i: any) => {
-
-                        if (data.id_estado === 1) {
-
-                            await db.query(`SELECT * FROM control_embarazo WHERE id_control=${data.id_control}`)
-                                .then((resp: any) => {
-                                    res.values[i].controlembarazada = resp?.values[0]
-
-                                    db.query(`SELECT l.id_laboratorio,l.fecha_realizado,l.resultado,t.nombre FROM laboratorios_realizados l INNER JOIN laboratorios t ON l.id_laboratorio=t.id_laboratorio WHERE l.id_control=${data.id_control}`)
-                                        .then((respLaboratorio: any) => {
-                                            res.values[i].laboratorios = respLaboratorio.values
-
-                                            db.query(`SELECT * FROM inmunizaciones_control c INNER JOIN inmunizaciones i ON c.id_inmunizacion=i.id_inmunizacion WHERE c.id_control=${data.id_control}`)
-                                                .then((respInmunizacion: any) => {
-                                                    res.values[i].inmunizaciones = respInmunizacion.values
-
-                                                    setPaciente({ ...paciente, controles: res.values, antecedentes: respantecedente.values[0], ubicacion: respUbicacion.values[0] })
-                                                })
-                                        })
-                                })
-                        }
-
-                    })
-
-                    return true
-                }
-
-
-                let lab: any = await laboratorio()
-
-
-
-                if (lab) {
-                    setTimeout(async function () {
-
-                        db.close()
-
-                    }, 2000);
-
-                }
-
-
-
-                return true;
             }
-            catch (error: any) {
-                return false;
+            const db = await dbdb()
+            await db.open();
+            //pacientes controles, ultimo control, antecedentes y ubicacion
+            let res: any = await db.query(`SELECT * FROM controles WHERE id_persona=${paciente.id_persona} ORDER BY fecha DESC`);
+
+            let respantecedente: any = await db.query(`SELECT a.*, s.id_app,m.id_mac FROM antecedentes a LEFT JOIN antecedentes_apps s ON a.id_antecedente=s.id_antecedente LEFT JOIN antecedentes_macs m ON a.id_antecedente=m.id_antecedente WHERE a.id_persona=${paciente.id_persona}`)
+            let respUbicacion: any = await db.query(`SELECT u.id_ubicacion,u.id_pais,u.id_area,u.id_paraje,u.num_vivienda,u.georeferencia, pa.nombre AS pais,a.nombre AS area, p.nombre AS paraje FROM ubicaciones u INNER JOIN parajes p ON u.id_paraje=p.id_paraje INNER JOIN areas a ON p.id_area=a.id_area INNER JOIN paises pa ON a.id_pais=pa.id_pais WHERE u.id_persona=${paciente.id_persona}`)
+
+            for (let i = 0; i < res.values.length; i++) {
+                const data = res.values[i];
+                if (data.id_estado === 1) {
+                    const resp = await db.query(`SELECT * FROM control_embarazo WHERE id_control=${data.id_control}`);
+                    res.values[i].controlembarazada = resp?.values && resp.values.length > 0 ? resp.values[0] : undefined;
+
+                    const respLaboratorio: any = await db.query(`SELECT l.id_laboratorio,l.fecha_realizado,l.resultado,t.nombre FROM laboratorios_realizados l INNER JOIN laboratorios t ON l.id_laboratorio=t.id_laboratorio WHERE l.id_control=${data.id_control}`);
+                    res.values[i].laboratorios = respLaboratorio.values;
+
+                    const respInmunizacion: any = await db.query(`SELECT * FROM inmunizaciones_control c INNER JOIN inmunizaciones i ON c.id_inmunizacion=i.id_inmunizacion WHERE c.id_control=${data.id_control}`);
+                    res.values[i].inmunizaciones = respInmunizacion.values;
+                }
+            }
+
+            setPaciente({ ...paciente, controles: res.values, antecedentes: respantecedente.values[0], ubicacion: respUbicacion.values[0] })
+
+            setTimeout(async function () {
+                db.close()
+            }, 500);
+
+            return true;
+        }
+        catch (error: any) {
+            return false;
+        }
+    }
+
+    useEffect(() => {
+        setShowDetalle(true);
+        loadPaciente();
+    }, [])
+
+    useIonViewWillEnter(() => {
+        loadPaciente();
+    });
+
+    const handleNuevoEmbarazo = async () => {
+        const dbdb = async () => {
+            const ret = await sqlite.checkConnectionsConsistency();
+            const isConn = (await sqlite.isConnection(NOMBRE_BB_DD)).result;
+            var db: SQLiteDBConnection
+            if (ret.result && isConn) {
+                return db = await sqlite.retrieveConnection(NOMBRE_BB_DD);
+            } else {
+                return db = await sqlite.createConnection(NOMBRE_BB_DD);
             }
         }
-        testDatabaseCopyFromAssets()
-    }, [])
+        const db = await dbdb();
+        await db.open();
+        const ultimoControl = paciente.controles?.find((c: any) => c.id_estado === 1) || null;
+        if (ultimoControl) {
+            await cerrarEmbarazoLocal(db, ultimoControl, paciente.antecedentes);
+        }
+        await db.close();
+        history.push({ pathname: "/nuevoantecedentes", state: paciente })
+    }
 
 
     //
@@ -210,8 +239,8 @@ const DetallePaciente: React.FC = () => {
 
 
     return (
-
-        showdetalle ? (<IonPage>
+        <>
+        {showdetalle ? (<IonPage>
             <IonHeader className="ion-no-border">
                 <IonToolbar>
                     <IonTitle slot="end">{paciente?.apellido} {paciente?.nombre}</IonTitle>
@@ -224,7 +253,15 @@ const DetallePaciente: React.FC = () => {
             </IonHeader>
             <IonContent >
                 <div>
-                    <IonButton expand="block" fill="outline" slot='end' onClick={() => { history.push({ pathname: "/nuevoantecedentes", state: paciente }) }}><IoCreateOutline size={32} />{" "}Nuevo Embarazo</IonButton>
+                    {paciente?.controles?.length > 0 && paciente.controles[0].id_estado === 2 && (
+                        <IonCard color="warning">
+                            <IonCardHeader>
+                                <IonCardSubtitle>Paciente puérpera. Inicie “Nuevo Embarazo” para registrar controles actuales.</IonCardSubtitle>
+                            </IonCardHeader>
+                        </IonCard>
+                    )}
+                    <IonButton expand="block" fill="outline" slot='end' onClick={() => history.push({ pathname: "/editarpersona", state: paciente })}>Editar datos personales</IonButton>
+                    <IonButton expand="block" fill="outline" slot='end' onClick={handleNuevoEmbarazo}><IoCreateOutline size={32} />{" "}Nuevo Embarazo</IonButton>
                 </div>
                 <div>
                     <IonButton expand="block" fill="outline" slot='end' onClick={() => { history.push({ pathname: "/editantecedentes", state: paciente }) }}><IoCreateOutline size={32} />{" "}Editar Antecedentes</IonButton>
@@ -323,11 +360,10 @@ const DetallePaciente: React.FC = () => {
                             </IonRow>
                         )
                     }
-                })}
-
+                })} 
             </IonContent>
-        </IonPage>) : null
-
+        </IonPage>) : null}
+        </>
     );
 };
 

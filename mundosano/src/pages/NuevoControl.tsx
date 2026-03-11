@@ -450,6 +450,8 @@ const NuevoControl: React.FC = () => {
 
 
         
+        setLoading(false)
+        return true
     }
 
 
@@ -466,14 +468,9 @@ const NuevoControl: React.FC = () => {
                 </IonToolbar>
             </IonHeader>
             <IonContent>
-                <form onSubmit={(e:any)=>{
-                        OnSubmit(e)
-                        .then(()=>{
-                            history.push("/personas")
-                            window.location.reload()
-                            setLoading(false)
-                        })
-
+                <form onSubmit={async (e:any)=>{
+                        const ok = await OnSubmit(e);
+                        if (ok) history.push("/personas");
                         }}>
                     <IonItem>
                         <IonLabel position="floating">Edad Gestacional (FUM {moment(paciente?.antecedentes?.fum).format("LL")})</IonLabel>
@@ -481,14 +478,14 @@ const NuevoControl: React.FC = () => {
                     </IonItem>
                      {/* === ION DATE TIME === */}
                      <IonItem>
-                            <IonLabel position="stacked">{fecha1 === null || fecha1 === "null" ?"":"Fecha de Control"}</IonLabel>
-                            {fecha1 === null || fecha1 === "null" ? <IonButton onClick={(e) => setDataPicker(true)} size="small" >Fecha de Control</IonButton> : <IonDatetimeButton datetime="datetime" defaultValue={fecha1} ></IonDatetimeButton>}
+                            <IonLabel position="stacked">{fecha1 ? "Fecha de Control" : "Elegir fecha de control"}</IonLabel>
+                            {fecha1 === null || fecha1 === "null" ? <IonButton color="dark" onClick={(e) => setDataPicker(true)} size="small" >Fecha de Control</IonButton> : <IonDatetimeButton color="dark" datetime="datetime" defaultValue={fecha1} ></IonDatetimeButton>}
                             <IonModal keepContentsMounted={true} isOpen={datapicker} className="ion-datetime-button-overlay" onDidDismiss={() => setDataPicker(false)}>
                                 <IonDatetime
                                     
                                     id="datetime"
                                     name="fecha_ultimocontrol"
-                                    onIonChange={(e) => setFecha1(e.target.value)}
+                                    onIonChange={(e) => setFecha1(e.detail.value)}
                                     presentation="date"
                                     showDefaultButtons={true}
                                     doneText="Confirmar"
@@ -500,6 +497,7 @@ const NuevoControl: React.FC = () => {
 
                                 />
                             </IonModal>
+                            <IonLabel position="stacked" color="medium">Seleccionada: {fecha1 ? moment(fecha1).format("DD/MM/YYYY") : "—"}</IonLabel>
                             
                         </IonItem>
                     {/* Ecografia */}

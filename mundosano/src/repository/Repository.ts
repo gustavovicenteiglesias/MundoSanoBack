@@ -1,18 +1,5 @@
-import { sqlite, existingConn, db } from "../App";
-import { SQLiteDBConnection } from "react-sqlite-hook";
-import { NOMBRE_BB_DD } from "../utils/constantes";
-
-
-const dbdb = async () => {
-    const ret = await sqlite.checkConnectionsConsistency();
-    const isConn = (await sqlite.isConnection(NOMBRE_BB_DD)).result;
-    var db: SQLiteDBConnection;
-    if (ret.result && isConn) {
-        return db = await sqlite.retrieveConnection(NOMBRE_BB_DD);
-    } else {
-        return db = await sqlite.createConnection(NOMBRE_BB_DD);
-    }
-}
+import { getDb } from "../data/db";
+const dbdb = getDb;
 const max = () => {
     const maxId = JSON.parse(localStorage.getItem("user") || "")
     if (maxId !== "") {
@@ -37,7 +24,7 @@ export class Repository<T extends object> {
 
     async getAll(): Promise<T[]> {
         try {
-            const db = await dbdb();
+            const db = await getDb();
             await db.open();
             const res = await db.query(`SELECT * FROM ${this.tableName}`);
             await db.close();
@@ -53,7 +40,7 @@ export class Repository<T extends object> {
 
     async getLastRow(campo: string): Promise<T[]> {
         try {
-            const db = await dbdb();
+            const db = await getDb();
         await db.open();
         const res = await db.query(`SELECT * FROM ${this.tableName} WHERE ${campo}  ORDER BY ${campo} DESC LIMIT 1`);
         await db.close();

@@ -884,7 +884,8 @@ const EditControlEmbrazada: React.FC = () => {
         }
 
         
-       
+        setLoading(false)
+        return true
     }
 
 
@@ -902,14 +903,9 @@ const EditControlEmbrazada: React.FC = () => {
                     </IonToolbar>
                 </IonHeader>
                 <IonContent>
-                    <form onSubmit={(e:any)=>{
-                        OnSubmit(e)
-                        .then(()=>{
-                            history.push("/personas")
-                            window.location.reload()
-                            setLoading(false)
-                        })
-
+                    <form onSubmit={async (e:any)=>{
+                        const ok = await OnSubmit(e);
+                        if (ok) history.push("/personas")
                         }}>
                         <IonItem>
                             <IonLabel position="floating">Edad Gestacional ({edadGestacional } Semanas )</IonLabel>
@@ -924,7 +920,10 @@ const EditControlEmbrazada: React.FC = () => {
                                     
                                     id="datetime"
                                     name="fecha_ultimocontrol"
-                                    onIonChange={(e) => setFecha1(e.target.value)}
+                                    onIonChange={(e) => {
+                                        const val = e.detail.value;
+                                        if (val) setFecha1(val);
+                                    }}
                                     presentation="date"
                                     showDefaultButtons={true}
                                     doneText="Confirmar"

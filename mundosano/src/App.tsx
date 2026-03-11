@@ -40,6 +40,7 @@ import { CargarBase } from './data/CargarBase';
 import { NOMBRE_BB_DD } from './utils/constantes';
 import NuevoAntecedentes from './pages/NuevoAntecedentes';
 import NuevoEmbarazadaControl from './pages/NuevoEmbarazoControl';
+import EditarPersona from './pages/EditarPersona';
 
 
 interface JsonListenerInterface {
@@ -183,6 +184,9 @@ const App: React.FC = () => {
           </Route>
           <Route exact path="/editantecedentes">
             {showEdituser || showReaduser ? <EditarAntecedentes/> : <Home />}
+          </Route>
+          <Route exact path="/editarpersona">
+            {showEdituser || showReaduser ? <EditarPersona/> : <Home />}
           </Route>
           <Route exact path="/nuevoembarazocontrol">
             {showEdituser || showReaduser ? <NuevoEmbarazadaControl/> : <Home />}

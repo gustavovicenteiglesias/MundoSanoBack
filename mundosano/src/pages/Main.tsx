@@ -184,6 +184,26 @@ const Main: React.FC<any> = () => {
 
   const nuevaBBDD = async () => {
     const db = await dbdb();
+    await db.open();
+    let hasData = false;
+    try {
+      const pending = await db.exportToJson("partial");
+      hasData = !!pending?.export?.tables?.some((t: any) => Array.isArray(t.values) && t.values.length > 0);
+    } catch (err:any) {
+      // si no hay datos o export lanza "Object is empty" lo tratamos como base vacía
+      const msg = (err?.message || "").toLowerCase();
+      if (!msg.includes("object is empty")) {
+        await db.close();
+        alert("No se pudo verificar datos locales: " + err);
+        return;
+      }
+      hasData = false;
+    }
+    if (hasData) {
+      await db.close();
+      alert("No se puede importar: hay datos locales sin exportar.");
+      return;
+    }
     let borrar: any = await db.delete();
     console.log("se borro");
     let existe: any = await sqlite.isDatabase(NOMBRE_BB_DD);
@@ -196,6 +216,7 @@ const Main: React.FC<any> = () => {
         setLoadingImport(false);
       });
     }
+    await db.close();
   };
   const continuar = () => {
     history.push("/personas");
