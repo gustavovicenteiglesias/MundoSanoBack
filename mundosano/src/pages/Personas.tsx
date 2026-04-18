@@ -25,7 +25,8 @@ const Personas: React.FC = () => {
   const [segmentEstado, setSegmentEstado] = useState<'todas' | 'embarazadas' | 'puerperas'>('todas');
   const repository=new PersonasRepository()
 
-  var result1: any = [];
+
+
 
   
 
@@ -55,6 +56,8 @@ const Personas: React.FC = () => {
       setLoading(true);
       let res = await repository.getTodos();
       let pendiente = await repository.getPendientes();
+      let result1: any = [];
+
 
       let arr = pendiente;
       const result = arr.filter(
@@ -78,7 +81,8 @@ const Personas: React.FC = () => {
 
   useEffect(() => {
     loadPersonas();
-  }, []);
+  }, [isPendientes]);
+
 
   useIonViewWillEnter(() => {
     loadPersonas();

@@ -46,7 +46,7 @@ export class PersonasRepository {
       LEFT JOIN areas ON u.id_area=areas.id_area 
       LEFT JOIN parajes je ON u.id_paraje=je.id_paraje 
       LEFT JOIN controles c ON c.id_persona=p.id_persona AND c.id_control = (SELECT c2.id_control FROM controles c2 WHERE c2.id_persona=p.id_persona ORDER BY c2.fecha DESC LIMIT 1)
-      WHERE madre IS NULL 
+      WHERE madre IS NULL AND (p.sql_deleted = 0 OR p.sql_deleted IS NULL)
       ORDER BY p.id_persona ASC`)
     await db.close()
 
@@ -68,7 +68,7 @@ export class PersonasRepository {
       + " LEFT JOIN paises pa ON u.id_pais=pa.id_pais"
       + " LEFT JOIN areas ON u.id_area=areas.id_area "
       + " LEFT JOIN parajes je ON u.id_paraje=je.id_paraje"
-      + ` WHERE em.eco="S" OR l.resultado IS NULL OR l.resultado="S" `)
+      + ` WHERE (em.eco="S" OR l.resultado IS NULL OR l.resultado="S") AND (p.sql_deleted = 0 OR p.sql_deleted IS NULL) `)
     await db.close()
 
     return res.values as any[]
@@ -78,7 +78,7 @@ export class PersonasRepository {
   async getAll(): Promise<Personas[]> {
     const db = await getDb()
     await db.open()
-    const res = await db.query("SELECT * FROM personas")
+    const res = await db.query("SELECT * FROM personas WHERE (sql_deleted = 0 OR sql_deleted IS NULL)")
     console.log("personas repositorio " + JSON.stringify(res.values))
     await db.close()
 

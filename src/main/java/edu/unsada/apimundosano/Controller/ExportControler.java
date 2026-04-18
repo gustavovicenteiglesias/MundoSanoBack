@@ -85,7 +85,7 @@ import java.util.*;
     public HashMap<String, Object> getAllPersonas() {
         HashMap<String, Object> response = new HashMap<>();
         try {
-            Iterable<PersonasEntity> personas = personasRepo.findAll();
+            Iterable<PersonasEntity> personas = personasRepo.findBySqlDeletedOrSqlDeletedIsNull(0);
             response.put("data", personas);
             response.put("success", true);
             return response;
@@ -792,7 +792,7 @@ import java.util.*;
     }
     @GetMapping("/data/json2")
     public Map<String, Object> getData() {
-        Iterable<PersonasEntity> data = personasRepo.findAll();
+        Iterable<PersonasEntity> data = personasRepo.findBySqlDeletedOrSqlDeletedIsNull(0);
         Iterable<ControlesEntity> dataControles=controlesRepo.findAll();
         Iterable<ControlEmbarazoEntity> dataControlEmbarazo=controlEmbarazoRepo.findAll();
 
@@ -949,7 +949,7 @@ import java.util.*;
             ParajeService parajeService = new ParajeService();
 
             row.add(buildTable("personas",
-                    safeValues("personas", () -> ps.valuesPersonas(personasRepo.findAll()))));
+                    safeValues("personas", () -> ps.valuesPersonas(personasRepo.findBySqlDeletedOrSqlDeletedIsNull(0))))));
 
             row.add(buildTable("usuarios",
                     safeValues("usuarios", () -> us.valuesUsuarios(usuarioRepo.findAll()))));
@@ -1010,7 +1010,7 @@ import java.util.*;
     }
     @GetMapping("/data/json")
     public ResponseEntity<String> getDataAsJson() throws JsonProcessingException {
-        Iterable<PersonasEntity> data = personasRepo.findAll();
+        Iterable<PersonasEntity> data = personasRepo.findBySqlDeletedOrSqlDeletedIsNull(0);
         ObjectMapper objectMapper = new ObjectMapper();
         String dataJson = objectMapper.writeValueAsString(data);
         return ResponseEntity.ok(dataJson);
