@@ -1,11 +1,9 @@
 package edu.unsada.apimundosano.Controller;
 
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.unsada.apimundosano.models.*;
 import edu.unsada.apimundosano.repositorio.*;
-
 
 import edu.unsada.apimundosano.service.*;
 import edu.unsada.apimundosano.utilidades.JsonSqlite;
@@ -28,12 +26,11 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api")
 
-    public class ExportControler {
+public class ExportControler {
 
     @Autowired
     private PersonasRepo personasRepo;
@@ -67,7 +64,7 @@ import java.util.*;
     private UsuarioRepo usuarioRepo;
 
     @Autowired
-    private  IdSegunDevice idSegunDeviceRepo;
+    private IdSegunDevice idSegunDeviceRepo;
 
     @Autowired
     private PaisesRepo paisesRepo;
@@ -122,6 +119,7 @@ import java.util.*;
         }
         return response;
     }
+
     private Object getValue(List valor, int index) {
         if (valor == null || index < 0 || index >= valor.size()) {
             return null;
@@ -131,19 +129,25 @@ import java.util.*;
 
     private String safeString(List valor, int index) {
         Object v = getValue(valor, index);
-        if (v == null) return null;
+        if (v == null)
+            return null;
         String s = v.toString().trim();
         return s.isEmpty() ? null : s;
     }
 
     private Integer safeInt(List valor, int index) {
         Object v = getValue(valor, index);
-        if (v == null) return null;
+        if (v == null)
+            return null;
 
-        if (v instanceof Integer) return (Integer) v;
-        if (v instanceof Long) return ((Long) v).intValue();
-        if (v instanceof Double) return ((Double) v).intValue();
-        if (v instanceof Float) return ((Float) v).intValue();
+        if (v instanceof Integer)
+            return (Integer) v;
+        if (v instanceof Long)
+            return ((Long) v).intValue();
+        if (v instanceof Double)
+            return ((Double) v).intValue();
+        if (v instanceof Float)
+            return ((Float) v).intValue();
 
         String s = v.toString().trim();
         if (s.isEmpty() || "null".equalsIgnoreCase(s) || "undefined".equalsIgnoreCase(s)) {
@@ -158,12 +162,12 @@ import java.util.*;
     }
 
     private void addLog(List<Map<String, Object>> logs,
-                        String tabla,
-                        Integer idPersona,
-                        Integer idControl,
-                        Integer idReferencia,
-                        String motivo,
-                        List payload) {
+            String tabla,
+            Integer idPersona,
+            Integer idControl,
+            Integer idReferencia,
+            String motivo,
+            List payload) {
 
         Map<String, Object> log = new HashMap<>();
         log.put("tabla", tabla);
@@ -199,6 +203,7 @@ import java.util.*;
             System.err.println("No se pudo escribir import_sync.log: " + e.getMessage());
         }
     }
+
     private void appendExportLogToFile(Map<String, Object> log) {
         try {
             Path folder = Path.of("logs");
@@ -228,7 +233,8 @@ import java.util.*;
         String tableName = String.valueOf(table.getOrDefault("name", "unknown"));
         List<Map<String, Object>> schema = (List<Map<String, Object>>) table.get("schema");
         List<List<Object>> values = (List<List<Object>>) table.get("values");
-        if (schema == null || values == null || values.isEmpty()) return;
+        if (schema == null || values == null || values.isEmpty())
+            return;
 
         int uuidIndex = -1;
         for (int i = 0; i < schema.size(); i++) {
@@ -238,7 +244,8 @@ import java.util.*;
                 break;
             }
         }
-        if (uuidIndex < 0) return;
+        if (uuidIndex < 0)
+            return;
 
         List<List<Object>> filtered = new ArrayList<>();
         for (List<Object> row : values) {
@@ -258,29 +265,36 @@ import java.util.*;
     }
 
     private boolean personaDisponible(Integer idPersona, Set<Integer> personasValidas) {
-        if (idPersona == null) return false;
+        if (idPersona == null)
+            return false;
         return personasValidas.contains(idPersona) || personasRepo.existsById(idPersona);
     }
 
     private boolean controlDisponible(Integer idControl, Set<Integer> controlesValidos) {
-        if (idControl == null) return false;
+        if (idControl == null)
+            return false;
         return controlesValidos.contains(idControl) || controlesRepo.existsById(idControl);
     }
 
     private boolean antecedenteDisponible(Integer idAntecedente, Set<Integer> antecedentesValidos) {
-        if (idAntecedente == null) return false;
+        if (idAntecedente == null)
+            return false;
         return antecedentesValidos.contains(idAntecedente) || antecedentesRepo.existsById(idAntecedente);
     }
+
     private String safeStringNotNull(List valor, int index) {
         Object v = getValue(valor, index);
-        if (v == null) return "";
+        if (v == null)
+            return "";
         return v.toString().trim();
     }
 
     private Date parseDate(Object value) {
-        if (value == null) return null;
+        if (value == null)
+            return null;
         String s = String.valueOf(value).trim();
-        if (s.isEmpty() || "null".equalsIgnoreCase(s)) return null;
+        if (s.isEmpty() || "null".equalsIgnoreCase(s))
+            return null;
         try {
             return Date.valueOf(LocalDate.parse(s));
         } catch (Exception e1) {
@@ -292,7 +306,8 @@ import java.util.*;
                 if (s.length() >= 10) {
                     try {
                         return Date.valueOf(LocalDate.parse(s.substring(0, 10)));
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 }
                 // prefer null over romper import
                 return null;
@@ -358,8 +373,9 @@ import java.util.*;
 
                     // Look-up by UUID (Deterministic Identity)
                     PersonasEntity personas = personasRepo.findByUuid(uuid).orElse(new PersonasEntity());
-                    
-                    // Si es nuevo, dejamos que la DB asigne el ID; si existe, conservamos el ID del servidor.
+
+                    // Si es nuevo, dejamos que la DB asigne el ID; si existe, conservamos el ID del
+                    // servidor.
                     personas.setApellido(safeString(valor, 1));
                     personas.setNombre(safeString(valor, 2));
                     personas.setDocumento(safeString(valor, 3));
@@ -375,7 +391,7 @@ import java.util.*;
                     personas.setUuid(uuid);
 
                     personasRepo.save(personas);
-                    
+
                     // Guardamos el mapeo para descendientes
                     if (idPersonaMovil != null) {
                         mapPersonas.put(idPersonaMovil, personas.getIdPersona());
@@ -411,7 +427,7 @@ import java.util.*;
                     }
 
                     ControlesEntity controles = controlesRepo.findByUuid(uuid).orElse(new ControlesEntity());
-                    
+
                     controles.setFecha(parseSqlDate(getValue(valor, 1)));
                     controles.setIdPersona(serverIdPersona);
                     controles.setControlNumero(safeInt(valor, 3));
@@ -432,7 +448,7 @@ import java.util.*;
                     controles.setUuid(uuid);
 
                     controlesRepo.save(controles);
-                    
+
                     if (idControlMovil != null) {
                         mapControles.put(idControlMovil, controles.getIdControl());
                     }
@@ -455,7 +471,8 @@ import java.util.*;
 
                 try {
                     if (uuid == null || uuid.isEmpty()) {
-                        addLog(logs, "ubicaciones", idPersonaMovil, null, idUbicacionMovil, "UUID de ubicación nulo", valor);
+                        addLog(logs, "ubicaciones", idPersonaMovil, null, idUbicacionMovil, "UUID de ubicación nulo",
+                                valor);
                         continue;
                     }
 
@@ -465,7 +482,7 @@ import java.util.*;
                     }
 
                     UbicacionesEntity ubicaciones = ubicacionesRepo.findByUuid(uuid).orElse(new UbicacionesEntity());
-                    
+
                     ubicaciones.setIdPersona(serverIdPersona);
                     ubicaciones.setIdParaje(safeInt(valor, 2));
                     ubicaciones.setIdArea(safeInt(valor, 3));
@@ -498,15 +515,17 @@ import java.util.*;
 
                 try {
                     if (uuid == null || uuid.isEmpty()) {
-                        addLog(logs, "antecedentes", idPersonaMovil, idControlMovil, idAntecedenteMovil, "UUID de antecedente nulo", valor);
+                        addLog(logs, "antecedentes", idPersonaMovil, idControlMovil, idAntecedenteMovil,
+                                "UUID de antecedente nulo", valor);
                         continue;
                     }
 
                     Integer serverIdPersona = mapPersonas.get(idPersonaMovil);
                     Integer serverIdControl = mapControles.get(idControlMovil);
 
-                    AntecedentesEntity antecedentes = antecedentesRepo.findByUuid(uuid).orElse(new AntecedentesEntity());
-                    
+                    AntecedentesEntity antecedentes = antecedentesRepo.findByUuid(uuid)
+                            .orElse(new AntecedentesEntity());
+
                     antecedentes.setIdPersona(serverIdPersona != null ? serverIdPersona : idPersonaMovil);
                     antecedentes.setIdControl(serverIdControl != null ? serverIdControl : idControlMovil);
                     antecedentes.setEdadPrimerEmbarazo(safeInt(valor, 3));
@@ -531,7 +550,8 @@ import java.util.*;
                     antecedentesGuardados++;
 
                 } catch (Exception e) {
-                    addLog(logs, "antecedentes", idPersonaMovil, idControlMovil, idAntecedenteMovil, e.getMessage(), valor);
+                    addLog(logs, "antecedentes", idPersonaMovil, idControlMovil, idAntecedenteMovil, e.getMessage(),
+                            valor);
                 }
             }
 
@@ -547,13 +567,15 @@ import java.util.*;
 
                 try {
                     if (uuid == null || uuid.isEmpty()) {
-                        addLog(logs, "control_embarazo", null, idControlMovil, idControlEmbarazoMovil, "UUID de control_embarazo nulo", valor);
+                        addLog(logs, "control_embarazo", null, idControlMovil, idControlEmbarazoMovil,
+                                "UUID de control_embarazo nulo", valor);
                         continue;
                     }
 
                     Integer serverIdControl = mapControles.get(idControlMovil);
 
-                    ControlEmbarazoEntity controlEmbarazo = controlEmbarazoRepo.findByUuid(uuid).orElse(new ControlEmbarazoEntity());
+                    ControlEmbarazoEntity controlEmbarazo = controlEmbarazoRepo.findByUuid(uuid)
+                            .orElse(new ControlEmbarazoEntity());
 
                     controlEmbarazo.setIdControl(serverIdControl != null ? serverIdControl : idControlMovil);
                     controlEmbarazo.setEdadGestacional(safeInt(valor, 2));
@@ -575,7 +597,8 @@ import java.util.*;
                     controlEmbarazoGuardados++;
 
                 } catch (Exception e) {
-                    addLog(logs, "control_embarazo", null, idControlMovil, idControlEmbarazoMovil, e.getMessage(), valor);
+                    addLog(logs, "control_embarazo", null, idControlMovil, idControlEmbarazoMovil, e.getMessage(),
+                            valor);
                 }
             }
             /*
@@ -591,15 +614,16 @@ import java.util.*;
 
                 try {
                     if (uuid == null || uuid.isEmpty()) {
-                        addLog(logs, "inmunizaciones_control", idPersonaMovil, idControlMovil, idInmunizacion, "UUID de inmunización nulo", valor);
+                        addLog(logs, "inmunizaciones_control", idPersonaMovil, idControlMovil, idInmunizacion,
+                                "UUID de inmunización nulo", valor);
                         continue;
                     }
 
                     Integer serverIdPersona = mapPersonas.get(idPersonaMovil);
                     Integer serverIdControl = mapControles.get(idControlMovil);
 
-                    InmunizacionesControlEntity inmunizacionesControl = 
-                            inmunizacionesControlRepo.findByUuid(uuid).orElse(new InmunizacionesControlEntity());
+                    InmunizacionesControlEntity inmunizacionesControl = inmunizacionesControlRepo.findByUuid(uuid)
+                            .orElse(new InmunizacionesControlEntity());
 
                     inmunizacionesControl.setIdPersona(serverIdPersona != null ? serverIdPersona : idPersonaMovil);
                     inmunizacionesControl.setIdControl(serverIdControl != null ? serverIdControl : idControlMovil);
@@ -613,7 +637,8 @@ import java.util.*;
                     inmunizacionesGuardadas++;
 
                 } catch (Exception e) {
-                    addLog(logs, "inmunizaciones_control", idPersonaMovil, idControlMovil, idInmunizacion, e.getMessage(), valor);
+                    addLog(logs, "inmunizaciones_control", idPersonaMovil, idControlMovil, idInmunizacion,
+                            e.getMessage(), valor);
                 }
             }
             /*
@@ -629,15 +654,16 @@ import java.util.*;
 
                 try {
                     if (uuid == null || uuid.isEmpty()) {
-                        addLog(logs, "laboratorios_realizados", idPersonaMovil, idControlMovil, idLaboratorio, "UUID de laboratorio nulo", valor);
+                        addLog(logs, "laboratorios_realizados", idPersonaMovil, idControlMovil, idLaboratorio,
+                                "UUID de laboratorio nulo", valor);
                         continue;
                     }
 
                     Integer serverIdPersona = mapPersonas.get(idPersonaMovil);
                     Integer serverIdControl = mapControles.get(idControlMovil);
 
-                    LaboratoriosRealizadosEntity laboratoriosRealizados = 
-                            laboratoriosRealizadosRepo.findByUuid(uuid).orElse(new LaboratoriosRealizadosEntity());
+                    LaboratoriosRealizadosEntity laboratoriosRealizados = laboratoriosRealizadosRepo.findByUuid(uuid)
+                            .orElse(new LaboratoriosRealizadosEntity());
 
                     laboratoriosRealizados.setIdPersona(serverIdPersona != null ? serverIdPersona : idPersonaMovil);
                     laboratoriosRealizados.setIdControl(serverIdControl != null ? serverIdControl : idControlMovil);
@@ -655,7 +681,8 @@ import java.util.*;
                     laboratoriosGuardados++;
 
                 } catch (Exception e) {
-                    addLog(logs, "laboratorios_realizados", idPersonaMovil, idControlMovil, idLaboratorio, e.getMessage(), valor);
+                    addLog(logs, "laboratorios_realizados", idPersonaMovil, idControlMovil, idLaboratorio,
+                            e.getMessage(), valor);
                 }
             }
 
@@ -672,15 +699,16 @@ import java.util.*;
 
                 try {
                     if (uuid == null || uuid.isEmpty()) {
-                        addLog(logs, "etmis_personas", idPersonaMovil, idControlMovil, idEtmi, "UUID de ETMI nulo", valor);
+                        addLog(logs, "etmis_personas", idPersonaMovil, idControlMovil, idEtmi, "UUID de ETMI nulo",
+                                valor);
                         continue;
                     }
 
                     Integer serverIdPersona = mapPersonas.get(idPersonaMovil);
                     Integer serverIdControl = mapControles.get(idControlMovil);
 
-                    EtmisPersonasEntity etmisPersonasEntity = 
-                            etmisPersonasRepo.findByUuid(uuid).orElse(new EtmisPersonasEntity());
+                    EtmisPersonasEntity etmisPersonasEntity = etmisPersonasRepo.findByUuid(uuid)
+                            .orElse(new EtmisPersonasEntity());
 
                     etmisPersonasEntity.setIdPersona(serverIdPersona != null ? serverIdPersona : idPersonaMovil);
                     etmisPersonasEntity.setIdEtmi(idEtmi);
@@ -709,16 +737,18 @@ import java.util.*;
 
                 try {
                     if (uuid == null || uuid.isEmpty()) {
-                        addLog(logs, "antecedentes_apps", null, null, idAntecedenteMovil, "UUID de antecedente_app nulo", valor);
+                        addLog(logs, "antecedentes_apps", null, null, idAntecedenteMovil,
+                                "UUID de antecedente_app nulo", valor);
                         continue;
                     }
 
                     Integer serverIdAntecedente = mapAntecedentes.get(idAntecedenteMovil);
 
-                    AntecedentesAppsEntity antecedentesApps = 
-                            antecedentesAppsRepo.findByUuid(uuid).orElse(new AntecedentesAppsEntity());
+                    AntecedentesAppsEntity antecedentesApps = antecedentesAppsRepo.findByUuid(uuid)
+                            .orElse(new AntecedentesAppsEntity());
 
-                    antecedentesApps.setIdAntecedente(serverIdAntecedente != null ? serverIdAntecedente : idAntecedenteMovil);
+                    antecedentesApps
+                            .setIdAntecedente(serverIdAntecedente != null ? serverIdAntecedente : idAntecedenteMovil);
                     antecedentesApps.setIdApp(idApp);
                     antecedentesApps.setLastModified(safeInt(valor, 2));
                     antecedentesApps.setSqlDeleted(safeInt(valor, 3));
@@ -744,16 +774,18 @@ import java.util.*;
 
                 try {
                     if (uuid == null || uuid.isEmpty()) {
-                        addLog(logs, "antecedentes_macs", null, null, idAntecedenteMovil, "UUID de antecedente_mac nulo", valor);
+                        addLog(logs, "antecedentes_macs", null, null, idAntecedenteMovil,
+                                "UUID de antecedente_mac nulo", valor);
                         continue;
                     }
 
                     Integer serverIdAntecedente = mapAntecedentes.get(idAntecedenteMovil);
 
-                    AntecedentesMacsEntity antecedentesMacs = 
-                            antecedentesMacsRepo.findByUuid(uuid).orElse(new AntecedentesMacsEntity());
+                    AntecedentesMacsEntity antecedentesMacs = antecedentesMacsRepo.findByUuid(uuid)
+                            .orElse(new AntecedentesMacsEntity());
 
-                    antecedentesMacs.setIdAntecedente(serverIdAntecedente != null ? serverIdAntecedente : idAntecedenteMovil);
+                    antecedentesMacs
+                            .setIdAntecedente(serverIdAntecedente != null ? serverIdAntecedente : idAntecedenteMovil);
                     antecedentesMacs.setIdMac(idMac);
                     antecedentesMacs.setSqlDeleted(safeInt(valor, 2));
                     antecedentesMacs.setLastModified(safeInt(valor, 3));
@@ -805,9 +837,11 @@ import java.util.*;
             return response;
         }
     }
+
     private Date parseSqlDate(Object value) {
         try {
-            if (value == null) return null;
+            if (value == null)
+                return null;
 
             String s = value.toString().trim();
 
@@ -825,6 +859,7 @@ import java.util.*;
             return null;
         }
     }
+
     private Map<String, Object> buildTable(String name, List<List<Object>> values) {
         Map<String, Object> table = new HashMap<>();
         table.put("name", name);
@@ -842,138 +877,142 @@ import java.util.*;
             return new ArrayList<>();
         }
     }
+
     @GetMapping("/data/json2")
     public Map<String, Object> getData() {
         Iterable<PersonasEntity> data = personasRepo.findBySqlDeletedOrSqlDeletedIsNull(0);
-        Iterable<ControlesEntity> dataControles=controlesRepo.findAll();
-        Iterable<ControlEmbarazoEntity> dataControlEmbarazo=controlEmbarazoRepo.findAll();
+        Iterable<ControlesEntity> dataControles = controlesRepo.findAll();
+        Iterable<ControlEmbarazoEntity> dataControlEmbarazo = controlEmbarazoRepo.findAll();
 
-        Iterable<InmunizacionesControlEntity> dataInmunizacionesControl=inmunizacionesControlRepo.findBYLast(syncTableRepo.buscarUltimoLast());
+        Iterable<InmunizacionesControlEntity> dataInmunizacionesControl = inmunizacionesControlRepo
+                .findBYLast(syncTableRepo.buscarUltimoLast());
 
-        Iterable<LaboratoriosRealizadosEntity> dataLaboratorioRealizado=laboratoriosRealizadosRepo.findBYLast(syncTableRepo.buscarUltimoLast());
-        Iterable<UbicacionesEntity> dataUbicaciones=ubicacionesRepo.findAll();
-        Iterable<AntecedentesEntity> dataAntecedentes=antecedentesRepo.findAll();
-        Iterable<AntecedentesAppsEntity>  dataAntecedentesApss=antecedentesAppsRepo.findAll();
-        Iterable<AntecedentesMacsEntity> dataAtecedentesMacs=antecedentesMacsRepo.findAll();
-        Iterable<UsuariosEntity> dataUsuarios=usuarioRepo.findAll();
+        Iterable<LaboratoriosRealizadosEntity> dataLaboratorioRealizado = laboratoriosRealizadosRepo
+                .findBYLast(syncTableRepo.buscarUltimoLast());
+        Iterable<UbicacionesEntity> dataUbicaciones = ubicacionesRepo.findAll();
+        Iterable<AntecedentesEntity> dataAntecedentes = antecedentesRepo.findAll();
+        Iterable<AntecedentesAppsEntity> dataAntecedentesApss = antecedentesAppsRepo.findAll();
+        Iterable<AntecedentesMacsEntity> dataAtecedentesMacs = antecedentesMacsRepo.findAll();
+        Iterable<UsuariosEntity> dataUsuarios = usuarioRepo.findAll();
 
         List<Object> row = new ArrayList<>();
-        Map<String, Object> json= new HashMap<>();
+        Map<String, Object> json = new HashMap<>();
 
         Map<String, Object> table = new HashMap<>();
         Map<String, Object> tableControles = new HashMap<>();
-        Map<String,Object>  tableControlEmbarazo=new HashMap<>();
-        Map<String,Object> tableInmunizacionesControl=new HashMap<>();
-        Map<String,Object> tableLaboratorioRealizados=new HashMap<>();
-        Map<String,Object> tableUbicaciones=new HashMap<>();
-        Map<String,Object> tableAntecedentes=new HashMap<>();
-        Map<String,Object> tableAntecedentesApps=new HashMap<>();
-        Map<String,Object> tableAntecedentesMacs=new HashMap<>();
-        Map<String,Object> tableUsuarios=new HashMap<>();
+        Map<String, Object> tableControlEmbarazo = new HashMap<>();
+        Map<String, Object> tableInmunizacionesControl = new HashMap<>();
+        Map<String, Object> tableLaboratorioRealizados = new HashMap<>();
+        Map<String, Object> tableUbicaciones = new HashMap<>();
+        Map<String, Object> tableAntecedentes = new HashMap<>();
+        Map<String, Object> tableAntecedentesApps = new HashMap<>();
+        Map<String, Object> tableAntecedentesMacs = new HashMap<>();
+        Map<String, Object> tableUsuarios = new HashMap<>();
 
-        PersonaSrevice ps=new PersonaSrevice();
-        ControlesService cs=new ControlesService();
-        ControlEmbarazoService ce=new ControlEmbarazoService();
-        InmunizacionesControlService ic= new InmunizacionesControlService();
-        LaboratoriosRealizadosService lr=new LaboratoriosRealizadosService();
-        UbicacionesService ub=new UbicacionesService();
-        AntecedentesService an=new AntecedentesService();
-        AntecedentesApps aapps=new AntecedentesApps();
-        AntededentesMacs amacs=new AntededentesMacs();
-        UsuarioService us=new UsuarioService();
+        PersonaSrevice ps = new PersonaSrevice();
+        ControlesService cs = new ControlesService();
+        ControlEmbarazoService ce = new ControlEmbarazoService();
+        InmunizacionesControlService ic = new InmunizacionesControlService();
+        LaboratoriosRealizadosService lr = new LaboratoriosRealizadosService();
+        UbicacionesService ub = new UbicacionesService();
+        AntecedentesService an = new AntecedentesService();
+        AntecedentesApps aapps = new AntecedentesApps();
+        AntededentesMacs amacs = new AntededentesMacs();
+        UsuarioService us = new UsuarioService();
 
-        List<List<Object>> valuesPersonas= ps.valuesPersonas(data) ;
-        List<List<Object>> valuesControles=cs.valuesControles(dataControles);
-        List<List<Object>> valuesControlEmbarazo=ce.valuesControlEmbarazo(dataControlEmbarazo);
-        List<List<Object>>  valuesInmunizacionesControl=ic.InmunizacionesControl(dataInmunizacionesControl);
-        List<List<Object>> valuesLaboratotiosRealizados=lr.LaboratoriosRealizados(dataLaboratorioRealizado);
-        List<List<Object>> valuesUbicaciones=ub.UbicacionesValues(dataUbicaciones);
-        List<List<Object>> valuesAntecedentes=an.AntecedentesValues(dataAntecedentes);
-        List<List<Object>> valuesAntedentesApps=aapps.AntecedentesAppsValues(dataAntecedentesApss);
-        List<List<Object>> valuesAntecedentesMacs=amacs.AntecedentesMacsValues(dataAtecedentesMacs);
-        List<List<Object>> valuesUsuarios=us.valuesUsuarios(dataUsuarios);
+        List<List<Object>> valuesPersonas = ps.valuesPersonas(data);
+        List<List<Object>> valuesControles = cs.valuesControles(dataControles);
+        List<List<Object>> valuesControlEmbarazo = ce.valuesControlEmbarazo(dataControlEmbarazo);
+        List<List<Object>> valuesInmunizacionesControl = ic.InmunizacionesControl(dataInmunizacionesControl);
+        List<List<Object>> valuesLaboratotiosRealizados = lr.LaboratoriosRealizados(dataLaboratorioRealizado);
+        List<List<Object>> valuesUbicaciones = ub.UbicacionesValues(dataUbicaciones);
+        List<List<Object>> valuesAntecedentes = an.AntecedentesValues(dataAntecedentes);
+        List<List<Object>> valuesAntedentesApps = aapps.AntecedentesAppsValues(dataAntecedentesApss);
+        List<List<Object>> valuesAntecedentesMacs = amacs.AntecedentesMacsValues(dataAtecedentesMacs);
+        List<List<Object>> valuesUsuarios = us.valuesUsuarios(dataUsuarios);
         /*
-        *
-        * Arma el primer nivel del json
-        *
-        */
+         *
+         * Arma el primer nivel del json
+         *
+         */
         json.put("database", bbdd);
-        json.put("version" ,2);
-        //json.put("overwrite",true);
+        json.put("version", 2);
+        // json.put("overwrite",true);
         json.put("encrypted", false);
-        json.put("mode","partial");
+        json.put("mode", "partial");
         /*
-         *Tabla personas
-        */
+         * Tabla personas
+         */
         table.put("name", "personas");
         table.put("values", valuesPersonas);
         row.add(table);
         /*
-         *Tabla usuarios
+         * Tabla usuarios
          */
         tableUsuarios.put("name", "usuarios");
         tableUsuarios.put("values", valuesUsuarios);
         row.add(tableUsuarios);
 
         /*
-        *Tabla controles
-        */
+         * Tabla controles
+         */
         tableControles.put("name", "controles");
-       tableControles.put("values", valuesControles);
+        tableControles.put("values", valuesControles);
         row.add(tableControles);
 
         /*
-        *Tabla contol embarazo
+         * Tabla contol embarazo
          */
         tableControlEmbarazo.put("name", "control_embarazo");
-        tableControlEmbarazo.put("values",valuesControlEmbarazo);
+        tableControlEmbarazo.put("values", valuesControlEmbarazo);
         row.add(tableControlEmbarazo);
 
         /*
-        *Tabla inmunizaciones_control
+         * Tabla inmunizaciones_control
          */
-        tableInmunizacionesControl.put("name","inmunizaciones_control");
-        tableInmunizacionesControl.put("values",valuesInmunizacionesControl);
+        tableInmunizacionesControl.put("name", "inmunizaciones_control");
+        tableInmunizacionesControl.put("values", valuesInmunizacionesControl);
         row.add(tableInmunizacionesControl);
 
         /*
-        *Tabla laboratorios_realizados
+         * Tabla laboratorios_realizados
          */
-        tableLaboratorioRealizados.put("name","laboratorios_realizados");
-        tableLaboratorioRealizados.put("values",valuesLaboratotiosRealizados);
+        tableLaboratorioRealizados.put("name", "laboratorios_realizados");
+        tableLaboratorioRealizados.put("values", valuesLaboratotiosRealizados);
         row.add(tableLaboratorioRealizados);
 
         /*
-        *Tabla ubicaciones
+         * Tabla ubicaciones
          */
-        tableUbicaciones.put("name","ubicaciones");
-        tableUbicaciones.put("values",valuesUbicaciones);
+        tableUbicaciones.put("name", "ubicaciones");
+        tableUbicaciones.put("values", valuesUbicaciones);
         row.add(tableUbicaciones);
 
         /*
-        *Tabla antecedentes
+         * Tabla antecedentes
          */
-        tableAntecedentes.put("name","antecedentes");
-        tableAntecedentes.put("values",valuesAntecedentes);
+        tableAntecedentes.put("name", "antecedentes");
+        tableAntecedentes.put("values", valuesAntecedentes);
         row.add(tableAntecedentes);
         /*
-        *Tabla antecedentes_apss
+         * Tabla antecedentes_apss
          */
-        tableAntecedentesApps.put("name","antecedentes_apps");
-        tableAntecedentesApps.put("values",valuesAntedentesApps);
+        tableAntecedentesApps.put("name", "antecedentes_apps");
+        tableAntecedentesApps.put("values", valuesAntedentesApps);
         row.add(tableAntecedentesApps);
 
         /*
-        *Table antecedentes_macs
+         * Table antecedentes_macs
          */
-        tableAntecedentesMacs.put("name","antecedentes_macs");
-        tableAntecedentesMacs.put("values",valuesAntecedentesMacs);
+        tableAntecedentesMacs.put("name", "antecedentes_macs");
+        tableAntecedentesMacs.put("values", valuesAntecedentesMacs);
         row.add(tableAntecedentesMacs);
 
-        json.put("tables",row);
+        json.put("tables", row);
 
         return json;
     }
+
     @GetMapping("/data/json3")
     public Map<String, Object> getDataall() {
         Map<String, Object> errorJson = new HashMap<>();
@@ -981,13 +1020,15 @@ import java.util.*;
         try {
             ObjectMapper mapper = new ObjectMapper();
             java.io.InputStream is = new org.springframework.core.io.ClassPathResource("schema.json").getInputStream();
-            Map<String, Object> json = mapper.readValue(is, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>(){});
-            
+            Map<String, Object> json = mapper.readValue(is,
+                    new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
+                    });
+
             json.put("database", bbdd);
             json.put("version", 2);
             json.put("encrypted", false);
             json.put("mode", "partial");
-            
+
             List<Map<String, Object>> tables = (List<Map<String, Object>>) json.get("tables");
 
             PersonaSrevice ps = new PersonaSrevice();
@@ -1007,8 +1048,9 @@ import java.util.*;
 
             for (Map<String, Object> t : tables) {
                 String tName = (String) t.get("name");
-                if (tName == null) continue;
-                
+                if (tName == null)
+                    continue;
+
                 // Trim schema column names dynamically just in case
                 List<Map<String, Object>> schema = (List<Map<String, Object>>) t.get("schema");
                 if (schema != null) {
@@ -1019,9 +1061,10 @@ import java.util.*;
                     }
                 }
 
-                switch(tName) {
+                switch (tName) {
                     case "personas":
-                        t.put("values", safeValues("personas", () -> ps.valuesPersonas(personasRepo.findBySqlDeletedOrSqlDeletedIsNull(0))));
+                        t.put("values", safeValues("personas",
+                                () -> ps.valuesPersonas(personasRepo.findBySqlDeletedOrSqlDeletedIsNull(0))));
                         break;
                     case "usuarios":
                         t.put("values", safeValues("usuarios", () -> us.valuesUsuarios(usuarioRepo.findAll())));
@@ -1030,28 +1073,36 @@ import java.util.*;
                         t.put("values", safeValues("controles", () -> cs.valuesControles(controlesRepo.findAll())));
                         break;
                     case "control_embarazo":
-                        t.put("values", safeValues("control_embarazo", () -> ce.valuesControlEmbarazo(controlEmbarazoRepo.findAll())));
+                        t.put("values", safeValues("control_embarazo",
+                                () -> ce.valuesControlEmbarazo(controlEmbarazoRepo.findAll())));
                         break;
                     case "inmunizaciones_control":
-                        t.put("values", safeValues("inmunizaciones_control", () -> ic.InmunizacionesControl(inmunizacionesControlRepo.findAll())));
+                        t.put("values", safeValues("inmunizaciones_control",
+                                () -> ic.InmunizacionesControl(inmunizacionesControlRepo.findAll())));
                         break;
                     case "laboratorios_realizados":
-                        t.put("values", safeValues("laboratorios_realizados", () -> lr.LaboratoriosRealizados(laboratoriosRealizadosRepo.findAll())));
+                        t.put("values", safeValues("laboratorios_realizados",
+                                () -> lr.LaboratoriosRealizados(laboratoriosRealizadosRepo.findAll())));
                         break;
                     case "ubicaciones":
-                        t.put("values", safeValues("ubicaciones", () -> ub.UbicacionesValues(ubicacionesRepo.findAll())));
+                        t.put("values",
+                                safeValues("ubicaciones", () -> ub.UbicacionesValues(ubicacionesRepo.findAll())));
                         break;
                     case "antecedentes":
-                        t.put("values", safeValues("antecedentes", () -> an.AntecedentesValues(antecedentesRepo.findAll())));
+                        t.put("values",
+                                safeValues("antecedentes", () -> an.AntecedentesValues(antecedentesRepo.findAll())));
                         break;
                     case "antecedentes_apps":
-                        t.put("values", safeValues("antecedentes_apps", () -> aapps.AntecedentesAppsValues(antecedentesAppsRepo.findAll())));
+                        t.put("values", safeValues("antecedentes_apps",
+                                () -> aapps.AntecedentesAppsValues(antecedentesAppsRepo.findAll())));
                         break;
                     case "antecedentes_macs":
-                        t.put("values", safeValues("antecedentes_macs", () -> amacs.AntecedentesMacsValues(antecedentesMacsRepo.findAll())));
+                        t.put("values", safeValues("antecedentes_macs",
+                                () -> amacs.AntecedentesMacsValues(antecedentesMacsRepo.findAll())));
                         break;
                     case "etmis_personas":
-                        t.put("values", safeValues("etmis_personas", () -> ep.EtmisPersonasValues(etmisPersonasRepo.findAll())));
+                        t.put("values", safeValues("etmis_personas",
+                                () -> ep.EtmisPersonasValues(etmisPersonasRepo.findAll())));
                         break;
                     case "paises":
                         t.put("values", safeValues("paises", () -> paisesServices.valuesPaises(paisesRepo.findAll())));
@@ -1060,7 +1111,8 @@ import java.util.*;
                         t.put("values", safeValues("areas", () -> areaServices.valuesAreas(areasRepo.findAll())));
                         break;
                     case "parajes":
-                        t.put("values", safeValues("parajes", () -> parajeService.valuesParajes(parajesRepo.findAll())));
+                        t.put("values",
+                                safeValues("parajes", () -> parajeService.valuesParajes(parajesRepo.findAll())));
                         break;
                 }
                 filterRowsWithoutUuid(t);
@@ -1083,28 +1135,69 @@ import java.util.*;
     @SuppressWarnings("unchecked")
     public Map<String, Object> getDataPartial(@RequestParam(value = "since", required = false) Integer since) {
         Map<String, Object> json = getDataall();
-        if (json == null) return new HashMap<>();
+        if (json == null)
+            return new HashMap<>();
 
         Integer effectiveSince = since;
         if (effectiveSince == null) {
             try {
                 effectiveSince = syncTableRepo.buscarUltimoLast();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
 
         Object tablesObject = json.get("tables");
         if (tablesObject instanceof List && effectiveSince != null) {
             List<Map<String, Object>> tables = (List<Map<String, Object>>) tablesObject;
             for (Map<String, Object> table : tables) {
-                filterRowsByLastModified(table, effectiveSince);
+                filterRowsBySince(table, effectiveSince);
+                // si querés mantener compatibilidad con nombre viejo:
+                // filterRowsByLastModified(table, effectiveSince);
             }
         }
+
         json.put("mode", "partial");
         if (effectiveSince != null) {
             json.put("since", effectiveSince);
         }
         return json;
     }
+
+    @SuppressWarnings("unchecked")
+    private void filterRowsBySince(Map<String, Object> table, Integer since) {
+        if (since == null)
+            return;
+
+        List<Map<String, Object>> schema = (List<Map<String, Object>>) table.get("schema");
+        List<List<Object>> values = (List<List<Object>>) table.get("values");
+        if (schema == null || values == null || values.isEmpty())
+            return;
+
+        int lastModifiedIndex = -1;
+        for (int i = 0; i < schema.size(); i++) {
+            Object column = schema.get(i).get("column");
+            if (column != null && "last_modified".equalsIgnoreCase(column.toString().trim())) {
+                lastModifiedIndex = i;
+                break;
+            }
+        }
+        if (lastModifiedIndex < 0)
+            return;
+
+        List<List<Object>> filtered = new ArrayList<>();
+        for (List<Object> row : values) {
+            if (row == null || lastModifiedIndex >= row.size())
+                continue;
+
+            Integer rowLastModified = safeInt(row, lastModifiedIndex);
+            if (rowLastModified != null && rowLastModified > since) {
+                filtered.add(row);
+            }
+        }
+
+        table.put("values", filtered);
+    }
+
     @GetMapping("/data/json")
     public ResponseEntity<String> getDataAsJson() throws JsonProcessingException {
         Iterable<PersonasEntity> data = personasRepo.findBySqlDeletedOrSqlDeletedIsNull(0);
@@ -1112,23 +1205,23 @@ import java.util.*;
         String dataJson = objectMapper.writeValueAsString(data);
         return ResponseEntity.ok(dataJson);
     }
+
     @PostMapping("/sync_date")
-    public HashMap<String, Object> last(@RequestBody SyncTableEntity sync){
-        HashMap<String, Object> response=new HashMap<>();
-        SyncTableEntity sync_table=new SyncTableEntity();
+    public HashMap<String, Object> last(@RequestBody SyncTableEntity sync) {
+        HashMap<String, Object> response = new HashMap<>();
+        SyncTableEntity sync_table = new SyncTableEntity();
         System.out.println(sync.toString());
 
         try {
             sync_table.setSyncDate(sync.getSyncDate());
             syncTableRepo.save(sync_table);
-            response.put("success",true);
+            response.put("success", true);
 
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             response.put("error", e.toString());
 
         }
-        return  response;
+        return response;
     }
 
     @GetMapping("/ultimarowdevice")
@@ -1144,10 +1237,11 @@ import java.util.*;
         }
         return response;
     }
+
     @PostMapping("/crearultimoid")
-    public HashMap<String, Object> crearUltimoidDevicw(@RequestBody IdsegundeviceEntity device){
+    public HashMap<String, Object> crearUltimoidDevicw(@RequestBody IdsegundeviceEntity device) {
         HashMap<String, Object> response = new HashMap<>();
-        IdsegundeviceEntity _device=new IdsegundeviceEntity();
+        IdsegundeviceEntity _device = new IdsegundeviceEntity();
 
         try {
             _device.setIdDevice(device.getIdDevice());
@@ -1156,8 +1250,8 @@ import java.util.*;
             _device.setMaxId(device.getMaxId());
             _device.setSqlDeleted(device.getSqlDeleted());
             _device.setLastModified(device.getLastModified());
-            Integer id=idSegunDeviceRepo.save(_device).getIdDevice();
-            response.put("data",id);
+            Integer id = idSegunDeviceRepo.save(_device).getIdDevice();
+            response.put("data", id);
             response.put("success", true);
             return response;
         } catch (Exception e) {
@@ -1165,13 +1259,14 @@ import java.util.*;
         }
         return response;
     }
+
     @GetMapping("/findbynrodevice/{parametro}")
-    public HashMap<String, Object> numero_device(@PathVariable String parametro){
+    public HashMap<String, Object> numero_device(@PathVariable String parametro) {
         HashMap<String, Object> response = new HashMap<>();
 
         try {
-            Optional device=idSegunDeviceRepo.findByNroDevice(parametro);
-            response.put("data",device);
+            Optional device = idSegunDeviceRepo.findByNroDevice(parametro);
+            response.put("data", device);
             response.put("success", true);
             return response;
         } catch (Exception e) {
@@ -1179,6 +1274,4 @@ import java.util.*;
         }
         return response;
     }
-    }
-
-
+}
