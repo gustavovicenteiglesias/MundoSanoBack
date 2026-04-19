@@ -4,9 +4,9 @@ import jakarta.persistence.*;
 import java.util.Collection;
 
 @Entity
-@Table(name = "control_emb_patologico", schema = "tripleconlast", catalog = "")
-public class ControlEmbPatologicoEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+@Table(name = "control_emb_patologico")
+public class ControlEmbPatologicoEntity extends BaseEntity {
+
     @Id
     @Column(name = "id_control_emb_patologico")
     private int idControlEmbPatologico;
@@ -25,12 +25,8 @@ public class ControlEmbPatologicoEntity {
     @Basic
     @Column(name = "tratamientos")
     private Short tratamientos;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Byte sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
+    
+    
     @ManyToOne
     @JoinColumn(name = "id_control_embarazo", referencedColumnName = "id_control_embarazo", nullable = false,insertable=false, updatable=false)
     private ControlEmbarazoEntity controlEmbarazoByIdControlEmbarazo;
@@ -85,21 +81,13 @@ public class ControlEmbPatologicoEntity {
         this.tratamientos = tratamientos;
     }
 
-    public Byte getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
-    public void setSqlDeleted(Byte sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
+    
 
-    public Integer getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
     @Override
     public boolean equals(Object o) {
@@ -150,3 +138,5 @@ public class ControlEmbPatologicoEntity {
         this.embarazosPatologiasByIdControlEmbPatologico = embarazosPatologiasByIdControlEmbPatologico;
     }
 }
+
+

@@ -1,0 +1,7196 @@
+{
+  "database": "mundosano",
+  "version": 1,
+  "encrypted": false,
+  "mode": "full",
+  "tables": [
+    {
+      "name": "estados",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_estado",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "nombre",
+          "value": "VARCHAR(150)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ],
+      "values": [
+        [
+          "32b090d1-678b-46a0-88c1-bac89e464182",
+          1,
+          "EMBARAZADA",
+          0,
+          1681778734
+        ],
+        [
+          "09b1af04-311d-4389-bb22-fd06ffbc181a",
+          2,
+          "PUÉRPERA",
+          0,
+          1681778734
+        ],
+        [
+          "1db23393-ccad-4b2f-9c34-eea24c8b6536",
+          3,
+          "RECIÉN NACIDO",
+          0,
+          1681778734
+        ]
+      ]
+    },
+    {
+      "name": "personas",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_persona",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "apellido",
+          "value": "VARCHAR(200)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "nombre",
+          "value": "VARCHAR(200)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "documento",
+          "value": "VARCHAR(40)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "fecha_nacimiento",
+          "value": "DATE  NULL DEFAULT NULL"
+        },
+        {
+          "column": "id_origen",
+          "value": "INT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "nacionalidad",
+          "value": "INT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "sexo",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "madre",
+          "value": "INT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "alta",
+          "value": "SMALLINT  NULL DEFAULT 0"
+        },
+        {
+          "column": "nacido_vivo",
+          "value": "SMALLINT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "fk_origenes_idx",
+          "value": "`id_origen` DESC"
+        },
+        {
+          "name": "fk_personas_paises",
+          "value": "`nacionalidad` DESC"
+        },
+        {
+          "name": "madre",
+          "value": "`madre` DESC"
+        }
+      ]
+    },
+    {
+      "name": "apps",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_app",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "nombre",
+          "value": "VARCHAR(45)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "nombre_apps_UNIQUE",
+          "value": "`nombre` DESC",
+          "mode": "UNIQUE"
+        }
+      ],
+      "values": [
+        [
+          "5edca5d8-d0d7-4bac-bacb-007051ca3a86",
+          8,
+          "CHAGAS",
+          0,
+          1681778571
+        ],
+        [
+          "848eb5dc-30da-4464-9828-349cfb70d599",
+          3,
+          "DBT",
+          0,
+          1681778571
+        ],
+        [
+          "12af7601-f333-437d-9782-18aa9dc1b8d4",
+          5,
+          "ECLAMPSIA",
+          0,
+          1681778571
+        ],
+        [
+          "15e57bd2-2b68-4540-b171-d4a318311e1f",
+          1,
+          "HTA GESTACIONAL",
+          0,
+          1681778571
+        ],
+        [
+          "4cd4ffa6-857c-40f4-8cac-8278ef2b80d5",
+          2,
+          "HTA-DBT GESTACIONAL",
+          0,
+          1681778571
+        ],
+        [
+          "ca672ad7-2500-4ce7-88df-8baea5698569",
+          10,
+          "NINGUNO",
+          0,
+          1681778571
+        ],
+        [
+          "6484136c-e989-4426-8370-536bc1285389",
+          4,
+          "PREECLAMPSIA",
+          0,
+          1681778571
+        ],
+        [
+          "c4bebdc9-46be-4c50-a267-7211c1fe414b",
+          7,
+          "SIFILIS",
+          0,
+          1681778571
+        ],
+        [
+          "6fbc1bab-abc1-42fb-8946-8ba10050bf4b",
+          6,
+          "TBC",
+          0,
+          1681778571
+        ],
+        [
+          "013b1eca-8317-4fab-9659-b68230a34121",
+          9,
+          "TOXOPLASMOSIS",
+          0,
+          1681778571
+        ]
+      ]
+    },
+    {
+      "name": "seguimiento_chagas",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_seguimiento_chagas",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "examen_clinico",
+          "value": "CHAR(1)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "detalle_examen",
+          "value": "TEXT  NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "ecg",
+          "value": "CHAR(1)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "detalle_ecg",
+          "value": "TEXT  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "hepatograma",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "ecocardiograma",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "tele_rx_torax",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "got",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "gpt",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "fal",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "parasitemia",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "serologia_10",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "serologia_12",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "serologia_24",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "detalle_got",
+          "value": "TEXT  NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "detalle_gpt",
+          "value": "TEXT  NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "detalle_hepatograma",
+          "value": "TEXT  NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "detalle_ecocardiograma",
+          "value": "TEXT  NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "detalle_fal",
+          "value": "TEXT  NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "detalle_rx_torax",
+          "value": "TEXT  NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "hemograma",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "detalle_hemograma",
+          "value": "TEXT  NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ]
+    },
+    {
+      "name": "paises",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_pais",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "codigo",
+          "value": "VARCHAR(3)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "nombre",
+          "value": "VARCHAR(150)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "codigo",
+          "value": "`codigo` DESC",
+          "mode": "UNIQUE"
+        },
+        {
+          "name": "nombre",
+          "value": "`nombre` DESC",
+          "mode": "UNIQUE"
+        }
+      ]
+    },
+    {
+      "name": "provincias",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_provincia",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "nombre",
+          "value": "VARCHAR(30)  NOT NULL  COLLATE BINARY"
+        },
+        {
+          "column": "id_pais",
+          "value": "INT  NOT NULL DEFAULT 1"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "constraint": "`fk_provincias_paises`",
+          "value": "FOREIGN KEY (`id_pais`) REFERENCES paises (`id_pais`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "id_pais_provincias",
+          "value": "`id_pais` DESC"
+        }
+      ],
+      "values": [
+        [
+          null,
+          1,
+          "Buenos Aires",
+          12,
+          0,
+          1681778962,
+          "b5949e7e-986a-4183-a0b0-83d949b2e16f"
+        ],
+        [
+          null,
+          2,
+          "Catamarca",
+          12,
+          0,
+          1681778962,
+          "684a302b-300a-4f71-a65d-bbdb73fed2e4"
+        ],
+        [
+          null,
+          3,
+          "Chaco",
+          12,
+          0,
+          1681778962,
+          "eab09f72-55f4-4d1a-9b04-7c0a073a38ae"
+        ],
+        [
+          null,
+          4,
+          "Chubut",
+          12,
+          0,
+          1681778962,
+          "74b99368-10db-4c95-8873-d8f09858bb1e"
+        ],
+        [
+          null,
+          5,
+          "Cordoba",
+          12,
+          0,
+          1681778962,
+          "0565e601-9965-4678-b3af-778e6d9d317a"
+        ],
+        [
+          null,
+          6,
+          "Corrientes",
+          12,
+          0,
+          1681778962,
+          "fac604e6-7ff2-437b-bdd1-7e9e0c6d694a"
+        ],
+        [
+          null,
+          7,
+          "Capital Federal",
+          12,
+          0,
+          1681778962,
+          "4bbae647-cbc7-4635-a4a3-12dee386a2ea"
+        ],
+        [
+          null,
+          8,
+          "Entre Rios",
+          12,
+          0,
+          1681778962,
+          "801b6baf-bc4b-4831-a9ec-5e2394f386c8"
+        ],
+        [
+          null,
+          9,
+          "Formosa",
+          12,
+          0,
+          1681778962,
+          "7d7f1444-c018-476b-864c-80192e3ef480"
+        ],
+        [
+          null,
+          10,
+          "Jujuy",
+          12,
+          0,
+          1681778962,
+          "6b2f4206-5a35-41a7-bdb4-949aeb18d2cc"
+        ],
+        [
+          null,
+          11,
+          "La Pampa",
+          12,
+          0,
+          1681778962,
+          "7b6073e7-45b9-44f6-afe3-6f7b57ab76d3"
+        ],
+        [
+          null,
+          12,
+          "La Rioja",
+          12,
+          0,
+          1681778962,
+          "945d3f9b-00e6-4839-8e8c-6995ffb88290"
+        ],
+        [
+          null,
+          13,
+          "Mendoza",
+          12,
+          0,
+          1681778962,
+          "bccbb608-23ae-45db-9673-f9c8fa4ea35f"
+        ],
+        [
+          null,
+          14,
+          "Misiones",
+          12,
+          0,
+          1681778962,
+          "a4c84183-af32-4b57-b107-8add05e36a1c"
+        ],
+        [
+          null,
+          15,
+          "Neuquen",
+          12,
+          0,
+          1681778962,
+          "8bebd550-4071-4c90-a094-9a8029f6b1da"
+        ],
+        [
+          null,
+          16,
+          "Rio Negro",
+          12,
+          0,
+          1681778962,
+          "6dde72f4-9c15-4d0e-a548-1cab27d97266"
+        ],
+        [
+          null,
+          17,
+          "Salta",
+          12,
+          0,
+          1681778962,
+          "ed7249fe-55cb-4a6a-81cf-7ae3cd575d36"
+        ],
+        [
+          null,
+          18,
+          "San Juan",
+          12,
+          0,
+          1681778962,
+          "004a38b5-915f-4b8c-b988-c079e0fd5931"
+        ],
+        [
+          null,
+          19,
+          "San Luis",
+          12,
+          0,
+          1681778962,
+          "5c7a5549-b103-4e4d-9e52-53f2640bc799"
+        ],
+        [
+          null,
+          20,
+          "Santa Cruz",
+          12,
+          0,
+          1681778962,
+          "2802211b-0697-40a7-a37a-f3abc2f41e9a"
+        ],
+        [
+          null,
+          21,
+          "Santa Fe",
+          12,
+          0,
+          1681778962,
+          "30339937-b3ce-40ef-970c-302349bc5d2a"
+        ],
+        [
+          null,
+          22,
+          "Santiago del Estero",
+          12,
+          0,
+          1681778962,
+          "e679ef8c-6b55-45c8-bb2a-41057910b687"
+        ],
+        [
+          null,
+          23,
+          "Tierra del Fuego",
+          12,
+          0,
+          1681778962,
+          "1e5cee99-d5be-4ea0-bf8d-eb4234b43c2e"
+        ],
+        [
+          null,
+          24,
+          "Tucuman",
+          12,
+          0,
+          1681778962,
+          "9c62618e-e6dd-41e7-9c5c-8227c55a000e"
+        ],
+        [
+          null,
+          25,
+          "Chuquisaca",
+          27,
+          0,
+          1681778962,
+          "53fdac3e-52b8-435d-96fc-5a5596a5051f"
+        ],
+        [
+          null,
+          26,
+          "Cochabamba",
+          27,
+          0,
+          1681778962,
+          "ad45ac52-d8a7-4467-bf70-a71891fa1893"
+        ],
+        [
+          null,
+          27,
+          "El Beni",
+          27,
+          0,
+          1681778962,
+          "9792a479-f053-4045-92ff-cd2c6d37ed40"
+        ],
+        [
+          null,
+          28,
+          "La Paz",
+          27,
+          0,
+          1681778962,
+          "2e8070f6-31af-4653-8017-6e21f2bf415b"
+        ],
+        [
+          null,
+          29,
+          "Oruro",
+          27,
+          0,
+          1681778962,
+          "eb56289f-ffd2-4360-848d-09d29530694e"
+        ],
+        [
+          null,
+          30,
+          "Pando",
+          27,
+          0,
+          1681778962,
+          "6619e157-1fb0-4495-b964-0de36972ead0"
+        ],
+        [
+          null,
+          31,
+          "Potosi",
+          27,
+          0,
+          1681778962,
+          "1b3fcefe-fc4f-4b5d-8c59-709ff1db0d2c"
+        ],
+        [
+          null,
+          32,
+          "Santa Cruz",
+          27,
+          0,
+          1681778962,
+          "3cb6e0fb-2721-4705-8ca5-1b68531086cd"
+        ],
+        [
+          null,
+          33,
+          "Tarija",
+          27,
+          0,
+          1681778962,
+          "7cc3d45f-a34b-41ba-b877-911734e748a8"
+        ],
+        [
+          null,
+          34,
+          "Alto Parana",
+          177,
+          0,
+          1681778962,
+          "bbefba52-ddfa-4bad-afa0-3f197225b6f9"
+        ],
+        [
+          null,
+          35,
+          "Amambay",
+          177,
+          0,
+          1681778962,
+          "3395f4e5-e5f1-4cd1-9cb0-d1c56d172e1e"
+        ],
+        [
+          null,
+          36,
+          "Boqueron",
+          177,
+          0,
+          1681778962,
+          "936e3137-6b19-4b0a-a64a-87a900cd8336"
+        ],
+        [
+          null,
+          37,
+          "Caaguazu",
+          177,
+          0,
+          1681778962,
+          "f7076350-4cba-499f-97f2-a7cbd585514b"
+        ],
+        [
+          null,
+          38,
+          "Caazapa",
+          177,
+          0,
+          1681778962,
+          "380991ff-65bc-444d-a82c-8f2097d72d1f"
+        ],
+        [
+          null,
+          39,
+          "Central",
+          177,
+          0,
+          1681778962,
+          "78ec345d-7de4-4dde-8d25-48731f767ad0"
+        ],
+        [
+          null,
+          40,
+          "Concepcion",
+          177,
+          0,
+          1681778962,
+          "d6fec158-dd7b-4ed1-9111-d35d628672f2"
+        ],
+        [
+          null,
+          41,
+          "Cordillera",
+          177,
+          0,
+          1681778962,
+          "460dc45c-4c22-4045-8e5c-25560158f871"
+        ],
+        [
+          null,
+          42,
+          "Guaira",
+          177,
+          0,
+          1681778962,
+          "958b9623-8cfc-45b0-b556-c09511988853"
+        ],
+        [
+          null,
+          43,
+          "Itapua",
+          177,
+          0,
+          1681778962,
+          "ebcd12e3-e93b-4140-ac39-481011f86ec9"
+        ],
+        [
+          null,
+          44,
+          "Misiones",
+          177,
+          0,
+          1681778962,
+          "a8c862d0-804d-4fc9-8ad3-4ac8d20da8b3"
+        ],
+        [
+          null,
+          45,
+          "Neembucu",
+          177,
+          0,
+          1681778962,
+          "567ca40b-e168-4d10-812a-010c0312a37e"
+        ],
+        [
+          null,
+          46,
+          "Paraguari",
+          177,
+          0,
+          1681778962,
+          "e74f6977-051d-4a67-a460-c5088bfb3131"
+        ],
+        [
+          null,
+          47,
+          "Presidente Hayes",
+          177,
+          0,
+          1681778962,
+          "1fb1c528-7443-44b8-8f61-0b8c8e5269d7"
+        ],
+        [
+          null,
+          48,
+          "San Pedro",
+          177,
+          0,
+          1681778962,
+          "94d3d1df-17cf-4a62-8e79-4e861d45d11a"
+        ],
+        [
+          null,
+          49,
+          "Canindeyu",
+          177,
+          0,
+          1681778962,
+          "729322ee-2570-477a-bbd8-1fa5cfc92362"
+        ],
+        [
+          null,
+          50,
+          "Chaco",
+          177,
+          0,
+          1681778962,
+          "cbf4bc79-e73c-4928-958d-2167bbc7dceb"
+        ],
+        [
+          null,
+          51,
+          "Nueva Asuncion",
+          177,
+          0,
+          1681778962,
+          "f09762d4-199c-46fd-ad7d-8270ffef906a"
+        ],
+        [
+          null,
+          52,
+          "Alto Paraguay",
+          177,
+          0,
+          1681778962,
+          "fe405210-3626-4d66-b3e2-ced43bef2dbe"
+        ]
+      ]
+    },
+    {
+      "name": "motivos_derivacion",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_motivo",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "nombre",
+          "value": "VARCHAR(25)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ],
+      "values": [
+        [
+          "c2018bb6-a825-49c1-8508-0f9ba24c0cf3",
+          1,
+          "HTA",
+          0,
+          1681778863
+        ],
+        [
+          "8d258b50-efea-42d9-964b-fce6db8002b8",
+          2,
+          "DBT",
+          0,
+          1681778863
+        ],
+        [
+          "b8aca845-6e32-4b61-b2a3-3448be0023ae",
+          3,
+          "PREECLAMPSIA",
+          0,
+          1681778863
+        ],
+        [
+          "fafb11bb-6e7d-4814-a389-ebc64c65e5b8",
+          4,
+          "ANEMIA",
+          0,
+          1681778863
+        ],
+        [
+          "2f038d39-d568-4b29-b3ba-ce21f0644d07",
+          5,
+          "SEVERA",
+          0,
+          1681778863
+        ],
+        [
+          "0af9810c-aad0-49d3-83b8-b982e3b81690",
+          6,
+          "RCIU",
+          0,
+          1681778863
+        ],
+        [
+          "1cc69c8a-c8ea-4ce1-b56a-611d607a61a4",
+          7,
+          "AMENAZA DE PARTO",
+          0,
+          1681778863
+        ],
+        [
+          "367ebeb6-beec-4d31-898a-dfe1fe22e5eb",
+          8,
+          "FECHA DE PARTO",
+          0,
+          1681778863
+        ],
+        [
+          "a9b064ba-7944-4835-ab36-6a505c6bbb92",
+          9,
+          "OTRO",
+          0,
+          1681778863
+        ]
+      ]
+    },
+    {
+      "name": "seguimiento_hiv",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_seguimiento_hiv",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "antecedente",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "carga_viral",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "medico_cargo",
+          "value": "TEXT  NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "derivacion_hospital",
+          "value": "TEXT  NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "test_rapido_pareja",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "derivacion_hospital_pareja",
+          "value": "TEXT  NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "medico_cargo_pareja",
+          "value": "TEXT  NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "proviral_cargaviral",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ]
+    },
+    {
+      "name": "seguimiento_sifilis",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_seguimiento_sifilis",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "pareja_fecha_realizado",
+          "value": "TIMESTAMP  NULL DEFAULT NULL"
+        },
+        {
+          "column": "pareja_fecha_resultados",
+          "value": "TIMESTAMP  NULL DEFAULT NULL"
+        },
+        {
+          "column": "pareja_resultado",
+          "value": "VARCHAR(45)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "pareja_tratamiento",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "rn_mes_seguimiento",
+          "value": "SMALLINT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "rn_examen_medico",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "rn_vdrl",
+          "value": "VARCHAR(45)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "rn_rx_osea",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "rn_sedimento_orina",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "rn_got",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "rn_gpt",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "rn_lcr",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "rn_oftalmologico",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "rn_auditivo",
+          "value": "CHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ]
+    },
+    {
+      "name": "seguimiento_vhb",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_seguimiento_vhb",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "antihbc",
+          "value": "CHAR(1)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "derivacion_hospital",
+          "value": "TEXT  NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "antihbs",
+          "value": "INT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "vacuna12hs",
+          "value": "SMALLINT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "gammaglobulina_1248",
+          "value": "SMALLINT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ]
+    },
+    {
+      "name": "tipos_fin_embarazos",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_tipos_fin_embarazos",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "nombre",
+          "value": "VARCHAR(45)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ],
+      "values": [
+        [
+          "1f093b66-b0c1-4343-960d-a366bc041ecb",
+          1,
+          "PARTO",
+          0,
+          1681779100
+        ],
+        [
+          "43b9eb30-055b-4cf2-abda-9ae6194a00af",
+          2,
+          "CESAREA",
+          0,
+          1681779100
+        ],
+        [
+          "13d1bc01-2568-4be8-95e3-64e3cc746f25",
+          3,
+          "ABORTO",
+          0,
+          1681779100
+        ]
+      ]
+    },
+    {
+      "name": "tratamiento_chagas",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_tratamiento_chagas",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "droga",
+          "value": "VARCHAR(45)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "dosis_diaria",
+          "value": "VARCHAR(45)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "fecha_inicio",
+          "value": "DATE  NULL DEFAULT NULL"
+        },
+        {
+          "column": "peso_inicial",
+          "value": "FLOAT(0,0)  NULL DEFAULT NULL"
+        },
+        {
+          "column": "fecha_finalizacion",
+          "value": "DATE  NULL DEFAULT NULL"
+        },
+        {
+          "column": "peso_final",
+          "value": "FLOAT(0,0)  NULL DEFAULT NULL"
+        },
+        {
+          "column": "id_motivo_finalizacion",
+          "value": "INT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "otros_eventos_adversos",
+          "value": "TEXT  NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "observaciones",
+          "value": "TEXT  NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "id_motivo_finalizacion",
+          "value": "`id_motivo_finalizacion` DESC"
+        }
+      ]
+    },
+    {
+      "name": "etmis",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_etmi",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "nombre",
+          "value": "VARCHAR(45)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "nombre_etmis_UNIQUE",
+          "value": "`nombre` DESC",
+          "mode": "UNIQUE"
+        }
+      ],
+      "values": [
+        [
+          "cbd9ca74-ab40-4c81-93ad-27faec9f53de",
+          0,
+          "NINGUNO",
+          0,
+          1681778745
+        ],
+        [
+          "47628df8-0529-4fda-934b-bd6b629c5183",
+          1,
+          "CHAGAS",
+          0,
+          1681778745
+        ],
+        [
+          "66127aba-5a06-4784-be3d-2454c813ad63",
+          2,
+          "HIV",
+          0,
+          1681778745
+        ],
+        [
+          "58962912-dfa1-490a-b2bd-946748c203dd",
+          3,
+          "SIFILIS",
+          0,
+          1681778745
+        ],
+        [
+          "26af5f91-d281-49da-8cee-fe2c122d1a26",
+          4,
+          "VHB",
+          0,
+          1681778745
+        ]
+      ]
+    },
+    {
+      "name": "inmunizaciones",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_inmunizacion",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "nombre",
+          "value": "VARCHAR(45)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "nombre_inmi_UNIQUE",
+          "value": "`nombre` DESC",
+          "mode": "UNIQUE"
+        }
+      ],
+      "values": [
+        [
+          "c125407c-5e3c-4c5f-9e98-a2fe743055a9",
+          2,
+          "A GRIPAL",
+          0,
+          1681778781
+        ],
+        [
+          "484733bc-139b-4685-8e14-8c15dc0c5fa1",
+          3,
+          "DB",
+          0,
+          1681778781
+        ],
+        [
+          "ccd3617e-13f3-4bd7-8356-294c82b52237",
+          1,
+          "TBA",
+          0,
+          1681778781
+        ],
+        [
+          "fe59bad1-252d-4b80-9ce6-53187025a712",
+          4,
+          "VHB",
+          0,
+          1681778781
+        ]
+      ]
+    },
+    {
+      "name": "tratamiento_hiv",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_tratamiento_hiv",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "droga",
+          "value": "VARCHAR(45)  NOT NULL DEFAULT 'AZT DURANTE 1 MES' COLLATE NOCASE"
+        },
+        {
+          "column": "medico_tratante",
+          "value": "VARCHAR(45)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ]
+    },
+    {
+      "name": "laboratorios",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_laboratorio",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "nombre",
+          "value": "VARCHAR(45)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "resultado",
+          "value": "VARCHAR(1)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "confirmacion",
+          "value": "SMALLINT  NOT NULL"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "nombre_labo_UNIQUE",
+          "value": "`nombre` DESC,`confirmacion` DESC",
+          "mode": "UNIQUE"
+        }
+      ],
+      "values": [
+        [
+          "7c956049-0f81-4387-8452-4a6f11898484",
+          1,
+          "SÍFILIS",
+          "B",
+          0,
+          0,
+          1681778803
+        ],
+        [
+          "754f6d1a-9296-46bf-bde3-e52e3793dc97",
+          2,
+          "HIV",
+          "B",
+          0,
+          0,
+          1681778803
+        ],
+        [
+          "1aac678f-eddc-427c-9772-3be5c2ab3f41",
+          4,
+          "CHAGAS",
+          "B",
+          0,
+          0,
+          1681778803
+        ],
+        [
+          "8ae84e36-4f41-4086-9af2-90c831b200aa",
+          5,
+          "VHB",
+          "B",
+          0,
+          0,
+          1681778803
+        ],
+        [
+          "0561ddff-1ea3-4ccc-a20a-babe1fce5311",
+          6,
+          "Hb",
+          "N",
+          0,
+          0,
+          1681778803
+        ],
+        [
+          "de51b27e-ea6d-4252-b741-26df54883724",
+          7,
+          "GLUCEMIA",
+          "N",
+          0,
+          0,
+          1681778803
+        ],
+        [
+          "1e179143-d4c3-46d3-a19a-fca66458d869",
+          8,
+          "ESTREPTOCOCO BETA HEMOLÍTICO",
+          "B",
+          0,
+          0,
+          1681778803
+        ],
+        [
+          "7211bd60-748d-4613-a48a-7f8acccc73e6",
+          9,
+          "GRUPO Y FACTOR",
+          "L",
+          0,
+          0,
+          1681778803
+        ],
+        [
+          "9eef044e-7029-4d87-928e-6ab4a35db89b",
+          11,
+          "MICROMÉTODO",
+          "B",
+          1,
+          0,
+          1681778803
+        ],
+        [
+          "24635f1a-305f-41e2-b9ee-febc0b4246da",
+          12,
+          "PARASITEMIA",
+          "B",
+          1,
+          0,
+          1681778803
+        ],
+        [
+          "7268e17c-6f1c-4220-9d68-e74ca3b00025",
+          13,
+          "VDRL CUANTITATIVO",
+          "M",
+          1,
+          0,
+          1681778803
+        ],
+        [
+          "6d73aed6-546b-40b3-98f6-e9e169fd75e6",
+          14,
+          "PCR/CV",
+          "B",
+          1,
+          0,
+          1681778803
+        ],
+        [
+          "33a250ba-8c7e-400d-bc0d-283a9f7eb882",
+          15,
+          "antiHBc",
+          "B",
+          1,
+          0,
+          1681778803
+        ],
+        [
+          "dc0d2572-db04-45fe-a99c-85bbf0799bf2",
+          16,
+          "antiHBs",
+          "N",
+          1,
+          0,
+          1681778803
+        ],
+        [
+          "b2f44682-befd-4c4c-9e3f-0dd1ef5b13e8",
+          17,
+          "HBs",
+          "N",
+          1,
+          0,
+          1681778803
+        ],
+        [
+          "68a112d3-bdc3-4ed4-b247-1294a7265713",
+          18,
+          "FTA-ABS",
+          "B",
+          1,
+          0,
+          1681778803
+        ],
+        [
+          "731bd423-70d8-4c9a-a710-dcbee3bb0431",
+          19,
+          "HAI",
+          "B",
+          1,
+          0,
+          1681778803
+        ],
+        [
+          "3485463a-898e-4f50-bb6e-2050d3591439",
+          20,
+          "ELISA",
+          "B",
+          1,
+          0,
+          1681778803
+        ],
+        [
+          "196a31fd-4d27-4a2c-95cd-10fed4a5259a",
+          21,
+          "WB",
+          "B",
+          1,
+          0,
+          1681778803
+        ],
+        [
+          "27960f90-eb7d-4668-9b3a-c8522827bb8b",
+          22,
+          "HBsAg",
+          "B",
+          1,
+          0,
+          1681778803
+        ],
+        [
+          "c612f451-b1c7-4100-b798-a1476fc6719a",
+          23,
+          "IFI",
+          "B",
+          1,
+          0,
+          1681778803
+        ]
+      ]
+    },
+    {
+      "name": "eventos_adversos",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_evento_adverso",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "nombre",
+          "value": "TEXT  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ],
+      "values": [
+        [
+          "e7834851-db3f-41e5-ac06-6a6e6e49d696",
+          1,
+          "CEFALEAS",
+          0,
+          1681778771
+        ],
+        [
+          "a5f10534-3294-46ef-98cd-3b9d0cc99220",
+          2,
+          "EPIGASTRALGIA",
+          0,
+          1681778771
+        ],
+        [
+          "0e7729ca-9505-4289-b687-83f58f99e488",
+          3,
+          "CÓLICOS",
+          0,
+          1681778771
+        ],
+        [
+          "903207ca-f017-45dc-9b53-045b495cb259",
+          4,
+          "DIARREA",
+          0,
+          1681778771
+        ],
+        [
+          "8cce9bb4-a499-45bd-810d-049f294a729a",
+          5,
+          "NÁUSEAS",
+          0,
+          1681778771
+        ],
+        [
+          "2d3b03ab-953b-46f3-ae0e-8d8a61239835",
+          6,
+          "VÓMITOS",
+          0,
+          1681778771
+        ],
+        [
+          "e9c380ea-31e1-4b8f-8a0a-c9a36b410be0",
+          7,
+          "ANOREXIA",
+          0,
+          1681778771
+        ],
+        [
+          "6428aaeb-aed7-426b-a497-bfaa34d05e16",
+          8,
+          "IRRITABILIDAD",
+          0,
+          1681778771
+        ],
+        [
+          "2469d0ba-feec-43a7-9bda-5c7c8c8adc61",
+          9,
+          "TEMBLOR",
+          0,
+          1681778771
+        ],
+        [
+          "55cc457b-6cb2-477f-ab7b-35cae4c0e56d",
+          10,
+          "PARESTESIA",
+          0,
+          1681778771
+        ],
+        [
+          "2670c2d2-cc41-4944-bbeb-d7fcc02620e7",
+          11,
+          "MAREO",
+          0,
+          1681778771
+        ],
+        [
+          "c1b4cfc9-87d2-4f61-b5cb-c6f056690769",
+          12,
+          "DISTENCIÓN ABDOMINAL",
+          0,
+          1681778771
+        ],
+        [
+          "5f7fa54e-f8d0-4810-adc5-c73058ad9824",
+          13,
+          "FIEBRE",
+          0,
+          1681778771
+        ],
+        [
+          "e617f158-1084-468c-a398-117b721e486d",
+          14,
+          "ELEVACIÓN DE TRANSAMINASAS",
+          0,
+          1681778771
+        ],
+        [
+          "24cc0276-596d-46e4-aef2-d292b4cbf438",
+          15,
+          "EOSINOFILIA",
+          0,
+          1681778771
+        ],
+        [
+          "06c7bf13-3f87-467d-8ab2-5ae323e49ea2",
+          16,
+          "PLAQUETOPENIA",
+          0,
+          1681778771
+        ],
+        [
+          "e6eadc92-a706-4342-950e-106d2fa2ad6e",
+          17,
+          "LEUCOPENIA",
+          0,
+          1681778771
+        ],
+        [
+          "25764353-09a3-4b3f-9a64-024f87d127df",
+          18,
+          "SÍNDROME DE STEVENS-JOHNSON",
+          0,
+          1681778771
+        ],
+        [
+          "3f92b27b-b9b9-49a1-83ab-b286845dacdf",
+          19,
+          "OTROS",
+          0,
+          1681778771
+        ]
+      ]
+    },
+    {
+      "name": "tratamiento_sifilis",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_tratamiento_sifilis",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "droga",
+          "value": "VARCHAR(100)  NOT NULL DEFAULT 'PENICILINA BENZATINICA 2400000' COLLATE NOCASE"
+        },
+        {
+          "column": "fecha_dosis",
+          "value": "DATE  NOT NULL"
+        },
+        {
+          "column": "fecha_fin_tratamiento",
+          "value": "DATE  NULL DEFAULT NULL"
+        },
+        {
+          "column": "dosis_numero",
+          "value": "INT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ]
+    },
+    {
+      "name": "macs",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_mac",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "nombre",
+          "value": "VARCHAR(45)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ],
+      "values": [
+        [
+          "cf62ec47-fa52-4783-88de-796ec97e1502",
+          1,
+          "IMPLANTE",
+          0,
+          1681778838
+        ],
+        [
+          "f3e8ee03-b7cb-43ea-8bf1-ce318a7f8321",
+          2,
+          "DIU",
+          0,
+          1681778838
+        ],
+        [
+          "6ffc3458-eb91-46e0-a21e-37a27f3143bb",
+          3,
+          "ORAL",
+          0,
+          1681778838
+        ],
+        [
+          "9009fb47-39de-4dbc-88be-16ad58cb8828",
+          4,
+          "INYECTABLE",
+          0,
+          1681778838
+        ],
+        [
+          "5dc91328-fd56-49ad-875d-6720b982c1d7",
+          5,
+          "BARRERA",
+          0,
+          1681778838
+        ],
+        [
+          "330f914d-ebc1-4edb-a29e-e743e0257de5",
+          6,
+          "NINGUNO",
+          0,
+          1681778838
+        ]
+      ]
+    },
+    {
+      "name": "tratamiento_vhb",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_tratamiento_vhb",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ]
+    },
+    {
+      "name": "controles",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_control",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "fecha",
+          "value": "DATE  NOT NULL"
+        },
+        {
+          "column": "id_persona",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "control_numero",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "id_estado",
+          "value": "INT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "id_seguimiento_chagas",
+          "value": "INT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "id_tratamiento_chagas",
+          "value": "INT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "id_seguimiento_hiv",
+          "value": "INT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "id_tratamiento_hiv",
+          "value": "INT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "id_seguimiento_sifilis",
+          "value": "INT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "id_tratamiento_sifilis",
+          "value": "INT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "id_seguimiento_vhb",
+          "value": "INT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "id_tratamiento_vhb",
+          "value": "INT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "fecha_fin_embarazo",
+          "value": "DATE  NULL DEFAULT NULL"
+        },
+        {
+          "column": "id_tipos_fin_embarazos",
+          "value": "INT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "georeferencia",
+          "value": "VARCHAR(30)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "constraint": "`controles_ibfk_1`",
+          "value": "FOREIGN KEY (`id_seguimiento_chagas`) REFERENCES seguimiento_chagas (`id_seguimiento_chagas`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        },
+        {
+          "constraint": "`controles_ibfk_2`",
+          "value": "FOREIGN KEY (`id_seguimiento_hiv`) REFERENCES seguimiento_hiv (`id_seguimiento_hiv`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        },
+        {
+          "constraint": "`controles_ibfk_3`",
+          "value": "FOREIGN KEY (`id_seguimiento_sifilis`) REFERENCES seguimiento_sifilis (`id_seguimiento_sifilis`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        },
+        {
+          "constraint": "`controles_ibfk_4`",
+          "value": "FOREIGN KEY (`id_seguimiento_vhb`) REFERENCES seguimiento_vhb (`id_seguimiento_vhb`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        },
+        {
+          "constraint": "`controles_ibfk_5`",
+          "value": "FOREIGN KEY (`id_tratamiento_chagas`) REFERENCES tratamiento_chagas (`id_tratamiento_chagas`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        },
+        {
+          "constraint": "`controles_ibfk_6`",
+          "value": "FOREIGN KEY (`id_tratamiento_hiv`) REFERENCES tratamiento_hiv (`id_tratamiento_hiv`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        },
+        {
+          "constraint": "`controles_ibfk_7`",
+          "value": "FOREIGN KEY (`id_tratamiento_sifilis`) REFERENCES tratamiento_sifilis (`id_tratamiento_sifilis`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        },
+        {
+          "constraint": "`controles_ibfk_9`",
+          "value": "FOREIGN KEY (`id_tratamiento_vhb`) REFERENCES tratamiento_vhb (`id_tratamiento_vhb`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        },
+        {
+          "constraint": "`fk_controles_estado`",
+          "value": "FOREIGN KEY (`id_estado`) REFERENCES estados (`id_estado`) ON DELETE NO ACTION ON UPDATE NO ACTION"
+        },
+        {
+          "constraint": "`fk_controles_personas`",
+          "value": "FOREIGN KEY (`id_persona`) REFERENCES personas (`id_persona`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        },
+        {
+          "constraint": "`fk_tipo_fin_emb`",
+          "value": "FOREIGN KEY (`id_tipos_fin_embarazos`) REFERENCES tipos_fin_embarazos (`id_tipos_fin_embarazos`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "fecha",
+          "value": "`fecha` DESC,`id_persona` DESC,`control_numero` DESC",
+          "mode": "UNIQUE"
+        },
+        {
+          "name": "fk_Estado_idx",
+          "value": "`id_estado` DESC"
+        },
+        {
+          "name": "id_seguimiento_chagas",
+          "value": "`id_seguimiento_chagas` DESC"
+        },
+        {
+          "name": "id_seguimiento_hiv",
+          "value": "`id_seguimiento_hiv` DESC"
+        },
+        {
+          "name": "id_seguimiento_sifilis",
+          "value": "`id_seguimiento_sifilis` DESC"
+        },
+        {
+          "name": "id_tratamiento_chagas_controles",
+          "value": "`id_tratamiento_chagas` DESC"
+        },
+        {
+          "name": "id_tratamiento_hiv",
+          "value": "`id_tratamiento_hiv` DESC"
+        },
+        {
+          "name": "id_tratamiento_sifilis",
+          "value": "`id_tratamiento_sifilis` DESC"
+        },
+        {
+          "name": "id_seguimiento_vhb",
+          "value": "`id_seguimiento_vhb` DESC"
+        },
+        {
+          "name": "id_tratamiento_vhb",
+          "value": "`id_tratamiento_vhb` DESC"
+        },
+        {
+          "name": "id_persona",
+          "value": "`id_persona` DESC"
+        },
+        {
+          "name": "id_tipos_fin_embarazos",
+          "value": "`id_tipos_fin_embarazos` DESC"
+        }
+      ]
+    },
+    {
+      "name": "motivo_finalizacion_tratamiento",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_motivo_finalizacion_tratamiento",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "nombre",
+          "value": "VARCHAR(45)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ],
+      "values": [
+        [
+          "0407a59d-8d82-4a1c-8762-fddc27656a1a",
+          1,
+          "TRATAMIENTO COMPLETO",
+          0,
+          1681778853
+        ],
+        [
+          "ddbee4f8-b234-46d3-95c6-8ab4cf9818e4",
+          2,
+          "SUSPENDIDO POR EVENTOS ADVERSOS",
+          0,
+          1681778853
+        ],
+        [
+          "5c1c66c5-f50a-4958-be80-6f53a93bd66d",
+          3,
+          "SUSPENDIDO POR OTRAS RAZONES",
+          0,
+          1681778853
+        ],
+        [
+          "23351bd5-47eb-4864-86ac-052f8145be54",
+          4,
+          "SUSPENDIDO POR EMBARAZO",
+          0,
+          1681778853
+        ],
+        [
+          "a4207966-78c7-40f0-8309-0c6428daf37b",
+          5,
+          "ABANDONADO",
+          0,
+          1681778853
+        ]
+      ]
+    },
+    {
+      "name": "patologias_embarazos",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_patologia_embarazo",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "nombre",
+          "value": "VARCHAR(80)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "nombre_pe_UNIQUE",
+          "value": "`nombre` DESC",
+          "mode": "UNIQUE"
+        }
+      ],
+      "values": [
+        [
+          "68d9cb80-df13-4bef-b970-8ad9983908e1",
+          14,
+          "ALTERACIONES ENCONTRADAS EN LA VITALIDAD FETAL (MF - LCF)",
+          0,
+          1681778934
+        ],
+        [
+          "1fdc7827-f737-47df-a6d9-7382e0889569",
+          1,
+          "ANEMIA",
+          0,
+          1681778934
+        ],
+        [
+          "6a2cbd23-7f98-4be6-834a-e6925a173ded",
+          15,
+          "APP",
+          0,
+          1681778934
+        ],
+        [
+          "ec7ceb45-3256-4094-9b4d-f5636d0989e5",
+          8,
+          "CARDIOPATÍA",
+          0,
+          1681778934
+        ],
+        [
+          "37f6a320-ec8b-4d9c-bbb2-9f68d9f27b06",
+          6,
+          "DBT GESTACIONAL",
+          0,
+          1681778934
+        ],
+        [
+          "ddbd6447-517f-4ef3-a6b0-9fe59bcc93aa",
+          10,
+          "ECLAMPSIA",
+          0,
+          1681778934
+        ],
+        [
+          "cc379098-23b7-448a-84eb-289f7acb3242",
+          7,
+          "EMBARAZO MÚLTIPLE",
+          0,
+          1681778934
+        ],
+        [
+          "2e81af57-db2c-4ac1-bc3e-eaac97f0f041",
+          11,
+          "HEMORRAGIAS 1° TRIM",
+          0,
+          1681778934
+        ],
+        [
+          "61ffb154-c5e6-491f-a89f-0bbf914dfca0",
+          12,
+          "HEMORRAGIAS 2° TRIM",
+          0,
+          1681778934
+        ],
+        [
+          "8ee839ca-4f72-4bf1-b7a3-fe66af210a08",
+          13,
+          "HEMORRAGIAS 3° TRIM",
+          0,
+          1681778934
+        ],
+        [
+          "8218d285-a1e0-402f-8bad-805f361ca3b1",
+          5,
+          "HTA GESTACIONAL",
+          0,
+          1681778934
+        ],
+        [
+          "9c3e9d1e-0ca2-4de7-a3cf-194daa7243ea",
+          2,
+          "ITU",
+          0,
+          1681778934
+        ],
+        [
+          "b3be6d29-bca5-40b0-905b-db1559de4708",
+          17,
+          "OTRAS",
+          0,
+          1681778934
+        ],
+        [
+          "cd021e95-947d-4338-846b-dce551fddadb",
+          3,
+          "OTRAS INFECCIONES",
+          0,
+          1681778934
+        ],
+        [
+          "89bcb5b1-da70-4f4d-953a-d2c7e5777ac1",
+          9,
+          "PREECLAMPSIA",
+          0,
+          1681778934
+        ],
+        [
+          "e2a4dbbb-73dd-411c-8eda-10d0f5615365",
+          16,
+          "RCIU",
+          0,
+          1681778934
+        ],
+        [
+          "3ba92b3c-71bc-4702-9a97-367a36ae2529",
+          4,
+          "TBC",
+          0,
+          1681778934
+        ]
+      ]
+    },
+    {
+      "name": "niveles_acceso",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_nivel_acceso",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "acceso",
+          "value": "VARCHAR(50)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ],
+      "values": [
+        [
+          "a1c9359f-a0a6-47d5-97cf-1b63fa4715ff",
+          1,
+          "FULL",
+          0,
+          1681778875
+        ],
+        [
+          "7713c5c0-24bb-45e7-a6b0-91b50d39d9a9",
+          2,
+          "CONSULTA",
+          0,
+          1681778875
+        ]
+      ]
+    },
+    {
+      "name": "origenes",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_origen",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "nombre",
+          "value": "VARCHAR(100)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "nombre_origenes",
+          "value": "`nombre` DESC",
+          "mode": "UNIQUE"
+        }
+      ],
+      "values": [
+        [
+          "e029ea77-2d19-4042-a5c5-65a8ec1e08be",
+          2,
+          "CRIOLLA",
+          0,
+          1681778890
+        ],
+        [
+          "bb61289a-c4dd-48e5-bdd3-f6ab4b9be6d3",
+          1,
+          "ORIGINARIA",
+          0,
+          1681778890
+        ]
+      ]
+    },
+    {
+      "name": "areas",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_area",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "id_pais",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "nombre",
+          "value": "VARCHAR(100)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "constraint": "`fk_paises`",
+          "value": "FOREIGN KEY (`id_pais`) REFERENCES paises (`id_pais`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "id_pais",
+          "value": "`id_pais` DESC"
+        }
+      ]
+    },
+    {
+      "name": "ciudades",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_ciudad",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "nombre",
+          "value": "VARCHAR(30)  NOT NULL  COLLATE BINARY"
+        },
+        {
+          "column": "id_provincia",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "constraint": "`fk_ciudad_provincias`",
+          "value": "FOREIGN KEY (`id_provincia`) REFERENCES provincias (`id_provincia`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "id_provincia",
+          "value": "`id_provincia` DESC"
+        }
+      ],
+      "values": [
+        [
+          null,
+          1,
+          "Aroma",
+          33,
+          0,
+          1681778613,
+          "34c55afe-43c5-4a4e-b6f6-af6a29f9093e"
+        ],
+        [
+          null,
+          2,
+          "Caracas",
+          32,
+          0,
+          1681778613,
+          "3190f041-fffc-45e2-83e8-02d4ba29ee7e"
+        ],
+        [
+          null,
+          3,
+          "Cochabamba",
+          26,
+          0,
+          1681778613,
+          "f0db0639-c027-4126-b0c6-aa67b9614313"
+        ],
+        [
+          null,
+          4,
+          "Cruz",
+          32,
+          0,
+          1681778613,
+          "65be767e-1801-46ed-b332-e7935ff8f03c"
+        ],
+        [
+          null,
+          5,
+          "La Paz",
+          28,
+          0,
+          1681778613,
+          "622edee3-1b2a-4b16-b7dd-1a450ebe1610"
+        ],
+        [
+          null,
+          6,
+          "Oruro",
+          30,
+          0,
+          1681778613,
+          "685d8457-9725-4c14-ab7e-d120db3d80a4"
+        ],
+        [
+          null,
+          7,
+          "Quillacollo",
+          26,
+          0,
+          1681778613,
+          "d6d983af-ffe4-48a7-b969-427c5b6b210e"
+        ],
+        [
+          null,
+          8,
+          "Riberalta",
+          27,
+          0,
+          1681778613,
+          "c2a09f3d-fe63-40ee-8851-90bcd5279431"
+        ],
+        [
+          null,
+          9,
+          "Santa Cruz",
+          27,
+          0,
+          1681778613,
+          "53540d14-f119-433a-8958-e786b01ee023"
+        ],
+        [
+          null,
+          10,
+          "Santa Cruz De La Sierra",
+          33,
+          0,
+          1681778613,
+          "ad9055b2-251f-42a9-9bd9-f0e24c6116f1"
+        ],
+        [
+          null,
+          11,
+          "Sucre",
+          25,
+          0,
+          1681778613,
+          "e40a89f2-e8c7-4fb8-a126-b125a315dfbf"
+        ],
+        [
+          null,
+          12,
+          "Tarija",
+          29,
+          0,
+          1681778613,
+          "9ccee62f-5666-448e-817d-47f88f6dd0f5"
+        ],
+        [
+          null,
+          13,
+          "Trinidad",
+          27,
+          0,
+          1681778613,
+          "debbb9bb-316b-49f9-89f2-f97564961b98"
+        ],
+        [
+          null,
+          14,
+          "Ulupicas",
+          29,
+          0,
+          1681778613,
+          "47e1a939-77f5-43c2-8afe-0c8696daebf9"
+        ],
+        [
+          null,
+          15,
+          "Ciudad Del Este",
+          34,
+          0,
+          1681778613,
+          "4b8a7033-7aab-456b-9047-cc6aa063b366"
+        ],
+        [
+          null,
+          16,
+          "Fernando De La Mora",
+          39,
+          0,
+          1681778613,
+          "9defff65-6af9-4db8-89a6-922f92f3eb8c"
+        ],
+        [
+          null,
+          17,
+          "Hernandarias",
+          34,
+          0,
+          1681778613,
+          "43896c21-cc96-48b8-bc3e-10c56c6a434c"
+        ],
+        [
+          null,
+          18,
+          "Hohenau",
+          44,
+          0,
+          1681778613,
+          "ee45b3c7-37e0-4c52-b6d6-bc3eef8e35a7"
+        ],
+        [
+          null,
+          19,
+          "Loma Plata",
+          36,
+          0,
+          1681778613,
+          "a6fcc3d5-d096-425c-a676-6929ac1adb3b"
+        ],
+        [
+          null,
+          20,
+          "Los Cedrales",
+          34,
+          0,
+          1681778613,
+          "08261557-0034-4676-9c54-d51d6392ec44"
+        ],
+        [
+          null,
+          21,
+          "Luque",
+          39,
+          0,
+          1681778613,
+          "e16d9698-48d9-43bc-95e0-b78cb9d33c63"
+        ],
+        [
+          null,
+          22,
+          "Mariano Roque Alonso",
+          39,
+          0,
+          1681778613,
+          "f7832fb0-a4ac-4ddd-afa6-bba42a6018d9"
+        ],
+        [
+          null,
+          23,
+          "Obligado",
+          44,
+          0,
+          1681778613,
+          "117472f8-1738-4607-9542-b81070d4277a"
+        ],
+        [
+          null,
+          24,
+          "Pilar",
+          46,
+          0,
+          1681778613,
+          "815a6e36-0ccd-4e9f-b1a1-76bc486dd8a2"
+        ],
+        [
+          null,
+          25,
+          "Presidente Franco",
+          34,
+          0,
+          1681778613,
+          "747df348-e50d-47c7-a7f5-1d19a79cae4d"
+        ],
+        [
+          null,
+          26,
+          "San Lorenzo",
+          39,
+          0,
+          1681778613,
+          "619d2110-7512-4c31-8c25-8eddeaf81cdb"
+        ],
+        [
+          null,
+          27,
+          "Santa Rita",
+          34,
+          0,
+          1681778613,
+          "326db908-113b-49a5-aba5-baa7bb1cc03a"
+        ],
+        [
+          null,
+          28,
+          "28 De Septiembre",
+          1,
+          0,
+          1681778613,
+          "ccde210c-161d-4155-8b95-776dca8864a0"
+        ],
+        [
+          null,
+          29,
+          "6 De Septiembre",
+          1,
+          0,
+          1681778613,
+          "b5ff85a3-19ac-41ab-a9fb-0917730d31aa"
+        ],
+        [
+          null,
+          30,
+          "A. Brown",
+          1,
+          0,
+          1681778613,
+          "e0ae26c1-5316-4ccc-9f11-5997b4a5a47d"
+        ],
+        [
+          null,
+          31,
+          "Abasto",
+          1,
+          0,
+          1681778613,
+          "2ab1274f-296f-40ba-a2f8-c31bc719acdf"
+        ],
+        [
+          null,
+          32,
+          "Abra Rica",
+          24,
+          0,
+          1681778613,
+          "be943eff-9d63-428d-a10a-d6d4438107ae"
+        ],
+        [
+          null,
+          33,
+          "Acassuso",
+          1,
+          0,
+          1681778613,
+          "14123701-a5f4-42d8-bb83-fb070430b240"
+        ],
+        [
+          null,
+          34,
+          "Aguilar",
+          10,
+          0,
+          1681778613,
+          "c458b8d0-98f6-4bed-86e9-7a9dc4ffe33c"
+        ],
+        [
+          null,
+          35,
+          "Aldo Bonzi",
+          1,
+          0,
+          1681778613,
+          "b751ba89-7a84-47da-a3ef-a4134eaea022"
+        ],
+        [
+          null,
+          36,
+          "Alem",
+          1,
+          0,
+          1681778613,
+          "696278e2-ae8a-4176-b521-07372ce725c0"
+        ],
+        [
+          null,
+          37,
+          "Allen",
+          16,
+          0,
+          1681778613,
+          "d1333e73-8538-4bb5-ad15-83e1ab61561b"
+        ],
+        [
+          null,
+          38,
+          "Almirante Brown",
+          7,
+          0,
+          1681778613,
+          "321eb95b-5fbf-4224-9e53-124120768f34"
+        ],
+        [
+          null,
+          39,
+          "Alsina",
+          1,
+          0,
+          1681778613,
+          "9a5e2dc7-9cc9-4e65-abc8-3a2e477ec15a"
+        ],
+        [
+          null,
+          40,
+          "Alta Gracia",
+          5,
+          0,
+          1681778613,
+          "b06efb4c-34f7-42cc-a477-9a473fa89e19"
+        ],
+        [
+          null,
+          41,
+          "Alvear",
+          21,
+          0,
+          1681778613,
+          "1ad0360f-f8e4-44ae-8086-e49dec3959ac"
+        ],
+        [
+          null,
+          42,
+          "Arrecifes",
+          1,
+          0,
+          1681778613,
+          "da08c366-8852-46a1-8e26-5ada76427b4e"
+        ],
+        [
+          null,
+          43,
+          "Arroyo Dulce",
+          1,
+          0,
+          1681778613,
+          "2a5bf47b-560b-471e-b2d5-b1584a449fe7"
+        ],
+        [
+          null,
+          44,
+          "Asturias",
+          1,
+          0,
+          1681778613,
+          "87b4ca72-da68-418c-b67a-c30a206f50cc"
+        ],
+        [
+          null,
+          45,
+          "Avellaneda",
+          1,
+          0,
+          1681778613,
+          "23c5fd4d-06d6-4511-af94-c5a41a5f5193"
+        ],
+        [
+          null,
+          46,
+          "Avellaneda",
+          21,
+          0,
+          1681778613,
+          "c0b6ffce-cd8b-4e25-85b2-1383ce8f20d2"
+        ],
+        [
+          null,
+          47,
+          "Ayacucho",
+          1,
+          0,
+          1681778613,
+          "631f15f7-d82f-4af7-81c1-40133c23254e"
+        ],
+        [
+          null,
+          48,
+          "Azul",
+          1,
+          0,
+          1681778613,
+          "043daf09-a69c-44e9-ab03-35922d321553"
+        ],
+        [
+          null,
+          49,
+          "Balbastro",
+          7,
+          0,
+          1681778613,
+          "4aef0716-a476-437e-ac2e-c9e1166870a9"
+        ],
+        [
+          null,
+          50,
+          "Balcarce",
+          1,
+          0,
+          1681778613,
+          "d88c9dd7-db9f-4183-99ab-0dcbb38f37ec"
+        ],
+        [
+          null,
+          51,
+          "Ballester",
+          1,
+          0,
+          1681778613,
+          "dcdd853b-f42f-4891-a666-c456b8300273"
+        ],
+        [
+          null,
+          52,
+          "Balnearia",
+          5,
+          0,
+          1681778613,
+          "ad9ab297-8cc1-4f8f-888c-e43ec8555f9a"
+        ],
+        [
+          null,
+          53,
+          "Bancalari",
+          1,
+          0,
+          1681778613,
+          "d2faf730-b293-4db9-82fa-7c4b7dea4367"
+        ],
+        [
+          null,
+          54,
+          "Banfield",
+          1,
+          0,
+          1681778613,
+          "8337cd3d-c522-4c90-8624-09c00624d590"
+        ],
+        [
+          null,
+          55,
+          "Bariloche",
+          1,
+          0,
+          1681778613,
+          "50611f9c-5b67-4974-993f-f0ce68757c9f"
+        ],
+        [
+          null,
+          56,
+          "Barrancas Viejo",
+          21,
+          0,
+          1681778613,
+          "44f3f693-6e5a-4639-af64-2eceec217627"
+        ],
+        [
+          null,
+          57,
+          "Barrio San Patricio",
+          1,
+          0,
+          1681778613,
+          "4a80857f-68b4-4e84-81ae-137ebfd1ad84"
+        ],
+        [
+          null,
+          58,
+          "Beccar",
+          1,
+          0,
+          1681778613,
+          "f050fd8d-891f-4575-a63a-2fcc339818e4"
+        ],
+        [
+          null,
+          59,
+          "Belgrano",
+          22,
+          0,
+          1681778613,
+          "79fa951b-ec3a-4a08-8a58-c45865405a82"
+        ],
+        [
+          null,
+          60,
+          "Bell Ville",
+          5,
+          0,
+          1681778613,
+          "d71d2363-8cfc-4fc7-b019-af7bc77e3b38"
+        ],
+        [
+          null,
+          61,
+          "Bella Vista",
+          1,
+          0,
+          1681778613,
+          "b6daac7f-f7e4-4608-bd80-91f8cc1fc5c4"
+        ],
+        [
+          null,
+          62,
+          "Benavides",
+          1,
+          0,
+          1681778613,
+          "b49e30e1-9100-4382-a097-21d051fc64c1"
+        ],
+        [
+          null,
+          63,
+          "Berazategui",
+          1,
+          0,
+          1681778613,
+          "77ecb373-a912-4afc-8d2a-1a57157187ef"
+        ],
+        [
+          null,
+          64,
+          "Berisso",
+          1,
+          0,
+          1681778613,
+          "50d9a16f-360c-406f-8e9c-31a30e513c05"
+        ],
+        [
+          null,
+          65,
+          "Bernal",
+          1,
+          0,
+          1681778613,
+          "f672de25-38aa-4b34-84cd-e597b1e837bf"
+        ],
+        [
+          null,
+          66,
+          "Billinghurst",
+          1,
+          0,
+          1681778613,
+          "11ec9cf5-6839-4655-9d35-6c718ac7bf52"
+        ],
+        [
+          null,
+          67,
+          "Bordenave",
+          1,
+          0,
+          1681778613,
+          "dd016f76-62a9-4afa-9407-232442794722"
+        ],
+        [
+          null,
+          68,
+          "Bosch",
+          1,
+          0,
+          1681778613,
+          "32208b52-3d73-455d-ad77-bda8096a389a"
+        ],
+        [
+          null,
+          69,
+          "Bosques",
+          1,
+          0,
+          1681778613,
+          "cc3eeb08-4d85-4a19-bbea-40b547c3e741"
+        ],
+        [
+          null,
+          70,
+          "Boulogne",
+          1,
+          0,
+          1681778613,
+          "40974b76-39dd-4022-9278-9651226aa8ea"
+        ],
+        [
+          null,
+          71,
+          "Bowen",
+          13,
+          0,
+          1681778613,
+          "4f6a3f12-8baf-40cf-96a3-59fb87ebb4cb"
+        ],
+        [
+          null,
+          72,
+          "Bragado",
+          1,
+          0,
+          1681778613,
+          "e6ea87a9-fed3-4e7c-80af-b22fa09806f0"
+        ],
+        [
+          null,
+          73,
+          "Brandsen",
+          1,
+          0,
+          1681778613,
+          "62e519d5-99aa-40b8-b2b9-101923aa06d1"
+        ],
+        [
+          null,
+          74,
+          "Buenos Aires",
+          7,
+          0,
+          1681778613,
+          "e0ca7d69-e260-4ed9-95bb-b26cafc89ed0"
+        ],
+        [
+          null,
+          75,
+          "Burzaco",
+          1,
+          0,
+          1681778613,
+          "f54f1b71-445f-4322-b1d0-ae392d85091a"
+        ],
+        [
+          null,
+          76,
+          "C. De Mayo",
+          1,
+          0,
+          1681778613,
+          "7443180a-4e11-409f-bbe5-db59a201cc0c"
+        ],
+        [
+          null,
+          77,
+          "Caleta Olivia",
+          20,
+          0,
+          1681778613,
+          "bcaf69db-2871-4ddc-8ca7-f19d111152f3"
+        ],
+        [
+          null,
+          78,
+          "Campana",
+          1,
+          0,
+          1681778613,
+          "9462e482-c790-47fe-9031-cf40cf44a932"
+        ],
+        [
+          null,
+          79,
+          "Canning",
+          1,
+          0,
+          1681778613,
+          "888eb10c-b9d3-4eba-934a-5c81bb595809"
+        ],
+        [
+          null,
+          80,
+          "Caraza",
+          1,
+          0,
+          1681778613,
+          "681571c5-84c7-46d8-b7c6-9f3ac75d6b97"
+        ],
+        [
+          null,
+          81,
+          "Carlos Casares",
+          1,
+          0,
+          1681778613,
+          "a32a25a3-3770-4beb-950e-c2d82097ec1e"
+        ],
+        [
+          null,
+          82,
+          "Carlos Pellegrini",
+          21,
+          0,
+          1681778613,
+          "344bcb67-ba23-49ee-b9c6-ba3e0d943230"
+        ],
+        [
+          null,
+          83,
+          "Carlos Tejedor",
+          1,
+          0,
+          1681778613,
+          "14f26216-c99a-45c3-bf9d-816cf8bb9e19"
+        ],
+        [
+          null,
+          84,
+          "Carmen",
+          23,
+          0,
+          1681778613,
+          "b5a50873-4589-4ccf-87ef-202c9045bc6d"
+        ],
+        [
+          null,
+          85,
+          "Carreras",
+          21,
+          0,
+          1681778613,
+          "9c13c906-d5eb-4382-b3aa-4546e5d1ed28"
+        ],
+        [
+          null,
+          86,
+          "Caseros",
+          1,
+          0,
+          1681778613,
+          "a978eb92-198b-4d4b-a7f9-5fe682500598"
+        ],
+        [
+          null,
+          87,
+          "Casilda",
+          21,
+          0,
+          1681778613,
+          "bb35e69f-a479-4b05-9c19-0c90a9941f57"
+        ],
+        [
+          null,
+          88,
+          "Castelar",
+          1,
+          0,
+          1681778613,
+          "97ea2c97-4467-42a7-b461-ef2ef1533099"
+        ],
+        [
+          null,
+          89,
+          "Catamarca",
+          2,
+          0,
+          1681778613,
+          "1597eed9-2350-4652-86ec-8d5135079103"
+        ],
+        [
+          null,
+          90,
+          "Catriel",
+          16,
+          0,
+          1681778613,
+          "2e15f581-c086-4958-a34c-a4b4c43bc651"
+        ],
+        [
+          null,
+          91,
+          "Centenario",
+          1,
+          0,
+          1681778613,
+          "057e4e4d-6af2-4522-a695-3eb922a76e09"
+        ],
+        [
+          null,
+          92,
+          "Cevallos",
+          11,
+          0,
+          1681778613,
+          "31a5ae01-dbd6-486a-90ab-1b54d9b0b399"
+        ],
+        [
+          null,
+          93,
+          "Chacabuco",
+          1,
+          0,
+          1681778613,
+          "55d7b2ea-dcd7-45b4-948b-a61702bc5258"
+        ],
+        [
+          null,
+          94,
+          "Chacarita",
+          7,
+          0,
+          1681778613,
+          "b83a66ca-8e96-438c-8247-76cee89fa08a"
+        ],
+        [
+          null,
+          95,
+          "Chivilcoy",
+          1,
+          0,
+          1681778613,
+          "431adc6d-dc56-49b1-8f20-44a75baac5f7"
+        ],
+        [
+          null,
+          96,
+          "Choele Choel",
+          16,
+          0,
+          1681778613,
+          "968ca58c-af5a-4ee5-aae7-8db92eb7b2e2"
+        ],
+        [
+          null,
+          97,
+          "Cipolleti",
+          16,
+          0,
+          1681778613,
+          "137e042d-30aa-446c-a9ce-22ace4549b6e"
+        ],
+        [
+          null,
+          98,
+          "Cipolletti",
+          16,
+          0,
+          1681778613,
+          "b9dd3c3a-b0fd-4b0c-af76-b081fae49e6c"
+        ],
+        [
+          null,
+          99,
+          "City Bell",
+          1,
+          0,
+          1681778613,
+          "02b44f76-190c-4700-b0ab-06e6f9a79a11"
+        ],
+        [
+          null,
+          100,
+          "Ciudad Evita",
+          1,
+          0,
+          1681778613,
+          "bd12c985-f042-4c84-9648-6cb57ed936e5"
+        ],
+        [
+          null,
+          101,
+          "Ciudad Universitaria",
+          24,
+          0,
+          1681778613,
+          "b0fd3adf-7878-4ace-91ff-d9b30958e855"
+        ],
+        [
+          null,
+          102,
+          "Ciudadela",
+          1,
+          0,
+          1681778613,
+          "735b50e7-32dd-474b-bd74-7b860123e8ba"
+        ],
+        [
+          null,
+          103,
+          "Claypole",
+          1,
+          0,
+          1681778613,
+          "90de0aae-5135-4f0e-ae02-8c7b678c1811"
+        ],
+        [
+          null,
+          104,
+          "Coillun-Co",
+          15,
+          0,
+          1681778613,
+          "8864e656-bf4b-44fa-a3d4-6ca2039bf9af"
+        ],
+        [
+          null,
+          105,
+          "Colonia Caroya",
+          5,
+          0,
+          1681778613,
+          "c8bc15dd-5561-44d7-bf42-c89b58ca4472"
+        ],
+        [
+          null,
+          106,
+          "Comandante L. Piedrabuena",
+          7,
+          0,
+          1681778613,
+          "15cf9e41-633f-4aab-9146-1fa68e14ccaf"
+        ],
+        [
+          null,
+          107,
+          "Comandante Nicanor Otamendi",
+          1,
+          0,
+          1681778613,
+          "27bca721-2580-419b-b053-e03c75d38ba8"
+        ],
+        [
+          null,
+          108,
+          "Comodoro Rivadavia",
+          7,
+          0,
+          1681778613,
+          "042ed21a-01d0-4f08-91ec-232d9a8e4590"
+        ],
+        [
+          null,
+          109,
+          "Conchitas",
+          1,
+          0,
+          1681778613,
+          "b0a5961a-18b1-4618-9145-d47c8d52e146"
+        ],
+        [
+          null,
+          110,
+          "Concordia",
+          8,
+          0,
+          1681778613,
+          "1f6df8f7-7e18-444c-892f-29a187ec6195"
+        ],
+        [
+          null,
+          111,
+          "Corral De Bustos",
+          5,
+          0,
+          1681778613,
+          "1d68f81c-9070-46ec-84ac-e7d6db706669"
+        ],
+        [
+          null,
+          112,
+          "Corrientes",
+          6,
+          0,
+          1681778613,
+          "d4f7a268-d070-4f8c-a90f-2090ebaa9526"
+        ],
+        [
+          null,
+          113,
+          "Crespo",
+          8,
+          0,
+          1681778613,
+          "15bcb127-39f7-4983-b118-ee6484abef89"
+        ],
+        [
+          null,
+          114,
+          "Cruz Del Eje",
+          5,
+          0,
+          1681778613,
+          "dd286d87-cd8b-4c07-bed6-673b90ad8263"
+        ],
+        [
+          null,
+          115,
+          "Darregueira",
+          1,
+          0,
+          1681778613,
+          "894769c3-9137-47c2-a10f-d4a269dd08f0"
+        ],
+        [
+          null,
+          116,
+          "De Mayo",
+          14,
+          0,
+          1681778613,
+          "c080e1cc-24df-4edc-b6f3-4efac3a3b883"
+        ],
+        [
+          null,
+          117,
+          "Del Viso",
+          1,
+          0,
+          1681778613,
+          "6e2cf3b1-92f0-407c-9c86-79122ddb9b91"
+        ],
+        [
+          null,
+          118,
+          "Derechos De La Ancianidad",
+          1,
+          0,
+          1681778613,
+          "74f407d0-8c2b-4644-89cc-c5d2d19dd889"
+        ],
+        [
+          null,
+          119,
+          "Derqui",
+          1,
+          0,
+          1681778613,
+          "3ba89030-3922-41ee-a35d-85f2b360634e"
+        ],
+        [
+          null,
+          120,
+          "Diamante",
+          1,
+          0,
+          1681778613,
+          "d4a098e6-64e2-499a-95c1-45e23ba820d0"
+        ],
+        [
+          null,
+          121,
+          "Diamante",
+          8,
+          0,
+          1681778613,
+          "67603e80-4067-4e4d-bb56-4e7f8ca53771"
+        ],
+        [
+          null,
+          122,
+          "Dolores",
+          1,
+          0,
+          1681778613,
+          "8f122e11-ac71-4de0-a7fb-7f61f34c3c21"
+        ],
+        [
+          null,
+          123,
+          "Domselaar",
+          1,
+          0,
+          1681778613,
+          "4acbbafa-2e9a-4674-9e74-929a6bf9d676"
+        ],
+        [
+          null,
+          124,
+          "Don Torcuato",
+          1,
+          0,
+          1681778613,
+          "af9920f5-7a06-4302-aeb7-36a471c7c674"
+        ],
+        [
+          null,
+          125,
+          "Drabble",
+          1,
+          0,
+          1681778613,
+          "f817d99c-92ce-4b3a-986a-d2fa550925a6"
+        ],
+        [
+          null,
+          126,
+          "El Calafate",
+          20,
+          0,
+          1681778613,
+          "13997aca-a3f9-436c-8289-034a83a01a44"
+        ],
+        [
+          null,
+          127,
+          "El Chorrillo",
+          19,
+          0,
+          1681778613,
+          "753eec92-5032-4a0f-8271-1500e9afaa5c"
+        ],
+        [
+          null,
+          128,
+          "El Dorado",
+          1,
+          0,
+          1681778613,
+          "3bb039a2-7ddd-476a-ac66-2335ebb38744"
+        ],
+        [
+          null,
+          129,
+          "El Hoyo",
+          22,
+          0,
+          1681778613,
+          "0c3b7233-8d99-42da-bd5f-39bfc0aead2b"
+        ],
+        [
+          null,
+          130,
+          "El Palomar",
+          1,
+          0,
+          1681778613,
+          "7df35b53-f9d9-4fda-bd78-45aad18d2735"
+        ],
+        [
+          null,
+          131,
+          "El Retiro",
+          5,
+          0,
+          1681778613,
+          "d3818367-97b4-41d9-a3e7-1b7b16414ca3"
+        ],
+        [
+          null,
+          132,
+          "El Talar",
+          1,
+          0,
+          1681778613,
+          "dc656413-de5c-4eaa-91ae-11555339bdec"
+        ],
+        [
+          null,
+          133,
+          "El Verano",
+          1,
+          0,
+          1681778613,
+          "08f85f33-6cdd-49ac-b73a-b6ddb7c2d8ec"
+        ],
+        [
+          null,
+          134,
+          "Eldorado",
+          14,
+          0,
+          1681778613,
+          "1b4fb4e5-af5d-4032-afd1-a0e25458111b"
+        ],
+        [
+          null,
+          135,
+          "Embalse",
+          5,
+          0,
+          1681778613,
+          "e2a02da2-82de-490c-a163-1c32a4fdd601"
+        ],
+        [
+          null,
+          136,
+          "Ensenada",
+          1,
+          0,
+          1681778613,
+          "fd4f4ac8-aa75-4e95-b178-fde486e851e6"
+        ],
+        [
+          null,
+          137,
+          "Escobar",
+          1,
+          0,
+          1681778613,
+          "bd9177fe-e662-4bb2-986e-23289f8932c4"
+        ],
+        [
+          null,
+          138,
+          "Esmeralda",
+          21,
+          0,
+          1681778613,
+          "2400c5e3-27a6-4d59-8236-0e142ca0bdce"
+        ],
+        [
+          null,
+          139,
+          "Espeleta",
+          1,
+          0,
+          1681778613,
+          "bc5ff7aa-f673-49d1-9c0d-422adc05914b"
+        ],
+        [
+          null,
+          140,
+          "Esperanza",
+          21,
+          0,
+          1681778613,
+          "6862fc5c-2549-4a8d-aa23-16361c0dfe57"
+        ],
+        [
+          null,
+          141,
+          "Esquel",
+          7,
+          0,
+          1681778613,
+          "dd7ae731-0d81-485c-8c7d-1436cd838868"
+        ],
+        [
+          null,
+          142,
+          "Ezeiza",
+          1,
+          0,
+          1681778613,
+          "02023197-78a0-43cc-a52c-bd6dd44bec34"
+        ],
+        [
+          null,
+          143,
+          "Ezpeleta",
+          1,
+          0,
+          1681778613,
+          "94096efd-bb1c-4fe3-ae01-07ec93dcd80b"
+        ],
+        [
+          null,
+          144,
+          "F. Alvarez",
+          1,
+          0,
+          1681778613,
+          "af44db9a-30c8-41b7-a7e0-9df1a8b27cd7"
+        ],
+        [
+          null,
+          145,
+          "F. Paz",
+          21,
+          0,
+          1681778613,
+          "5b5b71bb-1943-4832-ba93-dbb3fc3bc773"
+        ],
+        [
+          null,
+          146,
+          "Federal",
+          8,
+          0,
+          1681778613,
+          "f4efb5d8-eca3-448a-a2e1-0f0ed1113d51"
+        ],
+        [
+          null,
+          147,
+          "Fiorito",
+          1,
+          0,
+          1681778613,
+          "3a9ad6f0-4d6d-4a09-85b5-16e6bb514ec2"
+        ],
+        [
+          null,
+          148,
+          "Firmat",
+          21,
+          0,
+          1681778613,
+          "a15d6811-9346-46d3-ba54-7d3afe94cf63"
+        ],
+        [
+          null,
+          149,
+          "Florencio Varela",
+          1,
+          0,
+          1681778613,
+          "ca329bec-024a-40cf-806e-b8eece13c36c"
+        ],
+        [
+          null,
+          150,
+          "Flores",
+          7,
+          0,
+          1681778613,
+          "7b0f7ab6-3071-4ad6-8537-c46b3a899b02"
+        ],
+        [
+          null,
+          151,
+          "Floresta",
+          7,
+          0,
+          1681778613,
+          "b3696c1f-ddc5-4be2-85c6-aea3cb24c3f0"
+        ],
+        [
+          null,
+          152,
+          "Florida",
+          1,
+          0,
+          1681778613,
+          "4a5eaaf9-6121-4527-8448-c740a6593387"
+        ],
+        [
+          null,
+          153,
+          "Formosa",
+          9,
+          0,
+          1681778613,
+          "790517ba-43fe-4d13-82b9-292754bc6f7d"
+        ],
+        [
+          null,
+          154,
+          "Fuentes",
+          21,
+          0,
+          1681778613,
+          "b17f1c9f-a525-4724-b814-bb19f6e3abca"
+        ],
+        [
+          null,
+          155,
+          "Fulton",
+          1,
+          0,
+          1681778613,
+          "7b360b0c-29e3-4c95-983d-f9cbda1bf58b"
+        ],
+        [
+          null,
+          156,
+          "Funes",
+          21,
+          0,
+          1681778613,
+          "e7f2be04-fc46-4b2a-9a04-216c694fc688"
+        ],
+        [
+          null,
+          157,
+          "General Alvear",
+          1,
+          0,
+          1681778613,
+          "5fac8d91-cdcc-45d2-88db-947062ee9c1f"
+        ],
+        [
+          null,
+          158,
+          "General Belgrano",
+          1,
+          0,
+          1681778613,
+          "62144a63-dccf-4737-8d41-4fca9728dead"
+        ],
+        [
+          null,
+          159,
+          "General E. Godoy",
+          16,
+          0,
+          1681778613,
+          "7bade220-f832-4da1-849c-3aadf96c3ebc"
+        ],
+        [
+          null,
+          160,
+          "General Pacheco",
+          1,
+          0,
+          1681778613,
+          "6ded92d9-f573-4163-9361-4aa555220ecb"
+        ],
+        [
+          null,
+          161,
+          "General Pico",
+          11,
+          0,
+          1681778613,
+          "ad1cbbfd-12dd-4aa2-9ebd-e1413e90fb98"
+        ],
+        [
+          null,
+          162,
+          "General Roca",
+          16,
+          0,
+          1681778613,
+          "1acf8924-8296-4d68-83ac-e6ca02547a60"
+        ],
+        [
+          null,
+          163,
+          "General Villegas",
+          1,
+          0,
+          1681778613,
+          "7ddccf71-b4ed-493b-b223-51b9691b04cc"
+        ],
+        [
+          null,
+          164,
+          "Gerli",
+          1,
+          0,
+          1681778613,
+          "c261c3b0-9146-43f6-b3fc-614cb06324b1"
+        ],
+        [
+          null,
+          165,
+          "Germania",
+          1,
+          0,
+          1681778613,
+          "96fffbc3-44e1-4548-9874-fbfc8960ddc1"
+        ],
+        [
+          null,
+          166,
+          "Girondo",
+          1,
+          0,
+          1681778613,
+          "787630e3-de52-4350-9186-4085bbbc2cdc"
+        ],
+        [
+          null,
+          167,
+          "Glew",
+          1,
+          0,
+          1681778613,
+          "ac8fda9e-2e48-472f-aed5-c6d43180e92f"
+        ],
+        [
+          null,
+          168,
+          "Gobernador Castro",
+          1,
+          0,
+          1681778613,
+          "af368325-b1c4-4487-85fe-98f07d181253"
+        ],
+        [
+          null,
+          169,
+          "Gobernador Monteverde",
+          1,
+          0,
+          1681778613,
+          "59bbb2dd-12bb-4917-bfc9-07f139d60ae4"
+        ],
+        [
+          null,
+          170,
+          "Godoy Cruz",
+          13,
+          0,
+          1681778613,
+          "00b938a1-2a70-4638-ad09-cb099d9b7a54"
+        ],
+        [
+          null,
+          171,
+          "Gonnet",
+          1,
+          0,
+          1681778613,
+          "9042e17e-7723-4ddc-af50-ac21162223b1"
+        ],
+        [
+          null,
+          172,
+          "Goya",
+          6,
+          0,
+          1681778613,
+          "a0683f7d-bc5c-44bb-a870-f84705da0f4c"
+        ],
+        [
+          null,
+          173,
+          "Granadero Baigorria",
+          21,
+          0,
+          1681778613,
+          "3cf2e15e-63ba-4d7e-b746-36cad5180b8f"
+        ],
+        [
+          null,
+          174,
+          "Grand Bourg",
+          1,
+          0,
+          1681778613,
+          "6c7214c1-bb6b-4221-95e6-958679cb8f58"
+        ],
+        [
+          null,
+          175,
+          "Gualeguay",
+          8,
+          0,
+          1681778613,
+          "dc4f5d28-4ab0-4d14-b670-ad96ee293990"
+        ],
+        [
+          null,
+          176,
+          "Guernica",
+          1,
+          0,
+          1681778613,
+          "5510330a-c1c7-46c3-b0dc-6df00516347f"
+        ],
+        [
+          null,
+          177,
+          "Haedo",
+          1,
+          0,
+          1681778613,
+          "58a10ea1-eb46-40e1-851f-048794cd509e"
+        ],
+        [
+          null,
+          178,
+          "Herrera Vegas",
+          1,
+          0,
+          1681778613,
+          "dc81cbc6-a6a2-4632-8a19-0ec9e626b7b6"
+        ],
+        [
+          null,
+          179,
+          "Hilario",
+          18,
+          0,
+          1681778613,
+          "022fa7e2-eaae-4fd2-b349-ab3f2c45c043"
+        ],
+        [
+          null,
+          180,
+          "Hilario Ascasubi",
+          1,
+          0,
+          1681778613,
+          "237539eb-98a3-4539-ac88-5f1e9b23f858"
+        ],
+        [
+          null,
+          181,
+          "Hughes",
+          21,
+          0,
+          1681778613,
+          "8bd4e1b0-ee86-4c8d-8f6a-b0e525f1bd40"
+        ],
+        [
+          null,
+          182,
+          "Hurlingham",
+          1,
+          0,
+          1681778613,
+          "23e0dd93-59e1-428f-a107-6a93a8ac7766"
+        ],
+        [
+          null,
+          183,
+          "I. Casanova",
+          1,
+          0,
+          1681778613,
+          "c97689ce-a5fb-481d-a2b7-09d06866fe8e"
+        ],
+        [
+          null,
+          184,
+          "Ingeniero Budge",
+          1,
+          0,
+          1681778613,
+          "e50a739e-823a-46f2-96e3-b73c74a7d960"
+        ],
+        [
+          null,
+          185,
+          "Ingeniero Maschwitz",
+          1,
+          0,
+          1681778613,
+          "75c877ad-4066-47b0-a025-dcbdb2987f1f"
+        ],
+        [
+          null,
+          186,
+          "Iraizoz",
+          1,
+          0,
+          1681778613,
+          "983f45c6-203e-4d1d-a244-07a69d690422"
+        ],
+        [
+          null,
+          187,
+          "Isidro Casanova",
+          1,
+          0,
+          1681778613,
+          "bba39402-b0b9-4522-8adc-991e04d4e8ca"
+        ],
+        [
+          null,
+          188,
+          "J.F. Ibarra",
+          1,
+          0,
+          1681778613,
+          "4523ab67-3d40-4d39-822d-9ec85538997f"
+        ],
+        [
+          null,
+          189,
+          "J.M. Bosch",
+          1,
+          0,
+          1681778613,
+          "4ae04cb2-caee-4329-8a29-042bfe3c0fc1"
+        ],
+        [
+          null,
+          190,
+          "J.M. Gutierrez",
+          1,
+          0,
+          1681778613,
+          "d94d80d1-7643-434b-a2e1-654317c4c662"
+        ],
+        [
+          null,
+          191,
+          "Juan Vucetich",
+          1,
+          0,
+          1681778613,
+          "6e1658c2-1d16-4fe8-ab72-740f799a6cdb"
+        ],
+        [
+          null,
+          192,
+          "Jujuy",
+          10,
+          0,
+          1681778613,
+          "47cee8cb-0379-4886-8837-a3d1d2441a96"
+        ],
+        [
+          null,
+          193,
+          "Justiniano Posse",
+          5,
+          0,
+          1681778613,
+          "f87cbf19-2e90-4489-a4a0-0a9051afe82d"
+        ],
+        [
+          null,
+          194,
+          "L. De Zamora",
+          1,
+          0,
+          1681778613,
+          "82ab5e2b-0013-4e5d-82e9-421a823d26a7"
+        ],
+        [
+          null,
+          195,
+          "La Cesira",
+          5,
+          0,
+          1681778613,
+          "06a89cb4-9e87-49ad-ab5c-8dd60b9cc42c"
+        ],
+        [
+          null,
+          196,
+          "La Invencible",
+          1,
+          0,
+          1681778613,
+          "ed88ed92-9d62-48ce-8b5c-d66afe41d157"
+        ],
+        [
+          null,
+          197,
+          "La Pampa",
+          5,
+          0,
+          1681778613,
+          "c7bf7318-b0ab-46b0-94be-c2ae440982c6"
+        ],
+        [
+          null,
+          198,
+          "La Paternal",
+          7,
+          0,
+          1681778613,
+          "d866d5cc-1980-4cd7-9947-e472c5391065"
+        ],
+        [
+          null,
+          199,
+          "La Paz",
+          1,
+          0,
+          1681778613,
+          "4c3dcc78-ca7c-4326-81da-c802ead0bfa8"
+        ],
+        [
+          null,
+          200,
+          "La Plata",
+          1,
+          0,
+          1681778613,
+          "fb303393-1c3d-4e78-a283-d27db54a167b"
+        ],
+        [
+          null,
+          201,
+          "La Reja",
+          1,
+          0,
+          1681778613,
+          "1d606b6f-153e-4619-aca6-a18f23e71493"
+        ],
+        [
+          null,
+          202,
+          "La Rioja",
+          12,
+          0,
+          1681778613,
+          "aadd5e62-1a27-479a-a1f8-a7d1b48c2272"
+        ],
+        [
+          null,
+          203,
+          "Laferrere",
+          1,
+          0,
+          1681778613,
+          "969df788-40b4-44b1-9d42-98ba2540ba43"
+        ],
+        [
+          null,
+          204,
+          "Laguna Larga",
+          5,
+          0,
+          1681778613,
+          "79b51ada-9665-40f8-b79d-2363c8f976f4"
+        ],
+        [
+          null,
+          205,
+          "Lamarque",
+          16,
+          0,
+          1681778613,
+          "60e4e9fe-8360-4977-9413-02db3de789be"
+        ],
+        [
+          null,
+          206,
+          "Las Calles",
+          5,
+          0,
+          1681778613,
+          "a0408a35-9465-4b01-a4da-f6552974979b"
+        ],
+        [
+          null,
+          207,
+          "Las Delicias",
+          22,
+          0,
+          1681778613,
+          "2a4a9dfc-b316-4eb7-b495-c2ea7acdd568"
+        ],
+        [
+          null,
+          208,
+          "Las Flores",
+          22,
+          0,
+          1681778613,
+          "f6c5acaf-2ec9-41f5-99f7-3a5e51f3b063"
+        ],
+        [
+          null,
+          209,
+          "Las Heras",
+          5,
+          0,
+          1681778613,
+          "9eeb3c21-cc21-4560-95e1-de64a737fc6a"
+        ],
+        [
+          null,
+          210,
+          "Las Parejas",
+          21,
+          0,
+          1681778613,
+          "a0ef5d59-51ea-4680-b6de-9eb10bd1fd22"
+        ],
+        [
+          null,
+          211,
+          "Las Perdices",
+          5,
+          0,
+          1681778613,
+          "413e537b-d3d9-4c57-8772-fdcb3842c92c"
+        ],
+        [
+          null,
+          212,
+          "Las Varillas",
+          5,
+          0,
+          1681778613,
+          "ec5e9677-1e98-487f-a7d2-dfa60948bc98"
+        ],
+        [
+          null,
+          213,
+          "Lavalle",
+          22,
+          0,
+          1681778613,
+          "8b319542-1116-419e-bbd2-c4b944da13e8"
+        ],
+        [
+          null,
+          214,
+          "Libertad",
+          1,
+          0,
+          1681778613,
+          "02f1db13-d19b-4195-a16a-fbdfbd49b728"
+        ],
+        [
+          null,
+          215,
+          "Lima",
+          1,
+          0,
+          1681778613,
+          "85d9ec95-8091-4836-99ee-96e18c3dcc19"
+        ],
+        [
+          null,
+          216,
+          "Linch",
+          1,
+          0,
+          1681778613,
+          "1dc73901-2d98-46f0-a1b7-4b6abe28c765"
+        ],
+        [
+          null,
+          217,
+          "Lincoln",
+          1,
+          0,
+          1681778613,
+          "8680de1e-6402-4f32-a572-99bed35070bf"
+        ],
+        [
+          null,
+          218,
+          "Liniers",
+          7,
+          0,
+          1681778613,
+          "6d196bd6-5aad-4d48-8d99-afe779157339"
+        ],
+        [
+          null,
+          219,
+          "Llavallol",
+          1,
+          0,
+          1681778613,
+          "3aea5668-1621-4e3a-be91-5496bca45f1a"
+        ],
+        [
+          null,
+          220,
+          "Lobos",
+          1,
+          0,
+          1681778613,
+          "10120c2e-6454-403e-8c88-a2e2c64b7115"
+        ],
+        [
+          null,
+          221,
+          "Lomas De Zamora",
+          1,
+          0,
+          1681778613,
+          "a03ea2bf-ab0a-4437-81bb-28dc5189c009"
+        ],
+        [
+          null,
+          222,
+          "Lomas Del Mirador",
+          1,
+          0,
+          1681778613,
+          "367cc29a-f16e-49e7-a15f-308019279995"
+        ],
+        [
+          null,
+          223,
+          "Longchamps",
+          1,
+          0,
+          1681778613,
+          "924f5559-77ed-479f-8ca1-ecfa321c68cc"
+        ],
+        [
+          null,
+          224,
+          "Los Antiguos",
+          20,
+          0,
+          1681778613,
+          "b46ee300-d00a-4d46-bcf5-c38a49b26fb2"
+        ],
+        [
+          null,
+          225,
+          "Los Cardales",
+          1,
+          0,
+          1681778613,
+          "300e85b1-d014-42ac-b048-173ec31ca032"
+        ],
+        [
+          null,
+          226,
+          "Los Perales",
+          7,
+          0,
+          1681778613,
+          "02e5a61b-06d6-45d4-9275-0942c1838a6b"
+        ],
+        [
+          null,
+          227,
+          "Los Polvorines",
+          1,
+          0,
+          1681778613,
+          "612c207c-f824-4a25-856b-5ac23327acbc"
+        ],
+        [
+          null,
+          228,
+          "Los Surgentes",
+          5,
+          0,
+          1681778613,
+          "2b9f1d0c-9e4e-48f7-badf-b3399e69d975"
+        ],
+        [
+          null,
+          229,
+          "Lugones",
+          22,
+          0,
+          1681778613,
+          "8c886228-f4dd-4d46-8690-dc5e58d70dbf"
+        ],
+        [
+          null,
+          230,
+          "Luro",
+          1,
+          0,
+          1681778613,
+          "10032338-b970-4bc8-88ed-0f3faf20d4fe"
+        ],
+        [
+          null,
+          231,
+          "M. Acosta",
+          1,
+          0,
+          1681778613,
+          "612105e6-fe3e-496e-b14c-b30417991270"
+        ],
+        [
+          null,
+          232,
+          "Madryn",
+          4,
+          0,
+          1681778613,
+          "cf27f2b8-b0cb-4fbf-9d12-2ef98f0175b5"
+        ],
+        [
+          null,
+          233,
+          "Manfredi",
+          5,
+          0,
+          1681778613,
+          "51022acc-6dc8-4a61-be66-a7b223a622c1"
+        ],
+        [
+          null,
+          234,
+          "Manzanares",
+          1,
+          0,
+          1681778613,
+          "feebba2f-d285-4444-a1b4-67ece89a1cd4"
+        ],
+        [
+          null,
+          235,
+          "Maquinista Savio",
+          1,
+          0,
+          1681778613,
+          "e3076eef-3a33-4a45-89c5-421d379f55d3"
+        ],
+        [
+          null,
+          236,
+          "Mar Del Plata",
+          1,
+          0,
+          1681778613,
+          "26c4bd1e-819f-411b-852e-aac37962425f"
+        ],
+        [
+          null,
+          237,
+          "Marcelo Torcuato De Alvear",
+          7,
+          0,
+          1681778613,
+          "4704f610-e641-47dc-a8a8-fcf0dd219ae8"
+        ],
+        [
+          null,
+          238,
+          "Marcos Paz",
+          1,
+          0,
+          1681778613,
+          "1fc32551-2ce2-4a01-b4dd-5a0ec2717f03"
+        ],
+        [
+          null,
+          239,
+          "Mariano H. Alfonzo",
+          1,
+          0,
+          1681778613,
+          "cd5bc9f0-516e-4b88-bd21-2800564c9105"
+        ],
+        [
+          null,
+          240,
+          "Mataderos",
+          7,
+          0,
+          1681778613,
+          "fa8f5f7c-1504-4d34-9fbd-7abe70e0361f"
+        ],
+        [
+          null,
+          241,
+          "Mauricio Hirch",
+          1,
+          0,
+          1681778613,
+          "85ebe06a-1d78-4fc9-bc3b-9dd20b32323d"
+        ],
+        [
+          null,
+          242,
+          "Mendiolaza",
+          5,
+          0,
+          1681778613,
+          "729b28c2-d611-4ee1-829b-adf2bab71bf7"
+        ],
+        [
+          null,
+          243,
+          "Mendoza",
+          13,
+          0,
+          1681778613,
+          "b8711b5c-3c10-46cd-8f7a-15bcd6e7bf8d"
+        ],
+        [
+          null,
+          244,
+          "Mercedes",
+          19,
+          0,
+          1681778613,
+          "76993d2a-e607-4b5b-94b9-50253cfdda4b"
+        ],
+        [
+          null,
+          245,
+          "Merlo",
+          1,
+          0,
+          1681778613,
+          "b870c4aa-8902-430a-88ae-092f1af0911d"
+        ],
+        [
+          null,
+          246,
+          "Miramar",
+          1,
+          0,
+          1681778613,
+          "603c878a-7dc9-45d9-b83e-9b933743c8a7"
+        ],
+        [
+          null,
+          247,
+          "Moguehua",
+          1,
+          0,
+          1681778613,
+          "88033e54-7545-464f-903a-132447a39803"
+        ],
+        [
+          null,
+          248,
+          "Monte Castro",
+          7,
+          0,
+          1681778613,
+          "5d16c634-f643-457a-982e-30a8e7887d25"
+        ],
+        [
+          null,
+          249,
+          "Monte Chingolo",
+          1,
+          0,
+          1681778613,
+          "7007fe57-a7b4-4e07-8040-f0b07662724d"
+        ],
+        [
+          null,
+          250,
+          "Monte Grande",
+          1,
+          0,
+          1681778613,
+          "a9c9824e-548d-42a4-8ea9-4b799ec14fa3"
+        ],
+        [
+          null,
+          251,
+          "Munro",
+          1,
+          0,
+          1681778613,
+          "97299fb5-26bd-4d85-88e0-a0cc218ac43d"
+        ],
+        [
+          null,
+          252,
+          "Naranjito",
+          24,
+          0,
+          1681778613,
+          "54b3ab48-82f6-49e1-be60-e90a882cf76f"
+        ],
+        [
+          null,
+          253,
+          "Navarro",
+          22,
+          0,
+          1681778613,
+          "425169ab-2426-42f2-890e-cd2f8fef1642"
+        ],
+        [
+          null,
+          254,
+          "Necochea",
+          1,
+          0,
+          1681778613,
+          "1b2a7020-36e9-4b14-9601-e36c19da6fa4"
+        ],
+        [
+          null,
+          255,
+          "Neild",
+          1,
+          0,
+          1681778613,
+          "b53c4430-d3cc-4990-974f-f43c40cfd385"
+        ],
+        [
+          null,
+          256,
+          "Nueve De Julio",
+          1,
+          0,
+          1681778613,
+          "1e919f24-b921-4d46-ad21-9af766d37842"
+        ],
+        [
+          null,
+          257,
+          "Oliva",
+          5,
+          0,
+          1681778613,
+          "7d968fbd-ae6c-4dbc-850f-aaedc090624d"
+        ],
+        [
+          null,
+          258,
+          "Oliveros",
+          21,
+          0,
+          1681778613,
+          "802cccaf-5f4f-434f-9896-af16751a8fdd"
+        ],
+        [
+          null,
+          259,
+          "Olivia",
+          5,
+          0,
+          1681778613,
+          "324b1205-bc9f-4e9a-898f-15e0b0a455c2"
+        ],
+        [
+          null,
+          260,
+          "Olivos",
+          1,
+          0,
+          1681778613,
+          "4533d273-2087-4fbc-9380-342aa42aa788"
+        ],
+        [
+          null,
+          261,
+          "Ostende",
+          1,
+          0,
+          1681778613,
+          "c54ca7de-4471-4fc7-ab16-0f2fe05f47d7"
+        ],
+        [
+          null,
+          262,
+          "Paso De Los Libres",
+          6,
+          0,
+          1681778613,
+          "d8998ce5-597b-4fc3-9497-344869beae97"
+        ],
+        [
+          null,
+          263,
+          "Paso Del Rey",
+          1,
+          0,
+          1681778613,
+          "196a76ca-edb5-4598-9cb7-c4834923bfe6"
+        ],
+        [
+          null,
+          264,
+          "Pedro Luro",
+          1,
+          0,
+          1681778613,
+          "9ff3a519-2d47-468e-aede-a53ac168de73"
+        ],
+        [
+          null,
+          265,
+          "Pellegrini",
+          1,
+          0,
+          1681778613,
+          "b1c32280-ba43-4357-9e3e-d122c4f812f9"
+        ],
+        [
+          null,
+          266,
+          "Pergamino",
+          1,
+          0,
+          1681778613,
+          "ff5424bb-142c-45b5-b714-8bf624c5b9fb"
+        ],
+        [
+          null,
+          267,
+          "Pico Truncado",
+          20,
+          0,
+          1681778613,
+          "4d0447e7-abe3-4d4b-8756-384cb7bd942c"
+        ],
+        [
+          null,
+          268,
+          "Piedra Pintada",
+          5,
+          0,
+          1681778613,
+          "2765c71a-9959-430d-b644-c9d920305602"
+        ],
+        [
+          null,
+          269,
+          "Pilar",
+          21,
+          0,
+          1681778613,
+          "ca69eae1-18b6-4f45-876f-94d1336be991"
+        ],
+        [
+          null,
+          270,
+          "Pinamar",
+          1,
+          0,
+          1681778613,
+          "e00e22e0-ab40-43e5-9648-fc42d2944551"
+        ],
+        [
+          null,
+          271,
+          "Piquete Cabado",
+          17,
+          0,
+          1681778613,
+          "03280fe0-15fc-4f3d-92ce-a961d4e7d9ed"
+        ],
+        [
+          null,
+          272,
+          "Plottier",
+          15,
+          0,
+          1681778613,
+          "8d1359a7-4e93-45d5-ac12-31c14347c62d"
+        ],
+        [
+          null,
+          273,
+          "Polvorines",
+          1,
+          0,
+          1681778613,
+          "49c306be-3ff7-490e-8734-8558b7777e95"
+        ],
+        [
+          null,
+          274,
+          "Pontevedra",
+          1,
+          0,
+          1681778613,
+          "034c7416-d74d-488f-bcff-77e37a982016"
+        ],
+        [
+          null,
+          275,
+          "Posadas",
+          14,
+          0,
+          1681778613,
+          "efed8189-f5dc-43fd-8c71-1706463d99e1"
+        ],
+        [
+          null,
+          276,
+          "Presidente Derqui",
+          1,
+          0,
+          1681778613,
+          "17ae2c3b-72f6-4024-9391-65e31e8841ce"
+        ],
+        [
+          null,
+          277,
+          "Puan",
+          1,
+          0,
+          1681778613,
+          "1c02c412-7fe1-461b-8ae5-ee579cbdcce1"
+        ],
+        [
+          null,
+          278,
+          "Puerto Madero",
+          7,
+          0,
+          1681778613,
+          "127b1626-537c-41fa-97c4-4c14fa00d3ba"
+        ],
+        [
+          null,
+          279,
+          "Puerto Madryn",
+          4,
+          0,
+          1681778613,
+          "a733097a-85cf-4d42-90da-d250a4430901"
+        ],
+        [
+          null,
+          280,
+          "Pujol",
+          1,
+          0,
+          1681778613,
+          "ead3f5fa-ddd0-4496-8279-949288be3359"
+        ],
+        [
+          null,
+          281,
+          "Punta Alta",
+          1,
+          0,
+          1681778613,
+          "ee0d75b2-b0fc-4138-a0f5-389935dfc1a7"
+        ],
+        [
+          null,
+          282,
+          "Punta Indio",
+          1,
+          0,
+          1681778613,
+          "a96240dd-7466-4005-9026-768fe6860d13"
+        ],
+        [
+          null,
+          283,
+          "Quilmes",
+          1,
+          0,
+          1681778613,
+          "ded1e9c8-6872-4fc5-aa16-cc90cdcdf818"
+        ],
+        [
+          null,
+          284,
+          "R. De Escalada",
+          1,
+          0,
+          1681778613,
+          "d420e7b2-9645-4e4b-b396-ec58caa6497a"
+        ],
+        [
+          null,
+          285,
+          "Rafael Calzada",
+          1,
+          0,
+          1681778613,
+          "b074cc44-ed59-4e39-a06a-2ab23214a974"
+        ],
+        [
+          null,
+          286,
+          "Rafael Castillo",
+          1,
+          0,
+          1681778613,
+          "a6a21abe-d88a-4854-b45c-4ca1a134ef22"
+        ],
+        [
+          null,
+          287,
+          "Rafaela",
+          21,
+          0,
+          1681778613,
+          "423323a6-1b29-4648-9786-a323ab90d08d"
+        ],
+        [
+          null,
+          288,
+          "Ramos Otero",
+          1,
+          0,
+          1681778613,
+          "b7fff12b-03d1-4ba6-8616-30691a5e9725"
+        ],
+        [
+          null,
+          289,
+          "Ranelagh",
+          1,
+          0,
+          1681778613,
+          "9dcf9ce5-4e14-4f95-91b7-cfac76983b44"
+        ],
+        [
+          null,
+          290,
+          "Rawson",
+          4,
+          0,
+          1681778613,
+          "d7b05e2c-82ae-44df-8806-b71f0d6db811"
+        ],
+        [
+          null,
+          291,
+          "Reconquista",
+          21,
+          0,
+          1681778613,
+          "b223ae04-40f3-411d-8ae7-5e4d8977deb9"
+        ],
+        [
+          null,
+          292,
+          "Remedios De Escalada",
+          1,
+          0,
+          1681778613,
+          "70f7792f-4d4d-47f2-94dd-843d002451d2"
+        ],
+        [
+          null,
+          293,
+          "Resistencia",
+          3,
+          0,
+          1681778613,
+          "7be042ed-50ed-43d4-9fe6-8ce72ee994f0"
+        ],
+        [
+          null,
+          294,
+          "Rivadavia",
+          13,
+          0,
+          1681778613,
+          "80d22321-21ca-49cf-8281-9fb7528f6496"
+        ],
+        [
+          null,
+          295,
+          "Rodriguez",
+          21,
+          0,
+          1681778613,
+          "ad542038-0523-4dac-8996-11259eefba4e"
+        ],
+        [
+          null,
+          296,
+          "Rojas",
+          1,
+          0,
+          1681778613,
+          "80ee1ea7-f9a4-4602-833e-8261471f4622"
+        ],
+        [
+          null,
+          297,
+          "Rosa",
+          1,
+          0,
+          1681778613,
+          "c6062ad2-721d-4ba7-b388-245cb8853590"
+        ],
+        [
+          null,
+          298,
+          "Rosario",
+          21,
+          0,
+          1681778613,
+          "c661b5b8-fab6-4782-b798-ebf4ea8f4a09"
+        ],
+        [
+          null,
+          299,
+          "Rosario Del Tala",
+          8,
+          0,
+          1681778613,
+          "d7f1ff73-3daf-4596-b828-1a67f0780aed"
+        ],
+        [
+          null,
+          300,
+          "Rufino",
+          21,
+          0,
+          1681778613,
+          "06ff2be7-bcf1-43f0-b3c3-2164df8b85f8"
+        ],
+        [
+          null,
+          301,
+          "Saladillo",
+          5,
+          0,
+          1681778613,
+          "5351a8c4-ca29-4a08-822b-56aba492d120"
+        ],
+        [
+          null,
+          302,
+          "Saladillo",
+          21,
+          0,
+          1681778613,
+          "40c92c07-9a72-464c-83c1-0b3cd6efb850"
+        ],
+        [
+          null,
+          303,
+          "Salsipuedes",
+          5,
+          0,
+          1681778613,
+          "4a50a8b3-0927-45bc-a26f-352d963bee6f"
+        ],
+        [
+          null,
+          304,
+          "Salta",
+          17,
+          0,
+          1681778613,
+          "1419321b-179b-460a-9943-0855eda105c6"
+        ],
+        [
+          null,
+          305,
+          "Salto",
+          1,
+          0,
+          1681778613,
+          "9e6b4b33-25e0-43f9-be20-6f5944347c15"
+        ],
+        [
+          null,
+          306,
+          "San Antonio",
+          21,
+          0,
+          1681778613,
+          "cda7cc34-3a54-48e7-a89a-6563a6ec4bb8"
+        ],
+        [
+          null,
+          307,
+          "San Antonio De Areco",
+          1,
+          0,
+          1681778613,
+          "b7c53661-8d64-4994-954b-a69b8df6adf7"
+        ],
+        [
+          null,
+          308,
+          "San Antonio De Padua",
+          1,
+          0,
+          1681778613,
+          "f5b6e2f4-cde7-4fe6-b740-3d1543a0e2ad"
+        ],
+        [
+          null,
+          309,
+          "San Antonio Oeste",
+          16,
+          0,
+          1681778613,
+          "a04f659f-002f-41ff-9861-2451a70fa844"
+        ],
+        [
+          null,
+          310,
+          "San Bernardo",
+          22,
+          0,
+          1681778613,
+          "cca3bd92-1c7c-40f1-a08d-b3ec858aada9"
+        ],
+        [
+          null,
+          311,
+          "San Carlos",
+          22,
+          0,
+          1681778613,
+          "cd736e50-e5e1-459b-90ee-e91d4e7d8bec"
+        ],
+        [
+          null,
+          312,
+          "San Carlos De Bariloche",
+          16,
+          0,
+          1681778613,
+          "26448956-c9d5-48d5-b91b-bb58732d98bd"
+        ],
+        [
+          null,
+          313,
+          "San Cayetano",
+          1,
+          0,
+          1681778613,
+          "0fd70132-3350-4c4a-aae1-a13b085c73b9"
+        ],
+        [
+          null,
+          314,
+          "San Clemente",
+          5,
+          0,
+          1681778613,
+          "8cf18420-7306-4143-bff2-b2d094119bd0"
+        ],
+        [
+          null,
+          315,
+          "San Fernando",
+          1,
+          0,
+          1681778613,
+          "7b953aa4-4e9a-4f42-bed8-09ce2e123885"
+        ],
+        [
+          null,
+          316,
+          "San Francisco Solano",
+          1,
+          0,
+          1681778613,
+          "0e988a51-07de-474e-9d18-7c609744a5dd"
+        ],
+        [
+          null,
+          317,
+          "San Genaro",
+          21,
+          0,
+          1681778613,
+          "1724936d-ce7b-4e7e-8328-4a0bfb8e7c4d"
+        ],
+        [
+          null,
+          318,
+          "San Guillermo",
+          21,
+          0,
+          1681778613,
+          "3b65aca2-6481-48e3-aa2f-b4d6150664aa"
+        ],
+        [
+          null,
+          319,
+          "San Isidro",
+          1,
+          0,
+          1681778613,
+          "6b53e76b-9bfd-41d6-9193-93e045139cc0"
+        ],
+        [
+          null,
+          320,
+          "San Jorge",
+          21,
+          0,
+          1681778613,
+          "4bded385-b612-4d9c-9d4e-30b548963a45"
+        ],
+        [
+          null,
+          321,
+          "San Juan",
+          18,
+          0,
+          1681778613,
+          "76eb0e62-25b6-4b26-ad6a-04f53b345eed"
+        ],
+        [
+          null,
+          322,
+          "San Justo",
+          1,
+          0,
+          1681778613,
+          "7eff065d-1db3-4914-aca8-945f53fe608a"
+        ],
+        [
+          null,
+          323,
+          "San Justo",
+          22,
+          0,
+          1681778613,
+          "2d9f95be-71df-40bc-bbbf-6abae5fc13fb"
+        ],
+        [
+          null,
+          324,
+          "San Luis",
+          19,
+          0,
+          1681778613,
+          "76794311-be2f-44c3-a75f-5078b94f5cbd"
+        ],
+        [
+          null,
+          325,
+          "San Manuel",
+          1,
+          0,
+          1681778613,
+          "09b5c437-738b-4eac-875e-ce508a12cacf"
+        ],
+        [
+          null,
+          326,
+          "San Manuel",
+          22,
+          0,
+          1681778613,
+          "c7011352-542b-4b77-977c-2470d405b675"
+        ],
+        [
+          null,
+          327,
+          "San Miguel",
+          11,
+          0,
+          1681778613,
+          "6d340e2a-83f8-4c0e-9302-94c801331160"
+        ],
+        [
+          null,
+          328,
+          "San Miguel Del Monte",
+          1,
+          0,
+          1681778613,
+          "faeb2434-d5a6-4203-a68c-ae0ced401d08"
+        ],
+        [
+          null,
+          329,
+          "San Pedro",
+          1,
+          0,
+          1681778613,
+          "4ed87e7a-e7d9-405e-b24a-1882e4e15e18"
+        ],
+        [
+          null,
+          330,
+          "San Rafael",
+          13,
+          0,
+          1681778613,
+          "01ecb7f4-71ec-4d72-ae13-45e64c2e3fd4"
+        ],
+        [
+          null,
+          331,
+          "San Ricardo",
+          21,
+          0,
+          1681778613,
+          "e484ff0f-dba6-43bb-b7d3-4e8fe9ee1850"
+        ],
+        [
+          null,
+          332,
+          "San Telmo",
+          7,
+          0,
+          1681778613,
+          "3c58c855-6263-40f2-9b3d-b28a8a64c87e"
+        ],
+        [
+          null,
+          333,
+          "San Vicente",
+          1,
+          0,
+          1681778613,
+          "e4452eba-5825-41a5-8384-95a7878d2122"
+        ],
+        [
+          null,
+          334,
+          "Sanford",
+          21,
+          0,
+          1681778613,
+          "a86dc594-e9ef-48d7-b6e0-f761946f6e04"
+        ],
+        [
+          null,
+          335,
+          "Santa Cruz",
+          22,
+          0,
+          1681778613,
+          "306a038b-97a0-433d-adcc-3ff7448e9d22"
+        ],
+        [
+          null,
+          336,
+          "Santa Fe",
+          21,
+          0,
+          1681778613,
+          "8e0a0be4-7374-4ef2-bb37-e5713bcb32ff"
+        ],
+        [
+          null,
+          337,
+          "Santa Rosa",
+          11,
+          0,
+          1681778613,
+          "a30585ff-b29d-43e0-9d8d-0605ec05b71d"
+        ],
+        [
+          null,
+          338,
+          "Santa Rosa De Calamuchita",
+          5,
+          0,
+          1681778613,
+          "2f91c52e-94df-473d-a58e-9f773b96d34d"
+        ],
+        [
+          null,
+          339,
+          "Santa Teresita",
+          1,
+          0,
+          1681778613,
+          "43225fe4-0e98-45d0-bb33-cbd39f34f2b8"
+        ],
+        [
+          null,
+          340,
+          "Santiago Del Estero",
+          22,
+          0,
+          1681778613,
+          "19c1139d-226a-4e50-bf5a-29c6ffc46272"
+        ],
+        [
+          null,
+          341,
+          "Santos Lugares",
+          22,
+          0,
+          1681778613,
+          "b82aeca4-6b9b-4386-8faf-9235d492a55d"
+        ],
+        [
+          null,
+          342,
+          "Sarmiento",
+          21,
+          0,
+          1681778613,
+          "f08e0d33-e236-486d-9a2a-d1686afdc850"
+        ],
+        [
+          null,
+          343,
+          "Suipacha",
+          1,
+          0,
+          1681778613,
+          "2b7f0423-16a2-4c16-a0fd-cdcd7784eb7e"
+        ],
+        [
+          null,
+          344,
+          "Sunchales",
+          21,
+          0,
+          1681778613,
+          "3c834c94-3651-4989-885c-f6ed93a19a55"
+        ],
+        [
+          null,
+          345,
+          "Tablada",
+          1,
+          0,
+          1681778613,
+          "06b9a2c2-0441-4039-ba81-da8aea12dd57"
+        ],
+        [
+          null,
+          346,
+          "Tandil",
+          1,
+          0,
+          1681778613,
+          "3a3f6f7e-a415-4f49-bb97-888b46c7c1ba"
+        ],
+        [
+          null,
+          347,
+          "Temperley",
+          1,
+          0,
+          1681778613,
+          "ae0c6077-06b8-48ee-8e1a-f841e4a6b350"
+        ],
+        [
+          null,
+          348,
+          "Tigre",
+          1,
+          0,
+          1681778613,
+          "2353bca0-9b7a-4c1d-8a16-80c0e6b1a8e4"
+        ],
+        [
+          null,
+          349,
+          "Todd",
+          1,
+          0,
+          1681778613,
+          "d81f5c95-e259-4d61-a15a-81af5ccc6491"
+        ],
+        [
+          null,
+          350,
+          "Tornquist",
+          1,
+          0,
+          1681778613,
+          "ef1ae5c1-ee08-4544-a78d-c669bc589cc6"
+        ],
+        [
+          null,
+          351,
+          "Tortuguitas",
+          1,
+          0,
+          1681778613,
+          "6260a9d0-ecf7-4977-824c-21139e70c73f"
+        ],
+        [
+          null,
+          352,
+          "Trelew",
+          4,
+          0,
+          1681778613,
+          "31e1bfeb-2ce8-439d-9356-b86e522dfa37"
+        ],
+        [
+          null,
+          353,
+          "Trenque Lauquen",
+          1,
+          0,
+          1681778613,
+          "ba1a857b-d0c1-41d1-b94b-69a337790181"
+        ],
+        [
+          null,
+          354,
+          "Tres Arroyos",
+          1,
+          0,
+          1681778613,
+          "dd3ec28e-c07d-4cfa-b5e5-5fa00609c67f"
+        ],
+        [
+          null,
+          355,
+          "Turdera",
+          1,
+          0,
+          1681778613,
+          "955b9536-eb8d-4f59-8037-13692798f91c"
+        ],
+        [
+          null,
+          356,
+          "Ucacha",
+          5,
+          0,
+          1681778613,
+          "732103f8-4877-4e82-9dea-06014963035d"
+        ],
+        [
+          null,
+          357,
+          "Ushuaia",
+          23,
+          0,
+          1681778613,
+          "6d612494-310f-41e2-9c6c-0c383f00c7ef"
+        ],
+        [
+          null,
+          358,
+          "Valle Hermoso",
+          5,
+          0,
+          1681778613,
+          "8318fc97-6479-4458-9220-03b9ec8005d7"
+        ],
+        [
+          null,
+          359,
+          "Varela",
+          7,
+          0,
+          1681778613,
+          "997372aa-d973-4697-9830-ed6f222f3c04"
+        ],
+        [
+          null,
+          360,
+          "Venado Tuerto",
+          21,
+          0,
+          1681778613,
+          "19c35184-956f-4034-a8ea-bef9e225e196"
+        ],
+        [
+          null,
+          361,
+          "Victoria",
+          8,
+          0,
+          1681778613,
+          "71edbe47-202b-4882-98be-6dc1d4efca8a"
+        ],
+        [
+          null,
+          362,
+          "Viedma",
+          16,
+          0,
+          1681778613,
+          "7841c7b5-32ec-494f-9b53-3c1ebb234018"
+        ],
+        [
+          null,
+          363,
+          "Villa Aberastain",
+          18,
+          0,
+          1681778613,
+          "188a47ca-59d3-4abf-a43c-04737e78a522"
+        ],
+        [
+          null,
+          364,
+          "Villa Adelina",
+          1,
+          0,
+          1681778613,
+          "a4930d7c-4c6b-4f34-9ee0-40babfea1910"
+        ],
+        [
+          null,
+          365,
+          "Villa Alianza",
+          1,
+          0,
+          1681778613,
+          "892381ea-0cce-46b4-98b7-55d1dc4b7815"
+        ],
+        [
+          null,
+          366,
+          "Villa Ansaldi",
+          1,
+          0,
+          1681778613,
+          "2e3514ed-50c7-4c77-a97e-2420d5b4762d"
+        ],
+        [
+          null,
+          367,
+          "Villa Augusta",
+          1,
+          0,
+          1681778613,
+          "e74fc20e-df1c-419d-b22c-eefdc081c374"
+        ],
+        [
+          null,
+          368,
+          "Villa Ballester",
+          1,
+          0,
+          1681778613,
+          "413a069e-23b5-4579-acd4-85c35a6e3943"
+        ],
+        [
+          null,
+          369,
+          "Villa Barilari",
+          1,
+          0,
+          1681778613,
+          "ccc75bec-a484-403b-940d-f0c0ba70d936"
+        ],
+        [
+          null,
+          370,
+          "Villa Basso",
+          1,
+          0,
+          1681778613,
+          "425719d0-0703-4e38-ba2f-d0ee920e3a81"
+        ],
+        [
+          null,
+          371,
+          "Villa Carlos Paz",
+          5,
+          0,
+          1681778613,
+          "925372e5-9652-441d-9567-88e6acc59fa8"
+        ],
+        [
+          null,
+          372,
+          "Villa D. Sobral",
+          1,
+          0,
+          1681778613,
+          "4c380368-3f8f-4400-9f89-dcf0e7d82131"
+        ],
+        [
+          null,
+          373,
+          "Villa De Los Patricios",
+          1,
+          0,
+          1681778613,
+          "f75eb50f-e290-47df-919f-f1183c68b68a"
+        ],
+        [
+          null,
+          374,
+          "Villa De Mayo",
+          1,
+          0,
+          1681778613,
+          "dfeb17f1-a2aa-430e-b094-a9e1c7efa64d"
+        ],
+        [
+          null,
+          375,
+          "Villa Diamante",
+          1,
+          0,
+          1681778613,
+          "b417d50c-85c9-45c3-b7d9-f740f1b38f74"
+        ],
+        [
+          null,
+          376,
+          "Villa Dolores",
+          5,
+          0,
+          1681778613,
+          "cef6c58a-7f55-4fd6-96d4-9239f66fa131"
+        ],
+        [
+          null,
+          377,
+          "Villa Elisa",
+          1,
+          0,
+          1681778613,
+          "eded4760-0b7a-41c6-9060-267fda2effb5"
+        ],
+        [
+          null,
+          378,
+          "Villa Gesell",
+          1,
+          0,
+          1681778613,
+          "89ed1e2b-80ff-4b38-9459-99dae3b04b9d"
+        ],
+        [
+          null,
+          379,
+          "Villa Giambruno",
+          1,
+          0,
+          1681778613,
+          "6fa4825d-274f-4607-a868-eb78e9a23fce"
+        ],
+        [
+          null,
+          380,
+          "Villa Iglesias",
+          1,
+          0,
+          1681778613,
+          "712249e8-4595-4940-8a6f-48306a5bed7e"
+        ],
+        [
+          null,
+          381,
+          "Villa La Angostura",
+          15,
+          0,
+          1681778613,
+          "5245cdc3-a051-4aaf-b6be-71543a3c1d6c"
+        ],
+        [
+          null,
+          382,
+          "Villa Las Rosas",
+          5,
+          0,
+          1681778613,
+          "54b76dd5-c914-48da-9ea1-979c5878dd5a"
+        ],
+        [
+          null,
+          383,
+          "Villa Luro",
+          7,
+          0,
+          1681778613,
+          "aa7f89df-d16c-44f2-b5ac-d528ecbfd0f3"
+        ],
+        [
+          null,
+          384,
+          "Villa Luzuriaga",
+          1,
+          0,
+          1681778613,
+          "efdd2c8d-0f1f-4b7c-9f22-745866cee352"
+        ],
+        [
+          null,
+          385,
+          "Villa Madero",
+          1,
+          0,
+          1681778613,
+          "240462a4-1274-4e77-aa9f-d4ad4bf5a209"
+        ],
+        [
+          null,
+          386,
+          "Villa Nueva",
+          22,
+          0,
+          1681778613,
+          "c2837702-432f-4602-a643-fb3983d50d47"
+        ],
+        [
+          null,
+          387,
+          "Villa Ocampo",
+          21,
+          0,
+          1681778613,
+          "51259f23-efec-476a-b633-05023c244f69"
+        ],
+        [
+          null,
+          388,
+          "Villa Progreso",
+          1,
+          0,
+          1681778613,
+          "18483247-be4e-4ab2-9a5f-2d8329dc39f3"
+        ],
+        [
+          null,
+          389,
+          "Villa Recondo",
+          1,
+          0,
+          1681778613,
+          "e1dc6cce-2681-49db-a330-0ab2c8c36e0a"
+        ],
+        [
+          null,
+          390,
+          "Villa Reichembach",
+          1,
+          0,
+          1681778613,
+          "5ae152bb-caf7-42a3-80d1-2521d4a28ded"
+        ],
+        [
+          null,
+          391,
+          "Villa Residencial Laguna Brava",
+          1,
+          0,
+          1681778613,
+          "ea8da2a5-e825-45df-b159-f84b5b5791de"
+        ],
+        [
+          null,
+          392,
+          "Villa Sarmiento",
+          1,
+          0,
+          1681778613,
+          "4a9200b5-6eac-4e1d-948c-351e64f43ef8"
+        ],
+        [
+          null,
+          393,
+          "Villaguay",
+          8,
+          0,
+          1681778613,
+          "e0a086be-a82c-4c32-b645-59f06a0bb1fe"
+        ],
+        [
+          null,
+          394,
+          "Virreyes",
+          1,
+          0,
+          1681778613,
+          "e0735360-6e06-43db-9228-c9f1e6cc2d2d"
+        ],
+        [
+          null,
+          395,
+          "Wilde",
+          1,
+          0,
+          1681778613,
+          "2d1d4544-0ed7-4df7-a011-a86cdfd3c869"
+        ],
+        [
+          null,
+          396,
+          "Yerba Buena",
+          24,
+          0,
+          1681778613,
+          "98ff7ec4-c9bb-43bf-8a5f-91f5b28d7742"
+        ],
+        [
+          null,
+          397,
+          "Yocsina",
+          5,
+          0,
+          1681778613,
+          "8474c61c-4fe7-4e00-a14a-7881cce1d8cd"
+        ],
+        [
+          null,
+          398,
+          "Zapala",
+          15,
+          0,
+          1681778613,
+          "b5958d98-6137-433e-bf53-4323edbcca8f"
+        ]
+      ]
+    },
+    {
+      "name": "control_embarazo",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_control_embarazo",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "id_control",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "edad_gestacional",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "eco",
+          "value": "CHAR(1)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "detalle_eco",
+          "value": "TEXT  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "hpv",
+          "value": "CHAR(1)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "pap",
+          "value": "CHAR(1)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "sistolica",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "diastolica",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "clinico",
+          "value": "CHAR(1)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "observaciones",
+          "value": "TEXT  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "motivo",
+          "value": "INT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "derivada",
+          "value": "SMALLINT  NOT NULL"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "constraint": "`control_embarazo_ibfk_1`",
+          "value": "FOREIGN KEY (`id_control`) REFERENCES controles (`id_control`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        },
+        {
+          "constraint": "`fk_motivo`",
+          "value": "FOREIGN KEY (`motivo`) REFERENCES motivos_derivacion (`id_motivo`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "id_control",
+          "value": "`id_control` DESC"
+        },
+        {
+          "name": "fk_motivo",
+          "value": "`motivo` DESC"
+        }
+      ]
+    },
+    {
+      "name": "patologias_rn",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_patologias_Rn",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "nombre",
+          "value": "VARCHAR(45)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ],
+      "values": [
+        [
+          "e0c01a83-8bb9-4975-b605-bb095e9f5cfb",
+          1,
+          "PREMATURO",
+          0,
+          1681778944
+        ],
+        [
+          "63ddd41c-b3ac-48fb-b68e-e40ca3a502b6",
+          2,
+          "RCIU",
+          0,
+          1681778944
+        ],
+        [
+          "a074c41f-9174-4670-a507-622ee34d23d3",
+          3,
+          "HIJO DE MADRE DBT",
+          0,
+          1681778944
+        ],
+        [
+          "60911fac-97a3-4355-8f4b-de1b36acec2d",
+          4,
+          "DEPRIMIDO NEONATAL",
+          0,
+          1681778944
+        ],
+        [
+          "85056054-1e44-462b-b504-aa0a6cccd634",
+          5,
+          "SOSPECHA DE SEPSIS",
+          0,
+          1681778944
+        ],
+        [
+          "aa826b37-eaf5-47a1-a8c1-e7c2dfb97fcf",
+          6,
+          "HIPERBILIRRUBINEMIA",
+          0,
+          1681778944
+        ],
+        [
+          "4e17da27-e642-4a2a-a120-6a3c4212ef0b",
+          7,
+          "BAJO PESO",
+          0,
+          1681778944
+        ],
+        [
+          "33c93a08-d50e-42e4-84ba-040574ae4582",
+          8,
+          "HIPOTIROIDISMO CONGÉNITO",
+          0,
+          1681778944
+        ],
+        [
+          "dde447f8-331f-410b-855b-a95dff137f03",
+          9,
+          "SÍNDROME GENÉTICO / MALFORMACIONES",
+          0,
+          1681778944
+        ],
+        [
+          "9561f3bd-8b7d-4bef-b250-8a345843f479",
+          10,
+          "LABIO LEPORINO",
+          0,
+          1681778944
+        ]
+      ]
+    },
+    {
+      "name": "parajes",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_paraje",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "id_area",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "nombre",
+          "value": "VARCHAR(100)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "constraint": "`fk_areas`",
+          "value": "FOREIGN KEY (`id_area`) REFERENCES areas (`id_area`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "id_area",
+          "value": "`id_area` DESC"
+        }
+      ]
+    },
+    {
+      "name": "control_emb_patologico",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_control_emb_patologico",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "id_control_embarazo",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "observaciones",
+          "value": "TEXT  NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "derivacion",
+          "value": "SMALLINT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "hospital",
+          "value": "TEXT  NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "tratamientos",
+          "value": "SMALLINT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "constraint": "`fk_control_emb`",
+          "value": "FOREIGN KEY (`id_control_embarazo`) REFERENCES control_embarazo (`id_control_embarazo`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "id_control_embarazo",
+          "value": "`id_control_embarazo` DESC",
+          "mode": "UNIQUE"
+        }
+      ]
+    },
+    {
+      "name": "control_puerperio",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_control_puerperio",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "id_control",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "patologico",
+          "value": "SMALLINT  NOT NULL DEFAULT 0"
+        },
+        {
+          "column": "observaciones",
+          "value": "TEXT  NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "derivacion",
+          "value": "TEXT  NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "constraint": "`fk_control_puer_control`",
+          "value": "FOREIGN KEY (`id_control`) REFERENCES controles (`id_control`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "id_control_puerperio",
+          "value": "`id_control_puerperio` DESC,`id_control` DESC",
+          "mode": "UNIQUE"
+        },
+        {
+          "name": "fk_control_puer_control",
+          "value": "`id_control` DESC"
+        }
+      ]
+    },
+    {
+      "name": "control_rn",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_control_rn",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "id_control",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "edad_gestacional",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "peso",
+          "value": "FLOAT(0,0)  NOT NULL"
+        },
+        {
+          "column": "labio_leporino",
+          "value": "SMALLINT  NOT NULL DEFAULT 0"
+        },
+        {
+          "column": "s_genetico_malformaciones",
+          "value": "SMALLINT  NOT NULL DEFAULT 0"
+        },
+        {
+          "column": "hipotiroidismo_congenito",
+          "value": "SMALLINT  NOT NULL DEFAULT 0"
+        },
+        {
+          "column": "bajo_peso",
+          "value": "SMALLINT  NOT NULL DEFAULT 0"
+        },
+        {
+          "column": "hiperbilirrubinemia",
+          "value": "SMALLINT  NOT NULL DEFAULT 0"
+        },
+        {
+          "column": "sospecha_de_sepsis",
+          "value": "SMALLINT  NOT NULL DEFAULT 0"
+        },
+        {
+          "column": "deprimido_neonatal",
+          "value": "SMALLINT  NOT NULL DEFAULT 0"
+        },
+        {
+          "column": "madre_dbt",
+          "value": "SMALLINT  NOT NULL DEFAULT 0"
+        },
+        {
+          "column": "prematuro",
+          "value": "SMALLINT  NOT NULL DEFAULT 0"
+        },
+        {
+          "column": "rciu",
+          "value": "SMALLINT  NOT NULL DEFAULT 0"
+        },
+        {
+          "column": "hijo_de_madre_dbt",
+          "value": "SMALLINT  NOT NULL DEFAULT 0"
+        },
+        {
+          "column": "derivacion",
+          "value": "TEXT  NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "constraint": "`fk_controlrn_control`",
+          "value": "FOREIGN KEY (`id_control`) REFERENCES controles (`id_control`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "id_control_rn",
+          "value": "`id_control_rn` DESC,`id_control` DESC",
+          "mode": "UNIQUE"
+        },
+        {
+          "name": "fk_controlrn_control",
+          "value": "`id_control` DESC"
+        }
+      ]
+    },
+    {
+      "name": "tipos_embarazos",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_tipo_embarazo",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "nombre",
+          "value": "VARCHAR(45)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "nombre_UNIQUE",
+          "value": "`nombre` DESC",
+          "mode": "UNIQUE"
+        }
+      ],
+      "values": [
+        [
+          "2834b757-3120-4712-9251-696584265638",
+          3,
+          "ETMI",
+          0,
+          1681779065
+        ],
+        [
+          "86210dcc-f085-4880-ac94-436dd077da01",
+          1,
+          "NORMAL",
+          0,
+          1681779065
+        ],
+        [
+          "3450435e-24a2-49db-9e70-04d45d3f8126",
+          2,
+          "PATOLÓGICO",
+          0,
+          1681779065
+        ]
+      ]
+    },
+    {
+      "name": "embarazos",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_persona",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "id_control",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "id_tipo_embarazo",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "constraint": "CPK_id_persona_id_control_id_tipo_embarazo",
+          "value": "PRIMARY KEY (id_persona,id_control,id_tipo_embarazo)"
+        },
+        {
+          "constraint": "`fk_embarazos_controles`",
+          "value": "FOREIGN KEY (`id_control`) REFERENCES controles (`id_control`) ON DELETE NO ACTION ON UPDATE NO ACTION"
+        },
+        {
+          "constraint": "`fk_embarazos_personas`",
+          "value": "FOREIGN KEY (`id_persona`) REFERENCES personas (`id_persona`) ON DELETE NO ACTION ON UPDATE NO ACTION"
+        },
+        {
+          "constraint": "`fk_embarazos_tipo_embarazo`",
+          "value": "FOREIGN KEY (`id_tipo_embarazo`) REFERENCES tipos_embarazos (`id_tipo_embarazo`) ON DELETE NO ACTION ON UPDATE NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "fk_persona_idx",
+          "value": "`id_persona` DESC"
+        },
+        {
+          "name": "fk_control_embarazos_idx",
+          "value": "`id_control` DESC"
+        },
+        {
+          "name": "fk_tipo_embarazo_idx",
+          "value": "`id_tipo_embarazo` DESC"
+        }
+      ]
+    },
+    {
+      "name": "embarazos_patologias",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_control_embarazo_patologico",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "id_patologia_embarazo",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "constraint": "CPK_id_control_embarazo_patologico_id_patologia_embarazo",
+          "value": "PRIMARY KEY (id_control_embarazo_patologico,id_patologia_embarazo)"
+        },
+        {
+          "constraint": "`fk_control_emba_pat`",
+          "value": "FOREIGN KEY (`id_control_embarazo_patologico`) REFERENCES control_emb_patologico (`id_control_emb_patologico`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        },
+        {
+          "constraint": "`fk_pat_embs`",
+          "value": "FOREIGN KEY (`id_patologia_embarazo`) REFERENCES patologias_embarazos (`id_patologia_embarazo`) ON DELETE RESTRICT ON UPDATE RESTRICT"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "fk_pat_embs",
+          "value": "`id_patologia_embarazo` DESC"
+        }
+      ]
+    },
+    {
+      "name": "etmis_personas",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_persona",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "id_etmi",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "id_control",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "confirmada",
+          "value": "SMALLINT  NOT NULL DEFAULT 0"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "constraint": "CPK_id_persona_id_etmi_id_control",
+          "value": "PRIMARY KEY (id_persona,id_etmi,id_control)"
+        },
+        {
+          "constraint": "`fk_etmis_personas_control`",
+          "value": "FOREIGN KEY (`id_control`) REFERENCES controles (`id_control`) ON DELETE NO ACTION ON UPDATE NO ACTION"
+        },
+        {
+          "constraint": "`fk_etmis_personas_etmi`",
+          "value": "FOREIGN KEY (`id_etmi`) REFERENCES etmis (`id_etmi`) ON DELETE NO ACTION ON UPDATE NO ACTION"
+        },
+        {
+          "constraint": "`fk_etmis_personas_personas`",
+          "value": "FOREIGN KEY (`id_persona`) REFERENCES personas (`id_persona`) ON DELETE NO ACTION ON UPDATE NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "fk_etmi_idx",
+          "value": "`id_etmi` DESC"
+        },
+        {
+          "name": "fk_control_ep_idx",
+          "value": "`id_control` DESC"
+        }
+      ]
+    },
+    {
+      "name": "inmunizaciones_control",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_persona",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "id_control",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "id_inmunizacion",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "estado",
+          "value": "CHAR(1)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "constraint": "CPK_id_persona_id_control_id_inmunizacion",
+          "value": "PRIMARY KEY (id_persona,id_control,id_inmunizacion)"
+        },
+        {
+          "constraint": "`fk_inmunicaciones_control_control`",
+          "value": "FOREIGN KEY (`id_control`) REFERENCES controles (`id_control`) ON DELETE NO ACTION ON UPDATE NO ACTION"
+        },
+        {
+          "constraint": "`fk_inmunicaciones_control_inmunizacion`",
+          "value": "FOREIGN KEY (`id_inmunizacion`) REFERENCES inmunizaciones (`id_inmunizacion`) ON DELETE NO ACTION ON UPDATE NO ACTION"
+        },
+        {
+          "constraint": "`fk_inmunicaciones_control_persona`",
+          "value": "FOREIGN KEY (`id_persona`) REFERENCES personas (`id_persona`) ON DELETE NO ACTION ON UPDATE NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "fk_inmunizaciones_control_control",
+          "value": "`id_control` DESC"
+        },
+        {
+          "name": "fk_inmunizaciones_control_inmunizacion",
+          "value": "`id_inmunizacion` DESC"
+        },
+        {
+          "name": "fk_inmunizaciones_control_persona",
+          "value": "`id_persona` DESC"
+        }
+      ]
+    },
+    {
+      "name": "laboratorios_realizados",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_persona",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "id_control",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "id_laboratorio",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "trimestre",
+          "value": "SMALLINT  NOT NULL"
+        },
+        {
+          "column": "fecha_realizado",
+          "value": "DATE  NULL DEFAULT NULL"
+        },
+        {
+          "column": "fecha_resultados",
+          "value": "DATE  NULL DEFAULT NULL"
+        },
+        {
+          "column": "resultado",
+          "value": "VARCHAR(45)  NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "id_etmi",
+          "value": "INT  NOT NULL DEFAULT 0"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "constraint": "CPK_id_persona_id_control_id_laboratorio_trimestre_id_etmi",
+          "value": "PRIMARY KEY (id_persona,id_control,id_laboratorio,trimestre,id_etmi)"
+        },
+        {
+          "constraint": "`fk_laboratorios_realizados_control`",
+          "value": "FOREIGN KEY (`id_control`) REFERENCES controles (`id_control`) ON DELETE NO ACTION ON UPDATE NO ACTION"
+        },
+        {
+          "constraint": "`fk_laboratorios_realizados_laboratorio`",
+          "value": "FOREIGN KEY (`id_laboratorio`) REFERENCES laboratorios (`id_laboratorio`) ON DELETE NO ACTION ON UPDATE NO ACTION"
+        },
+        {
+          "constraint": "`fk_laboratorios_realizados_etmis`",
+          "value": "FOREIGN KEY (`id_etmi`) REFERENCES etmis (`id_etmi`) ON DELETE NO ACTION ON UPDATE NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "fk_control_idx",
+          "value": "`id_control` DESC"
+        },
+        {
+          "name": "fk_laboratorio_idx",
+          "value": "`id_laboratorio` DESC"
+        },
+        {
+          "name": "fk_etmis_idx",
+          "value": "`id_etmi` DESC"
+        }
+      ]
+    },
+    {
+      "name": "tratchagas_eventosadv",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_tratamiento_chagas",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "id_evento_adverso",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "id_tratamiento_chagas",
+          "value": "`id_tratamiento_chagas` DESC"
+        },
+        {
+          "name": "id_evento_adverso",
+          "value": "`id_evento_adverso` DESC"
+        }
+      ]
+    },
+    {
+      "name": "ubicaciones",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_ubicacion",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "id_persona",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "id_paraje",
+          "value": "INT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "id_area",
+          "value": "INT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "num_vivienda",
+          "value": "VARCHAR(10)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "fecha",
+          "value": "DATE  NOT NULL"
+        },
+        {
+          "column": "georeferencia",
+          "value": "VARCHAR(30)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "id_pais",
+          "value": "INT  NULL DEFAULT NULL"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ck",
+          "value": "`id_persona` DESC,`id_paraje` DESC,`id_area` DESC,`num_vivienda` DESC,`fecha` DESC,`id_pais` DESC",
+          "mode": "UNIQUE"
+        },
+        {
+          "name": "fk_paises_idx",
+          "value": "`id_pais` DESC"
+        },
+        {
+          "name": "fk_ubicaciones_areas",
+          "value": "`id_area` DESC"
+        },
+        {
+          "name": "fk_ubicaciones_parajes",
+          "value": "`id_paraje` DESC"
+        }
+      ]
+    },
+    {
+      "name": "usuarios",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_usuario",
+          "value": "INT PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "usuario",
+          "value": "VARCHAR(50)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "password",
+          "value": "VARCHAR(128)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "email",
+          "value": "VARCHAR(150)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "nombre",
+          "value": "VARCHAR(100)  NOT NULL  COLLATE NOCASE"
+        },
+        {
+          "column": "nivel_acceso",
+          "value": "INT  NOT NULL"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "usuario",
+          "value": "`usuario` DESC",
+          "mode": "UNIQUE"
+        },
+        {
+          "name": "nivel_acceso",
+          "value": "`nivel_acceso` DESC"
+        }
+      ]
+    },
+    {
+      "name": "antecedentes",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_antecedente",
+          "value": "INT NOT NULL"
+        },
+        {
+          "column": "id_persona",
+          "value": "INT NOT NULL"
+        },
+        {
+          "column": "id_control",
+          "value": "INT NOT NULL"
+        },
+        {
+          "column": "edad_primer_embarazo",
+          "value": "INT DEFAULT NULL"
+        },
+        {
+          "column": "fecha_ultimo_embarazo",
+          "value": "DATE DEFAULT NULL"
+        },
+        {
+          "column": "gestas",
+          "value": "INT DEFAULT 0"
+        },
+        {
+          "column": "partos",
+          "value": "INT DEFAULT 0"
+        },
+        {
+          "column": "cesareas",
+          "value": "INT DEFAULT 0"
+        },
+        {
+          "column": "abortos",
+          "value": "INT DEFAULT 0"
+        },
+        {
+          "column": "planificado",
+          "value": "SMALLINT DEFAULT NULL"
+        },
+        {
+          "column": "fum",
+          "value": "DATE DEFAULT NULL"
+        },
+        {
+          "column": "fpp",
+          "value": "DATE DEFAULT NULL"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK(sql_deleted IN (0, 1))"
+        },
+        {
+          "constraint": "fk_antecedentes_persona",
+          "value": "FOREIGN KEY(id_persona) REFERENCES personas(id_persona) ON DELETE NO ACTION ON UPDATE NO ACTION"
+        },
+        {
+          "constraint": "fk_antecedentes_control",
+          "value": "FOREIGN KEY(id_control) REFERENCES controles(id_control) ON DELETE NO ACTION ON UPDATE NO ACTION"
+        },
+        {
+          "constraint": "CPK_id_antecedente",
+          "value": "PRIMARY KEY(id_antecedente)"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ck_ante",
+          "value": "id_persona DESC",
+          "mode": "UNIQUE"
+        },
+        {
+          "name": "fk_control_ante_idx",
+          "value": "id_control DESC"
+        }
+      ]
+    },
+    {
+      "name": "antecedentes_apps",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_antecedente",
+          "value": "INT NOT NULL"
+        },
+        {
+          "column": "id_app",
+          "value": "INT NOT NULL"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK(sql_deleted IN (0, 1))"
+        },
+        {
+          "constraint": "fk_antecedentes_apps_apps",
+          "value": "FOREIGN KEY(id_app) REFERENCES apps(id_app) ON DELETE NO ACTION ON UPDATE NO ACTION"
+        },
+        {
+          "constraint": "fk_antecedentes_apps_antecedentes",
+          "value": "FOREIGN KEY(id_antecedente) REFERENCES antecedentes(id_antecedente) ON DELETE NO ACTION ON UPDATE NO ACTION"
+        },
+        {
+          "constraint": "CPK_id_antecedente_id_app",
+          "value": "PRIMARY KEY(id_antecedente,id_app)"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "fk_apps_idx",
+          "value": "id_app DESC"
+        }
+      ]
+    },
+    {
+      "name": "antecedentes_macs",
+      "schema": [
+        {
+          "column": "uuid",
+          "value": "VARCHAR(36) UNIQUE NOT NULL"
+        },
+        {
+          "column": "id_antecedente",
+          "value": "INT NOT NULL"
+        },
+        {
+          "column": "id_mac",
+          "value": "INT NOT NULL"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK(sql_deleted IN (0, 1))"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "constraint": "fk_antecedentes_macs_antecedentes",
+          "value": "FOREIGN KEY(id_antecedente) REFERENCES antecedentes(id_antecedente) ON DELETE NO ACTION ON UPDATE NO ACTION"
+        },
+        {
+          "constraint": "fk_antecedentes_macs_macs",
+          "value": "FOREIGN KEY(id_mac) REFERENCES macs(id_mac) ON DELETE NO ACTION ON UPDATE NO ACTION"
+        },
+        {
+          "constraint": "CPK_id_antecedente_id_mac",
+          "value": "PRIMARY KEY(id_antecedente,id_mac)"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "fk_macs_idx",
+          "value": "id_mac DESC"
+        }
+      ]
+    }
+  ]
+}

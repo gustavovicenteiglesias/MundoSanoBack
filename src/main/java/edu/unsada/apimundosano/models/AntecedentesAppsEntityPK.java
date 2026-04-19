@@ -5,10 +5,12 @@ import java.io.Serializable;
 
 public class AntecedentesAppsEntityPK implements Serializable {
 
+
     @Id
     @Column(name = "id_antecedente")
 
     private int idAntecedente;
+
 
     @Id
     @Column(name = "id_app")
@@ -49,5 +51,10 @@ public class AntecedentesAppsEntityPK implements Serializable {
         int result = idAntecedente;
         result = 31 * result + idApp;
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return idAntecedente + "-" + idApp;
     }
 }

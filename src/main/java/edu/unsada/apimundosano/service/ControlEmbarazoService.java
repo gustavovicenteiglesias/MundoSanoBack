@@ -10,6 +10,7 @@ public class ControlEmbarazoService {
         List<List<Object>> values = new ArrayList<>();
         for (ControlEmbarazoEntity item : data) {
             List<Object> row = new ArrayList<>();
+            row.add(item.getUuid());
             row.add(item.getIdControlEmbarazo());
             row.add((item.getIdControl()));
             row.add(item.getEdadGestacional());

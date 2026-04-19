@@ -6,15 +6,15 @@ import java.io.Serializable;
 public class EtmisPersonasEntityPK implements Serializable {
     @Column(name = "id_persona")
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     private int idPersona;
     @Column(name = "id_etmi")
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     private int idEtmi;
     @Column(name = "id_control")
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     private int idControl;
 
     public int getIdPersona() {
@@ -61,5 +61,10 @@ public class EtmisPersonasEntityPK implements Serializable {
         result = 31 * result + idEtmi;
         result = 31 * result + idControl;
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return idPersona + "-" + idEtmi + "-" + idControl;
     }
 }

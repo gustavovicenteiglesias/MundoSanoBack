@@ -11,6 +11,7 @@ public class ControlesService {
         List<List<Object>> values = new ArrayList<>();
         for (ControlesEntity item : data) {
             List<Object> row = new ArrayList<>();
+            row.add(item.getUuid());
             row.add(item.getIdControl());
             row.add(item.getFecha());
             row.add(item.getIdPersona());
@@ -29,6 +30,7 @@ public class ControlesService {
             row.add(item.getGeoreferencia());
             row.add(item.getSqlDeleted());
             row.add(item.getLastModified());
+
 
             values.add(row);
         }

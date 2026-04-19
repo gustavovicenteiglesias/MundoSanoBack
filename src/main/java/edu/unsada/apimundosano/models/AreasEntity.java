@@ -4,9 +4,9 @@ import jakarta.persistence.*;
 import java.util.Collection;
 
 @Entity
-@Table(name = "areas", schema = "tripleconlast", catalog = "")
-public class AreasEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+@Table(name = "areas")
+public class AreasEntity extends BaseEntity {
+
     @Id
     @Column(name = "id_area")
     private int idArea;
@@ -16,14 +16,10 @@ public class AreasEntity {
     @Basic
     @Column(name = "nombre")
     private String nombre;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Byte sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
+    
+    
     @ManyToOne
-    @JoinColumn(name = "id_pais", referencedColumnName = "id_pais", nullable = false,insertable=false, updatable=false)
+   @JoinColumn(name = "id_pais", referencedColumnName = "id_pais", nullable = false,insertable=false, updatable=false)
     private PaisesEntity paisesByIdPais;
     @OneToMany(mappedBy = "areasByIdArea")
     private Collection<ParajesEntity> parajesByIdArea;
@@ -52,21 +48,13 @@ public class AreasEntity {
         this.nombre = nombre;
     }
 
-    public Byte getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
-    public void setSqlDeleted(Byte sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
+    
 
-    public Integer getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
     @Override
     public boolean equals(Object o) {
@@ -110,3 +98,5 @@ public class AreasEntity {
         this.parajesByIdArea = parajesByIdArea;
     }
 }
+
+

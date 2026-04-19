@@ -3,21 +3,17 @@ package edu.unsada.apimundosano.models;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "apps", schema = "tripleconlast", catalog = "")
-public class AppsEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+@Table(name = "apps")
+public class AppsEntity extends BaseEntity {
+
     @Id
     @Column(name = "id_app")
     private int idApp;
     @Basic
     @Column(name = "nombre")
     private String nombre;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Byte sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
+    
+    
 
     public int getIdApp() {
         return idApp;
@@ -35,21 +31,13 @@ public class AppsEntity {
         this.nombre = nombre;
     }
 
-    public Byte getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
-    public void setSqlDeleted(Byte sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
+    
 
-    public Integer getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
     @Override
     public boolean equals(Object o) {
@@ -75,3 +63,5 @@ public class AppsEntity {
         return result;
     }
 }
+
+

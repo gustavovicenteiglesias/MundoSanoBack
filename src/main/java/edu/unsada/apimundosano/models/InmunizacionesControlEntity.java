@@ -5,17 +5,20 @@ import jakarta.persistence.*;
 import java.util.Objects;
 
 @Entity
-@Table(name = "inmunizaciones_control", schema = "tripleconlast", catalog = "")
+@Table(name = "inmunizaciones_control")
 @IdClass(InmunizacionesControlEntityPK.class)
-public class InmunizacionesControlEntity {
+public class InmunizacionesControlEntity extends BaseEntity {
+
 
     @Id
     @Column(name = "id_persona")
     private Integer idPersona;
 
+
     @Id
     @Column(name = "id_control")
     private Integer idControl;
+
 
     @Id
     @Column(name = "id_inmunizacion")
@@ -23,12 +26,8 @@ public class InmunizacionesControlEntity {
     @Basic
     @Column(name = "estado")
     private String estado;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Integer sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
+    
+    
     @ManyToOne
     @JoinColumn(name = "id_persona", referencedColumnName = "id_persona", nullable = false,insertable=false, updatable=false)
     private PersonasEntity personasByIdPersona;
@@ -71,21 +70,14 @@ public class InmunizacionesControlEntity {
         this.estado = estado;
     }
 
-    public Integer getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
-    public void setSqlDeleted(Integer sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
 
-    public Integer getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
-    }
+    
+
+    
 
     public PersonasEntity getPersonasByIdPersona() {
         return personasByIdPersona;
@@ -139,3 +131,5 @@ public class InmunizacionesControlEntity {
         return Objects.hash(idPersona, idControl, idInmunizacion, estado, sqlDeleted, lastModified, personasByIdPersona, controlesByIdControl, inmunizacionesByIdInmunizacion);
     }
 }
+
+

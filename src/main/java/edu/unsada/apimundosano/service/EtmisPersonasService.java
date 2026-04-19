@@ -12,6 +12,7 @@ public class EtmisPersonasService {
         List<List<Object>> values = new ArrayList<>();
         for (EtmisPersonasEntity item : data) {
             List<Object> row = new ArrayList<>();
+            row.add(item.getUuid());
             row.add(item.getIdPersona());
             row.add(item.getIdEtmi());
             row.add(item.getIdControl());

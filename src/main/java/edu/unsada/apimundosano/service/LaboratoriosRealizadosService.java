@@ -11,6 +11,7 @@ public class LaboratoriosRealizadosService {
         List<List<Object>> values = new ArrayList<>();
         for (LaboratoriosRealizadosEntity item : data) {
             List<Object> row = new ArrayList<>();
+            row.add(item.getUuid());
             row.add(item.getIdPersona());
             row.add(item.getIdControl());
             row.add(item.getIdLaboratorio());
@@ -21,6 +22,7 @@ public class LaboratoriosRealizadosService {
             row.add(item.getIdEtmi());
             row.add(item.getSqlDeleted());
             row.add(item.getLastModified());
+
             values.add(row);
         }
         return values;

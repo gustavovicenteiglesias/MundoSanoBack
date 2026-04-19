@@ -6,15 +6,15 @@ import java.io.Serializable;
 public class EmbarazosEntityPK implements Serializable {
     @Column(name = "id_persona")
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     private int idPersona;
     @Column(name = "id_control")
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     private int idControl;
     @Column(name = "id_tipo_embarazo")
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     private int idTipoEmbarazo;
 
     public int getIdPersona() {
@@ -61,5 +61,10 @@ public class EmbarazosEntityPK implements Serializable {
         result = 31 * result + idControl;
         result = 31 * result + idTipoEmbarazo;
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return idPersona + "-" + idControl + "-" + idTipoEmbarazo;
     }
 }

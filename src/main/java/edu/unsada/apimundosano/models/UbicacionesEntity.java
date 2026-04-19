@@ -4,8 +4,9 @@ import jakarta.persistence.*;
 import java.sql.Date;
 
 @Entity
-@Table(name = "ubicaciones", schema = "tripleconlast", catalog = "")
-public class UbicacionesEntity {
+@Table(name = "ubicaciones")
+public class UbicacionesEntity extends BaseEntity {
+
 
     @Id
     @Column(name = "id_ubicacion")
@@ -31,12 +32,8 @@ public class UbicacionesEntity {
     @Basic
     @Column(name = "id_pais")
     private Integer idPais;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Integer sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
+    
+    
 
     public int getIdUbicacion() {
         return idUbicacion;
@@ -102,21 +99,14 @@ public class UbicacionesEntity {
         this.idPais = idPais;
     }
 
-    public Integer getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
-    public void setSqlDeleted(Integer sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
 
-    public Integer getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
-    }
+    
+
+    
 
     @Override
     public boolean equals(Object o) {
@@ -171,3 +161,5 @@ public class UbicacionesEntity {
                 '}';
     }
 }
+
+

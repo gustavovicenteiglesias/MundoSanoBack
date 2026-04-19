@@ -4,8 +4,9 @@ import jakarta.persistence.*;
 import java.sql.Date;
 
 @Entity
-@Table(name = "antecedentes", schema = "tripleconlast", catalog = "")
-public class AntecedentesEntity {
+@Table(name = "antecedentes")
+public class AntecedentesEntity extends BaseEntity {
+
 
     @Id
     @Column(name = "id_antecedente")
@@ -43,18 +44,13 @@ public class AntecedentesEntity {
     @Basic
     @Column(name = "fpp")
     private Date fpp;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Integer sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
-
+    
+    
     @ManyToOne
-    @JoinColumn(name = "id_persona", referencedColumnName = "id_persona", nullable = false,insertable=false, updatable=false)
+   @JoinColumn(name = "id_persona", referencedColumnName = "id_persona", nullable = false,insertable=false, updatable=false)
     private PersonasEntity personasByIdPersona;
     @ManyToOne
-    @JoinColumn(name = "id_control", referencedColumnName = "id_control", nullable = false,insertable=false, updatable=false)
+    @JoinColumn(name = "id_control", referencedColumnName = "id_control", nullable = false,insertable=false, updatable=false )
     private ControlesEntity controlesByIdControl;
 
     public int getIdAntecedente() {
@@ -133,6 +129,7 @@ public class AntecedentesEntity {
         return planificado;
     }
 
+
     public void setPlanificado(Integer planificado) {
         this.planificado = planificado;
     }
@@ -153,21 +150,14 @@ public class AntecedentesEntity {
         this.fpp = fpp;
     }
 
-    public Integer getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
-    public Integer getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
-    public void setSqlDeleted(Integer sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
+
+    
 
     @Override
     public boolean equals(Object o) {
@@ -253,3 +243,5 @@ public class AntecedentesEntity {
                 '}';
     }
 }
+
+

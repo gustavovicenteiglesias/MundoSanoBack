@@ -11,10 +11,11 @@ public class AntecedentesApps {
         List<List<Object>> values = new ArrayList<>();
         for (AntecedentesAppsEntity item : data) {
             List<Object> row = new ArrayList<>();
+            row.add(item.getUuid());
             row.add(item.getIdAntecedente());
             row.add(item.getIdApp());
             row.add(item.getLastModified());
-            row.add(item.getSqlDelete());
+            row.add(item.getSqlDeleted());
 
             values.add(row);
         }

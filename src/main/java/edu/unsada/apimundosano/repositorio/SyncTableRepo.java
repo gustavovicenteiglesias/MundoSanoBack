@@ -11,6 +11,9 @@ import java.util.Optional;
 
 public interface SyncTableRepo extends CrudRepository<SyncTableEntity,Integer> {
 
+    Optional<SyncTableEntity> findByUuid(String uuid);
+
     @Query(value = "SELECT sync_date FROM sync_table ORDER BY sync_date DESC LIMIT 1", nativeQuery = true)
     Integer buscarUltimoLast() ;
 }
+

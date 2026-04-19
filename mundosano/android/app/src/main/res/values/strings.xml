@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">mundosano</string>
+    <string name="title_activity_main">mundosano</string>
+    <string name="package_name">edu.unsada.iglesias</string>
+    <string name="custom_url_scheme">edu.unsada.iglesias</string>
+</resources>

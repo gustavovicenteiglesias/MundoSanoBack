@@ -3,9 +3,9 @@ package edu.unsada.apimundosano.models;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "control_rn", schema = "tripleconlast", catalog = "")
-public class ControlRnEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+@Table(name = "control_rn")
+public class ControlRnEntity extends BaseEntity {
+
     @Id
     @Column(name = "id_control_rn")
     private int idControlRn;
@@ -54,14 +54,10 @@ public class ControlRnEntity {
     @Basic
     @Column(name = "derivacion")
     private String derivacion;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Byte sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
+    
+    
     @ManyToOne
-    @JoinColumn(name = "id_control", referencedColumnName = "id_control", nullable = false,insertable=false, updatable=false)
+ @JoinColumn(name = "id_control", referencedColumnName = "id_control", nullable = false,insertable=false, updatable=false)
     private ControlesEntity controlesByIdControl;
 
     public int getIdControlRn() {
@@ -192,21 +188,13 @@ public class ControlRnEntity {
         this.derivacion = derivacion;
     }
 
-    public Byte getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
-    public void setSqlDeleted(Byte sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
+    
 
-    public Integer getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
     @Override
     public boolean equals(Object o) {
@@ -271,3 +259,5 @@ public class ControlRnEntity {
         this.controlesByIdControl = controlesByIdControl;
     }
 }
+
+

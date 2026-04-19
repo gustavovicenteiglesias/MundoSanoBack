@@ -3,9 +3,9 @@ package edu.unsada.apimundosano.models;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "usuarios", schema = "tripleconlast", catalog = "")
-public class UsuariosEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+@Table(name = "usuarios")
+public class UsuariosEntity extends BaseEntity {
+
     @Id
     @Column(name = "id_usuario")
     private int idUsuario;
@@ -24,12 +24,8 @@ public class UsuariosEntity {
     @Basic
     @Column(name = "nivel_acceso")
     private int nivelAcceso;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Byte sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
+    
+    
 
     public int getIdUsuario() {
         return idUsuario;
@@ -79,21 +75,13 @@ public class UsuariosEntity {
         this.nivelAcceso = nivelAcceso;
     }
 
-    public Byte getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
-    public void setSqlDeleted(Byte sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
+    
 
-    public Integer getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
     @Override
     public boolean equals(Object o) {
@@ -127,3 +115,5 @@ public class UsuariosEntity {
         return result;
     }
 }
+
+

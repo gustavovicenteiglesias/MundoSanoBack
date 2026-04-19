@@ -4,21 +4,17 @@ import jakarta.persistence.*;
 import java.util.Collection;
 
 @Entity
-@Table(name = "estados", schema = "tripleconlast", catalog = "")
-public class EstadosEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+@Table(name = "estados")
+public class EstadosEntity extends BaseEntity {
+
     @Id
     @Column(name = "id_estado")
     private int idEstado;
     @Basic
     @Column(name = "nombre")
     private String nombre;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Byte sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
+    
+    
     @OneToMany(mappedBy = "estadosByIdEstado")
     private Collection<ControlesEntity> controlesByIdEstado;
 
@@ -38,21 +34,13 @@ public class EstadosEntity {
         this.nombre = nombre;
     }
 
-    public Byte getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
-    public void setSqlDeleted(Byte sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
+    
 
-    public Integer getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
     @Override
     public boolean equals(Object o) {
@@ -86,3 +74,5 @@ public class EstadosEntity {
         this.controlesByIdEstado = controlesByIdEstado;
     }
 }
+
+

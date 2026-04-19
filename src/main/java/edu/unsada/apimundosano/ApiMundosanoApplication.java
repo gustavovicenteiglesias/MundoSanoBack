@@ -4,7 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 
-@ComponentScan({"edu.unsada.apimundosano.repositorio","edu.unsada.apimundosano.Controller"})
+@ComponentScan({"edu.unsada.apimundosano.repositorio","edu.unsada.apimundosano.Controller", "edu.unsada.apimundosano.service"})
 @SpringBootApplication
 
 public class ApiMundosanoApplication {

@@ -1,23 +1,17 @@
 package edu.unsada.apimundosano.models;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
-@Table(name = "origenes", schema = "tripleconlast", catalog = "")
-public class OrigenesEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+@Table(name = "origenes")
+public class OrigenesEntity extends BaseEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_origen")
     private int idOrigen;
-    @Basic
+
     @Column(name = "nombre")
     private String nombre;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Byte sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
 
     public int getIdOrigen() {
         return idOrigen;
@@ -33,22 +27,6 @@ public class OrigenesEntity {
 
     public void setNombre(String nombre) {
         this.nombre = nombre;
-    }
-
-    public Byte getSqlDeleted() {
-        return sqlDeleted;
-    }
-
-    public void setSqlDeleted(Byte sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
-
-    public Integer getLastModified() {
-        return lastModified;
-    }
-
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
     }
 
     @Override
@@ -75,3 +53,5 @@ public class OrigenesEntity {
         return result;
     }
 }
+
+

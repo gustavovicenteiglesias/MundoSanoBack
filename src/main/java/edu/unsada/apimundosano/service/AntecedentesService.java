@@ -11,6 +11,7 @@ public class AntecedentesService {
         List<List<Object>> values = new ArrayList<>();
         for (AntecedentesEntity item : data) {
             List<Object> row = new ArrayList<>();
+            row.add(item.getUuid());
             row.add(item.getIdAntecedente());
             row.add(item.getIdPersona());
             row.add(item.getIdControl());

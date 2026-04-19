@@ -1,23 +1,18 @@
 package edu.unsada.apimundosano.models;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
-@Table(name = "motivo_finalizacion_tratamiento", schema = "tripleconlast", catalog = "")
-public class MotivoFinalizacionTratamientoEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+@Table(name = "motivo_finalizacion_tratamiento")
+public class MotivoFinalizacionTratamientoEntity extends BaseEntity {
+
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_motivo_finalizacion_tratamiento")
     private int idMotivoFinalizacionTratamiento;
-    @Basic
+
     @Column(name = "nombre")
     private String nombre;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Byte sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
 
     public int getIdMotivoFinalizacionTratamiento() {
         return idMotivoFinalizacionTratamiento;
@@ -33,22 +28,6 @@ public class MotivoFinalizacionTratamientoEntity {
 
     public void setNombre(String nombre) {
         this.nombre = nombre;
-    }
-
-    public Byte getSqlDeleted() {
-        return sqlDeleted;
-    }
-
-    public void setSqlDeleted(Byte sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
-
-    public Integer getLastModified() {
-        return lastModified;
-    }
-
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
     }
 
     @Override
@@ -75,3 +54,5 @@ public class MotivoFinalizacionTratamientoEntity {
         return result;
     }
 }
+
+

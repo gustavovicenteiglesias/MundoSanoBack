@@ -7,8 +7,18 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 public interface LaboratoriosRealizadosRepo extends JpaRepository<LaboratoriosRealizadosEntity,Integer> {
+
+    Optional<LaboratoriosRealizadosEntity> findByUuid(String uuid);
     @Modifying
     @Query(value = "SELECT * FROM laboratorios_realizados WHERE last_modified>:last", nativeQuery = true)
     Iterable<LaboratoriosRealizadosEntity> findBYLast (@Param("last") Integer last );
+    Optional<LaboratoriosRealizadosEntity> findByIdPersonaAndIdControlAndIdLaboratorio(
+            Integer idPersona,
+            Integer idControl,
+            Integer idLaboratorio
+    );
 }
+

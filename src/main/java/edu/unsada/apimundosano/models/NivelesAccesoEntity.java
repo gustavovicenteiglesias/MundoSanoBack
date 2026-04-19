@@ -3,21 +3,17 @@ package edu.unsada.apimundosano.models;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "niveles_acceso", schema = "tripleconlast", catalog = "")
-public class NivelesAccesoEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+@Table(name = "niveles_acceso")
+public class NivelesAccesoEntity extends BaseEntity {
+
     @Id
     @Column(name = "id_nivel_acceso")
     private int idNivelAcceso;
     @Basic
     @Column(name = "acceso")
     private String acceso;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Byte sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
+    
+    
 
     public int getIdNivelAcceso() {
         return idNivelAcceso;
@@ -35,21 +31,13 @@ public class NivelesAccesoEntity {
         this.acceso = acceso;
     }
 
-    public Byte getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
-    public void setSqlDeleted(Byte sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
+    
 
-    public Integer getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
     @Override
     public boolean equals(Object o) {
@@ -75,3 +63,5 @@ public class NivelesAccesoEntity {
         return result;
     }
 }
+
+
