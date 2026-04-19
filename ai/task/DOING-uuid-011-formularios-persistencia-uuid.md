@@ -20,7 +20,7 @@ Evitar regresiones de persistencia local y errores SQL durante guardado en formu
 
 ## Criterios de Aceptación
 - [ ] Ningún formulario de la lista falla con `no such column: id` al guardar.
-- [x] Los repositorios no envían `id` genérico ni valores `undefined` en SQL.
+- [ ] Los repositorios no envían `id` genérico ni valores `undefined` en SQL.
 - [ ] Se mantiene `last_modified` en updates/inserts.
 - [ ] Se preserva `uuid` existente y solo se genera si falta en create.
 - [ ] El flujo "editar presión sistólica y guardar" persiste localmente sin error.
@@ -34,21 +34,3 @@ Evitar regresiones de persistencia local y errores SQL durante guardado en formu
 ## Notas
 - Prioridad inmediata: resolver la persistencia local antes de ajustar export/import.
 - Cambios mínimos, trazables y focalizados por formulario.
-
-## Matriz de Auditoría Componente por Componente (Persistencia)
-| Componente | Tipo de operación | Tablas afectadas | Riesgo actual | Estado |
-|---|---|---|---|---|
-| `EditControlEmbarazada.tsx` | `update`, `updateInmunizaciones`, `updateLaboratoriosRealizados`, `updateEtmisPersonas`, `updateFecha` | `controles`, `control_embarazo`, `inmunizaciones_control`, `laboratorios_realizados`, `etmis_personas` | **Crítico** (ya reportó `no such column: id`) | En curso |
-| `NuevoControl.tsx` | `create` múltiple | `controles`, `control_embarazo`, `inmunizaciones_control`, `laboratorios_realizados`, `etmis_personas` | Alto (persistencia masiva en submit) | Pendiente |
-| `NuevaEmbazadaControl.tsx` | `create` múltiple + alta paciente/ubicación | `personas`, `ubicaciones`, `controles`, `antecedentes`, `antecedentes_apps`, `antecedentes_macs`, `control_embarazo`, `inmunizaciones_control`, `laboratorios_realizados`, `etmis_personas` | Alto | Pendiente |
-| `NuevoEmbarazoControl.tsx` | `create` + `update` de antecedentes | `controles`, `antecedentes`, `antecedentes_apps`, `antecedentes_macs`, `control_embarazo`, `inmunizaciones_control`, `laboratorios_realizados`, `etmis_personas` | Alto | Pendiente |
-| `FormEditAntecedentes.tsx` | `update/create` | `antecedentes`, `antecedentes_apps`, `antecedentes_macs` | Medio/Alto (updates por PK real) | Pendiente |
-| `FormNuevoAntecedente.tsx` | tránsito de datos (persistencia en paso posterior) | Deriva a controles/antecedentes | Medio (depende del submit siguiente) | Pendiente |
-| `NuevaEmbarazada.tsx` | tránsito de datos inicial | Deriva a alta de persona/control | Medio | Pendiente |
-
-## Orden de Ejecución (obligatorio)
-1. `EditControlEmbarazada` (incidente en producción reportado).
-2. `NuevoControl`.
-3. `NuevoEmbarazoControl` y `NuevaEmbazadaControl`.
-4. `FormEditAntecedentes`.
-5. Validación de flujo completo desde `NuevaEmbarazada` + `FormNuevoAntecedente`.
