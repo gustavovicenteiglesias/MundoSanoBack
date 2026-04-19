@@ -191,6 +191,11 @@ const NuevoControl: React.FC = () => {
     const OnSubmit = async (e: any) => {
         e.preventDefault()
         setLoading(true)
+        const toInt = (value: any, fallback: number = 0): number => {
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : fallback;
+        };
+        const strOrEmpty = (value: any): string => value === undefined || value === null ? "" : String(value);
 
         /*Tabla control_embarazo */
         const control_embarazo: any = {};
@@ -221,12 +226,12 @@ const NuevoControl: React.FC = () => {
 
         let ultimo_id_control = await repositoryControles.getLastRowId("id_control")
 
-        let c = Number(ultimo_id_control) + 1
-        let n = Number(resp_numero_control) + 1
+        let c = toInt(ultimo_id_control) + 1
+        let n = toInt(resp_numero_control) + 1
         let newControles: Controles = {
             id_control: c,
             fecha: fecha1,
-            id_persona: Number(paciente.id_persona),
+            id_persona: toInt(paciente.id_persona),
             control_numero: n,
             id_estado: 1,
             id_seguimiento_chagas: null,
@@ -264,19 +269,19 @@ const NuevoControl: React.FC = () => {
         ultimo_id_control = await repositoryControles.getLastRowId("id_control")
         let ultimo_id_control_embarazada = await repositoryControlEmbarazo.getLastRowId("id_control_embarazo")
         let newControlEmbarazo: Control_Embarazo = {
-            id_control_embarazo: Number(ultimo_id_control_embarazada) + 1,
-            id_control: Number(ultimo_id_control),
-            edad_gestacional: control_embarazo.edad_gestacional,
-            eco: control_embarazo.eco,
-            detalle_eco: control_embarazo.detalle_eco,
-            hpv: control_embarazo.hpv,
-            pap: control_embarazo.pap,
-            sistolica: control_embarazo.sistolica,
-            diastolica: control_embarazo.diastolica,
-            clinico: control_embarazo.clinico,
-            observaciones: control_embarazo.observaciones,
-            motivo: control_embarazo.motivo,
-            derivada: control_embarazo.derivada,
+            id_control_embarazo: toInt(ultimo_id_control_embarazada) + 1,
+            id_control: toInt(ultimo_id_control),
+            edad_gestacional: toInt(control_embarazo.edad_gestacional),
+            eco: strOrEmpty(control_embarazo.eco),
+            detalle_eco: strOrEmpty(control_embarazo.detalle_eco),
+            hpv: strOrEmpty(control_embarazo.hpv),
+            pap: strOrEmpty(control_embarazo.pap),
+            sistolica: toInt(control_embarazo.sistolica),
+            diastolica: toInt(control_embarazo.diastolica),
+            clinico: strOrEmpty(control_embarazo.clinico),
+            observaciones: strOrEmpty(control_embarazo.observaciones),
+            motivo: toInt(control_embarazo.motivo),
+            derivada: toInt(control_embarazo.derivada),
             sql_deleted: 0,
             last_modified: Math.floor(new Date().getTime() / 1000)
         }
@@ -285,7 +290,7 @@ const NuevoControl: React.FC = () => {
         //Insert inmunizaciones
 
         const newInmunizacionesControl: Inmunizaciones_Control = {
-            id_persona: Number(paciente.id_persona),
+            id_persona: toInt(paciente.id_persona),
             id_control: ultimo_id_control,
             id_inmunizacion: 2,
             estado: control.agripal,
