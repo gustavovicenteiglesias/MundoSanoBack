@@ -199,6 +199,64 @@ import java.util.*;
             System.err.println("No se pudo escribir import_sync.log: " + e.getMessage());
         }
     }
+    private void appendExportLogToFile(Map<String, Object> log) {
+        try {
+            Path folder = Path.of("logs");
+            Files.createDirectories(folder);
+            Path file = folder.resolve("export_sync.log");
+            String line = new ObjectMapper().writeValueAsString(log) + System.lineSeparator();
+            Files.writeString(file, line, StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            // Si falla el log en disco no interrumpimos el flujo
+            System.err.println("No se pudo escribir export_sync.log: " + e.getMessage());
+        }
+    }
+
+    private void logRejectedExportRow(String tabla, String motivo, List<Object> payload) {
+        Map<String, Object> log = new HashMap<>();
+        log.put("tabla", tabla);
+        log.put("motivo", motivo);
+        log.put("payload", payload);
+        log.put("ts", LocalDateTime.now().toString());
+        System.err.println("EXPORT RECHAZADO -> tabla=" + tabla + ", motivo=" + motivo + ", payload=" + payload);
+        appendExportLogToFile(log);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void filterRowsWithoutUuid(Map<String, Object> table) {
+        String tableName = String.valueOf(table.getOrDefault("name", "unknown"));
+        List<Map<String, Object>> schema = (List<Map<String, Object>>) table.get("schema");
+        List<List<Object>> values = (List<List<Object>>) table.get("values");
+        if (schema == null || values == null || values.isEmpty()) return;
+
+        int uuidIndex = -1;
+        for (int i = 0; i < schema.size(); i++) {
+            Object column = schema.get(i).get("column");
+            if (column != null && "uuid".equalsIgnoreCase(column.toString().trim())) {
+                uuidIndex = i;
+                break;
+            }
+        }
+        if (uuidIndex < 0) return;
+
+        List<List<Object>> filtered = new ArrayList<>();
+        for (List<Object> row : values) {
+            if (row == null || uuidIndex >= row.size()) {
+                logRejectedExportRow(tableName, "Fila sin columna UUID esperada por schema", row);
+                continue;
+            }
+            Object uuidValue = row.get(uuidIndex);
+            String uuid = uuidValue == null ? "" : uuidValue.toString().trim();
+            if (uuid.isEmpty()) {
+                logRejectedExportRow(tableName, "UUID nulo o vacío en export", row);
+                continue;
+            }
+            filtered.add(row);
+        }
+        table.put("values", filtered);
+    }
+
     private boolean personaDisponible(Integer idPersona, Set<Integer> personasValidas) {
         if (idPersona == null) return false;
         return personasValidas.contains(idPersona) || personasRepo.existsById(idPersona);
@@ -1005,6 +1063,7 @@ import java.util.*;
                         t.put("values", safeValues("parajes", () -> parajeService.valuesParajes(parajesRepo.findAll())));
                         break;
                 }
+                filterRowsWithoutUuid(t);
             }
 
             return json;
@@ -1094,6 +1153,5 @@ import java.util.*;
         return response;
     }
     }
-
 
 

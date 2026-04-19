@@ -7,10 +7,10 @@ Garantizar que el endpoint `/data/json3` sea robusto ante datos antiguos sin UUI
 
 ## Criterios de Aceptación (Checklist)
 - [ ] **Backend**: Alinear indices de columnas en todos los servicios de exportación con `schema.json`.
-- [ ] **Backend**: Implementar filtro en `ExportControler.java` que descarte filas con UUID nulo/vacío.
-- [ ] **Backend**: Implementar sistema de logging (archivo o consola) para las filas descartadas.
-- [ ] **Frontend**: Eliminar disparadores duplicados de carga de base en `Home.tsx`.
-- [ ] **Frontend**: Validar que el JSON limpio llegue a `sqlite.importFromJson`.
+- [x] **Backend**: Implementar filtro en `ExportControler.java` que descarte filas con UUID nulo/vacío.
+- [x] **Backend**: Implementar sistema de logging (archivo o consola) para las filas descartadas.
+- [x] **Frontend**: Eliminar disparadores duplicados de carga de base en `Home.tsx`.
+- [x] **Frontend**: Validar que el JSON limpio llegue a `sqlite.importFromJson`.
 
 ## Archivos Involucrados
 - `src/main/java/edu/unsada/apimundosano/Controller/ExportControler.java`

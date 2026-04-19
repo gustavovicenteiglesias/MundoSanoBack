@@ -11,7 +11,6 @@ import { Inmunizaciones_Control, InicialInmunizacionesControl } from "../models/
 import { Laboratorios_Realizados, InicialLaboratorios } from "../models/Laboratorios_Realizados";
 import { Ubicaciones, InicialUbicaciones } from "../models/Ubicaciones";
 import { Usuarios,InitialUsuario } from "../models/Usuarios";
-import { datos } from "./exportarIII..last";
 import { Repository } from "../repository/Repository";
 import { SQLiteDBConnection } from "react-sqlite-hook";
 import Swal from 'sweetalert2'
