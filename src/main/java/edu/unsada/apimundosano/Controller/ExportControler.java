@@ -315,6 +315,30 @@ public class ExportControler {
         }
     }
 
+    private Integer coalesceServerIdByUuid(Integer mappedId, String uuidRef, java.util.function.Function<String, Integer> finder) {
+        if (mappedId != null) {
+            return mappedId;
+        }
+        if (uuidRef == null || uuidRef.isBlank()) {
+            return null;
+        }
+        try {
+            return finder.apply(uuidRef);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private boolean shouldApplyIncomingLastModified(Integer currentLastModified, Integer incomingLastModified) {
+        if (incomingLastModified == null) {
+            return true;
+        }
+        if (currentLastModified == null) {
+            return true;
+        }
+        return incomingLastModified > currentLastModified;
+    }
+
     @PostMapping("/sqlite")
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public HashMap<String, Object> postSqlite(@RequestBody JsonSqlite json) {
@@ -332,11 +356,15 @@ public class ExportControler {
         int antecedentesAppsGuardados = 0;
         int antecedentesMacsGuardados = 0;
         int etmisGuardados = 0;
+        int conflictosLastModified = 0;
 
         // Mapas de traducción de IDs (Mobile ID -> Server ID)
         Map<Integer, Integer> mapPersonas = new HashMap<>();
         Map<Integer, Integer> mapControles = new HashMap<>();
         Map<Integer, Integer> mapAntecedentes = new HashMap<>();
+        Map<Integer, String> mapPersonaUuidByMobileId = new HashMap<>();
+        Map<Integer, String> mapControlUuidByMobileId = new HashMap<>();
+        Map<Integer, String> mapAntecedenteUuidByMobileId = new HashMap<>();
 
         try {
             Map<String, List<List>> tablas = new HashMap<>();
@@ -356,6 +384,30 @@ public class ExportControler {
             List<List> antecedentesMacsValues = tablas.getOrDefault("antecedentes_macs", new ArrayList<>());
             List<List> etmisValues = tablas.getOrDefault("etmis_personas", new ArrayList<>());
 
+            // Pre-scan de UUIDs para poder resolver relaciones por UUID si no existe mapping
+            // mobile->server generado en esta misma importación.
+            for (List valor : personasValues) {
+                Integer idPersonaMovil = safeInt(valor, 0);
+                String uuidPersona = safeString(valor, 13);
+                if (idPersonaMovil != null && uuidPersona != null && !uuidPersona.isBlank()) {
+                    mapPersonaUuidByMobileId.put(idPersonaMovil, uuidPersona);
+                }
+            }
+            for (List valor : controlesValues) {
+                Integer idControlMovil = safeInt(valor, 0);
+                String uuidControl = safeString(valor, 18);
+                if (idControlMovil != null && uuidControl != null && !uuidControl.isBlank()) {
+                    mapControlUuidByMobileId.put(idControlMovil, uuidControl);
+                }
+            }
+            for (List valor : antecedentesValues) {
+                Integer idAntecedenteMovil = safeInt(valor, 0);
+                String uuidAntecedente = safeString(valor, 14);
+                if (idAntecedenteMovil != null && uuidAntecedente != null && !uuidAntecedente.isBlank()) {
+                    mapAntecedenteUuidByMobileId.put(idAntecedenteMovil, uuidAntecedente);
+                }
+            }
+
             /*
              * =========================
              * 1) PERSONAS
@@ -372,7 +424,17 @@ public class ExportControler {
                     }
 
                     // Look-up by UUID (Deterministic Identity)
-                    PersonasEntity personas = personasRepo.findByUuid(uuid).orElse(new PersonasEntity());
+                    Optional<PersonasEntity> existingOpt = personasRepo.findByUuid(uuid);
+                    PersonasEntity personas = existingOpt.orElse(new PersonasEntity());
+                    Integer incomingLastModified = safeInt(valor, 12);
+                    if (existingOpt.isPresent()
+                            && !shouldApplyIncomingLastModified(personas.getLastModified(), incomingLastModified)) {
+                        if (idPersonaMovil != null) {
+                            mapPersonas.put(idPersonaMovil, personas.getIdPersona());
+                        }
+                        conflictosLastModified++;
+                        continue;
+                    }
 
                     // Si es nuevo, dejamos que la DB asigne el ID; si existe, conservamos el ID del
                     // servidor.
@@ -387,7 +449,7 @@ public class ExportControler {
                     personas.setAlta(safeInt(valor, 9));
                     personas.setNacidoVivo(safeInt(valor, 10));
                     personas.setSqlDeleted(safeInt(valor, 11));
-                    personas.setLastModified(safeInt(valor, 12));
+                    personas.setLastModified(incomingLastModified);
                     personas.setUuid(uuid);
 
                     personasRepo.save(personas);
@@ -420,13 +482,28 @@ public class ExportControler {
                     }
 
                     // Traducción de ID de Persona
-                    Integer serverIdPersona = mapPersonas.get(idPersonaMovil);
+                    Integer serverIdPersona = coalesceServerIdByUuid(
+                            mapPersonas.get(idPersonaMovil),
+                            mapPersonaUuidByMobileId.get(idPersonaMovil),
+                            personaUuid -> personasRepo.findByUuid(personaUuid).map(PersonasEntity::getIdPersona).orElse(null));
+
                     if (serverIdPersona == null) {
-                        // Si no estaba en el payload, intentamos buscarlo en la DB si existe la persona
-                        serverIdPersona = idPersonaMovil; // Fallback al ID original por ahora
+                        addLog(logs, "controles", idPersonaMovil, idControlMovil, null,
+                                "No se pudo resolver id_persona por UUID", valor);
+                        continue;
                     }
 
-                    ControlesEntity controles = controlesRepo.findByUuid(uuid).orElse(new ControlesEntity());
+                    Optional<ControlesEntity> existingOpt = controlesRepo.findByUuid(uuid);
+                    ControlesEntity controles = existingOpt.orElse(new ControlesEntity());
+                    Integer incomingLastModified = safeInt(valor, 17);
+                    if (existingOpt.isPresent()
+                            && !shouldApplyIncomingLastModified(controles.getLastModified(), incomingLastModified)) {
+                        if (idControlMovil != null) {
+                            mapControles.put(idControlMovil, controles.getIdControl());
+                        }
+                        conflictosLastModified++;
+                        continue;
+                    }
 
                     controles.setFecha(parseSqlDate(getValue(valor, 1)));
                     controles.setIdPersona(serverIdPersona);
@@ -444,7 +521,7 @@ public class ExportControler {
                     controles.setIdTiposFinEmbarazos(safeInt(valor, 14));
                     controles.setGeoreferencia(safeString(valor, 15));
                     controles.setSqlDeleted(safeInt(valor, 16));
-                    controles.setLastModified(safeInt(valor, 17));
+                    controles.setLastModified(incomingLastModified);
                     controles.setUuid(uuid);
 
                     controlesRepo.save(controles);
@@ -476,12 +553,25 @@ public class ExportControler {
                         continue;
                     }
 
-                    Integer serverIdPersona = mapPersonas.get(idPersonaMovil);
+                    Integer serverIdPersona = coalesceServerIdByUuid(
+                            mapPersonas.get(idPersonaMovil),
+                            mapPersonaUuidByMobileId.get(idPersonaMovil),
+                            personaUuid -> personasRepo.findByUuid(personaUuid).map(PersonasEntity::getIdPersona).orElse(null));
+
                     if (serverIdPersona == null) {
-                        serverIdPersona = idPersonaMovil;
+                        addLog(logs, "ubicaciones", idPersonaMovil, null, idUbicacionMovil,
+                                "No se pudo resolver id_persona por UUID", valor);
+                        continue;
                     }
 
-                    UbicacionesEntity ubicaciones = ubicacionesRepo.findByUuid(uuid).orElse(new UbicacionesEntity());
+                    Optional<UbicacionesEntity> existingOpt = ubicacionesRepo.findByUuid(uuid);
+                    UbicacionesEntity ubicaciones = existingOpt.orElse(new UbicacionesEntity());
+                    Integer incomingLastModified = safeInt(valor, 9);
+                    if (existingOpt.isPresent()
+                            && !shouldApplyIncomingLastModified(ubicaciones.getLastModified(), incomingLastModified)) {
+                        conflictosLastModified++;
+                        continue;
+                    }
 
                     ubicaciones.setIdPersona(serverIdPersona);
                     ubicaciones.setIdParaje(safeInt(valor, 2));
@@ -491,7 +581,7 @@ public class ExportControler {
                     ubicaciones.setGeoreferencia(safeString(valor, 6));
                     ubicaciones.setIdPais(safeInt(valor, 7));
                     ubicaciones.setSqlDeleted(safeInt(valor, 8));
-                    ubicaciones.setLastModified(safeInt(valor, 9));
+                    ubicaciones.setLastModified(incomingLastModified);
                     ubicaciones.setUuid(uuid);
 
                     ubicacionesRepo.save(ubicaciones);
@@ -520,14 +610,35 @@ public class ExportControler {
                         continue;
                     }
 
-                    Integer serverIdPersona = mapPersonas.get(idPersonaMovil);
-                    Integer serverIdControl = mapControles.get(idControlMovil);
+                    Integer serverIdPersona = coalesceServerIdByUuid(
+                            mapPersonas.get(idPersonaMovil),
+                            mapPersonaUuidByMobileId.get(idPersonaMovil),
+                            personaUuid -> personasRepo.findByUuid(personaUuid).map(PersonasEntity::getIdPersona).orElse(null));
+                    Integer serverIdControl = coalesceServerIdByUuid(
+                            mapControles.get(idControlMovil),
+                            mapControlUuidByMobileId.get(idControlMovil),
+                            controlUuid -> controlesRepo.findByUuid(controlUuid).map(ControlesEntity::getIdControl).orElse(null));
 
-                    AntecedentesEntity antecedentes = antecedentesRepo.findByUuid(uuid)
-                            .orElse(new AntecedentesEntity());
+                    if (serverIdPersona == null || serverIdControl == null) {
+                        addLog(logs, "antecedentes", idPersonaMovil, idControlMovil, idAntecedenteMovil,
+                                "No se pudo resolver relación persona/control por UUID", valor);
+                        continue;
+                    }
 
-                    antecedentes.setIdPersona(serverIdPersona != null ? serverIdPersona : idPersonaMovil);
-                    antecedentes.setIdControl(serverIdControl != null ? serverIdControl : idControlMovil);
+                    Optional<AntecedentesEntity> existingOpt = antecedentesRepo.findByUuid(uuid);
+                    AntecedentesEntity antecedentes = existingOpt.orElse(new AntecedentesEntity());
+                    Integer incomingLastModified = safeInt(valor, 12);
+                    if (existingOpt.isPresent()
+                            && !shouldApplyIncomingLastModified(antecedentes.getLastModified(), incomingLastModified)) {
+                        if (idAntecedenteMovil != null) {
+                            mapAntecedentes.put(idAntecedenteMovil, antecedentes.getIdAntecedente());
+                        }
+                        conflictosLastModified++;
+                        continue;
+                    }
+
+                    antecedentes.setIdPersona(serverIdPersona);
+                    antecedentes.setIdControl(serverIdControl);
                     antecedentes.setEdadPrimerEmbarazo(safeInt(valor, 3));
                     antecedentes.setFechaUltimoEmbarazo(parseSqlDate(getValue(valor, 4)));
                     antecedentes.setGestas(safeInt(valor, 5));
@@ -537,7 +648,7 @@ public class ExportControler {
                     antecedentes.setPlanificado(safeInt(valor, 9));
                     antecedentes.setFum(parseSqlDate(getValue(valor, 10)));
                     antecedentes.setFpp(parseSqlDate(getValue(valor, 11)));
-                    antecedentes.setLastModified(safeInt(valor, 12));
+                    antecedentes.setLastModified(incomingLastModified);
                     antecedentes.setSqlDeleted(safeInt(valor, 13));
                     antecedentes.setUuid(uuid);
 
@@ -572,12 +683,27 @@ public class ExportControler {
                         continue;
                     }
 
-                    Integer serverIdControl = mapControles.get(idControlMovil);
+                    Integer serverIdControl = coalesceServerIdByUuid(
+                            mapControles.get(idControlMovil),
+                            mapControlUuidByMobileId.get(idControlMovil),
+                            controlUuid -> controlesRepo.findByUuid(controlUuid).map(ControlesEntity::getIdControl).orElse(null));
+                    if (serverIdControl == null) {
+                        addLog(logs, "control_embarazo", null, idControlMovil, idControlEmbarazoMovil,
+                                "No se pudo resolver id_control por UUID", valor);
+                        continue;
+                    }
 
-                    ControlEmbarazoEntity controlEmbarazo = controlEmbarazoRepo.findByUuid(uuid)
+                    Optional<ControlEmbarazoEntity> existingOpt = controlEmbarazoRepo.findByUuid(uuid);
+                    ControlEmbarazoEntity controlEmbarazo = existingOpt
                             .orElse(new ControlEmbarazoEntity());
+                    Integer incomingLastModified = safeInt(valor, 14);
+                    if (existingOpt.isPresent()
+                            && !shouldApplyIncomingLastModified(controlEmbarazo.getLastModified(), incomingLastModified)) {
+                        conflictosLastModified++;
+                        continue;
+                    }
 
-                    controlEmbarazo.setIdControl(serverIdControl != null ? serverIdControl : idControlMovil);
+                    controlEmbarazo.setIdControl(serverIdControl);
                     controlEmbarazo.setEdadGestacional(safeInt(valor, 2));
                     controlEmbarazo.setEco(safeStringNotNull(valor, 3));
                     controlEmbarazo.setDetalleEco(safeStringNotNull(valor, 4));
@@ -590,7 +716,7 @@ public class ExportControler {
                     controlEmbarazo.setMotivo(safeInt(valor, 11));
                     controlEmbarazo.setDerivada(safeInt(valor, 12));
                     controlEmbarazo.setSqlDeleted(safeInt(valor, 13));
-                    controlEmbarazo.setLastModified(safeInt(valor, 14));
+                    controlEmbarazo.setLastModified(incomingLastModified);
                     controlEmbarazo.setUuid(uuid);
 
                     controlEmbarazoRepo.save(controlEmbarazo);
@@ -619,18 +745,37 @@ public class ExportControler {
                         continue;
                     }
 
-                    Integer serverIdPersona = mapPersonas.get(idPersonaMovil);
-                    Integer serverIdControl = mapControles.get(idControlMovil);
+                    Integer serverIdPersona = coalesceServerIdByUuid(
+                            mapPersonas.get(idPersonaMovil),
+                            mapPersonaUuidByMobileId.get(idPersonaMovil),
+                            personaUuid -> personasRepo.findByUuid(personaUuid).map(PersonasEntity::getIdPersona).orElse(null));
+                    Integer serverIdControl = coalesceServerIdByUuid(
+                            mapControles.get(idControlMovil),
+                            mapControlUuidByMobileId.get(idControlMovil),
+                            controlUuid -> controlesRepo.findByUuid(controlUuid).map(ControlesEntity::getIdControl).orElse(null));
 
-                    InmunizacionesControlEntity inmunizacionesControl = inmunizacionesControlRepo.findByUuid(uuid)
+                    if (serverIdPersona == null || serverIdControl == null) {
+                        addLog(logs, "inmunizaciones_control", idPersonaMovil, idControlMovil, idInmunizacion,
+                                "No se pudo resolver relación persona/control por UUID", valor);
+                        continue;
+                    }
+
+                    Optional<InmunizacionesControlEntity> existingOpt = inmunizacionesControlRepo.findByUuid(uuid);
+                    InmunizacionesControlEntity inmunizacionesControl = existingOpt
                             .orElse(new InmunizacionesControlEntity());
+                    Integer incomingLastModified = safeInt(valor, 5);
+                    if (existingOpt.isPresent()
+                            && !shouldApplyIncomingLastModified(inmunizacionesControl.getLastModified(), incomingLastModified)) {
+                        conflictosLastModified++;
+                        continue;
+                    }
 
-                    inmunizacionesControl.setIdPersona(serverIdPersona != null ? serverIdPersona : idPersonaMovil);
-                    inmunizacionesControl.setIdControl(serverIdControl != null ? serverIdControl : idControlMovil);
+                    inmunizacionesControl.setIdPersona(serverIdPersona);
+                    inmunizacionesControl.setIdControl(serverIdControl);
                     inmunizacionesControl.setIdInmunizacion(idInmunizacion);
                     inmunizacionesControl.setEstado(safeStringNotNull(valor, 3));
                     inmunizacionesControl.setSqlDeleted(safeInt(valor, 4));
-                    inmunizacionesControl.setLastModified(safeInt(valor, 5));
+                    inmunizacionesControl.setLastModified(incomingLastModified);
                     inmunizacionesControl.setUuid(uuid);
 
                     inmunizacionesControlRepo.save(inmunizacionesControl);
@@ -659,14 +804,33 @@ public class ExportControler {
                         continue;
                     }
 
-                    Integer serverIdPersona = mapPersonas.get(idPersonaMovil);
-                    Integer serverIdControl = mapControles.get(idControlMovil);
+                    Integer serverIdPersona = coalesceServerIdByUuid(
+                            mapPersonas.get(idPersonaMovil),
+                            mapPersonaUuidByMobileId.get(idPersonaMovil),
+                            personaUuid -> personasRepo.findByUuid(personaUuid).map(PersonasEntity::getIdPersona).orElse(null));
+                    Integer serverIdControl = coalesceServerIdByUuid(
+                            mapControles.get(idControlMovil),
+                            mapControlUuidByMobileId.get(idControlMovil),
+                            controlUuid -> controlesRepo.findByUuid(controlUuid).map(ControlesEntity::getIdControl).orElse(null));
 
-                    LaboratoriosRealizadosEntity laboratoriosRealizados = laboratoriosRealizadosRepo.findByUuid(uuid)
+                    if (serverIdPersona == null || serverIdControl == null) {
+                        addLog(logs, "laboratorios_realizados", idPersonaMovil, idControlMovil, idLaboratorio,
+                                "No se pudo resolver relación persona/control por UUID", valor);
+                        continue;
+                    }
+
+                    Optional<LaboratoriosRealizadosEntity> existingOpt = laboratoriosRealizadosRepo.findByUuid(uuid);
+                    LaboratoriosRealizadosEntity laboratoriosRealizados = existingOpt
                             .orElse(new LaboratoriosRealizadosEntity());
+                    Integer incomingLastModified = safeInt(valor, 9);
+                    if (existingOpt.isPresent()
+                            && !shouldApplyIncomingLastModified(laboratoriosRealizados.getLastModified(), incomingLastModified)) {
+                        conflictosLastModified++;
+                        continue;
+                    }
 
-                    laboratoriosRealizados.setIdPersona(serverIdPersona != null ? serverIdPersona : idPersonaMovil);
-                    laboratoriosRealizados.setIdControl(serverIdControl != null ? serverIdControl : idControlMovil);
+                    laboratoriosRealizados.setIdPersona(serverIdPersona);
+                    laboratoriosRealizados.setIdControl(serverIdControl);
                     laboratoriosRealizados.setIdLaboratorio(idLaboratorio);
                     laboratoriosRealizados.setTrimestre(safeInt(valor, 3));
                     laboratoriosRealizados.setFechaRealizado(parseSqlDate(getValue(valor, 4)));
@@ -674,7 +838,7 @@ public class ExportControler {
                     laboratoriosRealizados.setResultado(safeStringNotNull(valor, 6));
                     laboratoriosRealizados.setIdEtmi(safeInt(valor, 7));
                     laboratoriosRealizados.setSqlDeleted(safeInt(valor, 8));
-                    laboratoriosRealizados.setLastModified(safeInt(valor, 9));
+                    laboratoriosRealizados.setLastModified(incomingLastModified);
                     laboratoriosRealizados.setUuid(uuid);
 
                     laboratoriosRealizadosRepo.save(laboratoriosRealizados);
@@ -704,18 +868,36 @@ public class ExportControler {
                         continue;
                     }
 
-                    Integer serverIdPersona = mapPersonas.get(idPersonaMovil);
-                    Integer serverIdControl = mapControles.get(idControlMovil);
+                    Integer serverIdPersona = coalesceServerIdByUuid(
+                            mapPersonas.get(idPersonaMovil),
+                            mapPersonaUuidByMobileId.get(idPersonaMovil),
+                            personaUuid -> personasRepo.findByUuid(personaUuid).map(PersonasEntity::getIdPersona).orElse(null));
+                    Integer serverIdControl = coalesceServerIdByUuid(
+                            mapControles.get(idControlMovil),
+                            mapControlUuidByMobileId.get(idControlMovil),
+                            controlUuid -> controlesRepo.findByUuid(controlUuid).map(ControlesEntity::getIdControl).orElse(null));
 
-                    EtmisPersonasEntity etmisPersonasEntity = etmisPersonasRepo.findByUuid(uuid)
-                            .orElse(new EtmisPersonasEntity());
+                    if (serverIdPersona == null || serverIdControl == null) {
+                        addLog(logs, "etmis_personas", idPersonaMovil, idControlMovil, idEtmi,
+                                "No se pudo resolver relación persona/control por UUID", valor);
+                        continue;
+                    }
 
-                    etmisPersonasEntity.setIdPersona(serverIdPersona != null ? serverIdPersona : idPersonaMovil);
+                    Optional<EtmisPersonasEntity> existingOpt = etmisPersonasRepo.findByUuid(uuid);
+                    EtmisPersonasEntity etmisPersonasEntity = existingOpt.orElse(new EtmisPersonasEntity());
+                    Integer incomingLastModified = safeInt(valor, 5);
+                    if (existingOpt.isPresent()
+                            && !shouldApplyIncomingLastModified(etmisPersonasEntity.getLastModified(), incomingLastModified)) {
+                        conflictosLastModified++;
+                        continue;
+                    }
+
+                    etmisPersonasEntity.setIdPersona(serverIdPersona);
                     etmisPersonasEntity.setIdEtmi(idEtmi);
-                    etmisPersonasEntity.setIdControl(serverIdControl != null ? serverIdControl : idControlMovil);
+                    etmisPersonasEntity.setIdControl(serverIdControl);
                     etmisPersonasEntity.setConfirmada(safeInt(valor, 3));
                     etmisPersonasEntity.setSqlDeleted(safeInt(valor, 4));
-                    etmisPersonasEntity.setLastModified(safeInt(valor, 5));
+                    etmisPersonasEntity.setLastModified(incomingLastModified);
                     etmisPersonasEntity.setUuid(uuid);
 
                     etmisPersonasRepo.save(etmisPersonasEntity);
@@ -742,15 +924,29 @@ public class ExportControler {
                         continue;
                     }
 
-                    Integer serverIdAntecedente = mapAntecedentes.get(idAntecedenteMovil);
+                    Integer serverIdAntecedente = coalesceServerIdByUuid(
+                            mapAntecedentes.get(idAntecedenteMovil),
+                            mapAntecedenteUuidByMobileId.get(idAntecedenteMovil),
+                            antecedenteUuid -> antecedentesRepo.findByUuid(antecedenteUuid).map(AntecedentesEntity::getIdAntecedente).orElse(null));
+                    if (serverIdAntecedente == null) {
+                        addLog(logs, "antecedentes_apps", null, null, idAntecedenteMovil,
+                                "No se pudo resolver id_antecedente por UUID", valor);
+                        continue;
+                    }
 
-                    AntecedentesAppsEntity antecedentesApps = antecedentesAppsRepo.findByUuid(uuid)
+                    Optional<AntecedentesAppsEntity> existingOpt = antecedentesAppsRepo.findByUuid(uuid);
+                    AntecedentesAppsEntity antecedentesApps = existingOpt
                             .orElse(new AntecedentesAppsEntity());
+                    Integer incomingLastModified = safeInt(valor, 2);
+                    if (existingOpt.isPresent()
+                            && !shouldApplyIncomingLastModified(antecedentesApps.getLastModified(), incomingLastModified)) {
+                        conflictosLastModified++;
+                        continue;
+                    }
 
-                    antecedentesApps
-                            .setIdAntecedente(serverIdAntecedente != null ? serverIdAntecedente : idAntecedenteMovil);
+                    antecedentesApps.setIdAntecedente(serverIdAntecedente);
                     antecedentesApps.setIdApp(idApp);
-                    antecedentesApps.setLastModified(safeInt(valor, 2));
+                    antecedentesApps.setLastModified(incomingLastModified);
                     antecedentesApps.setSqlDeleted(safeInt(valor, 3));
                     antecedentesApps.setUuid(uuid);
 
@@ -779,16 +975,30 @@ public class ExportControler {
                         continue;
                     }
 
-                    Integer serverIdAntecedente = mapAntecedentes.get(idAntecedenteMovil);
+                    Integer serverIdAntecedente = coalesceServerIdByUuid(
+                            mapAntecedentes.get(idAntecedenteMovil),
+                            mapAntecedenteUuidByMobileId.get(idAntecedenteMovil),
+                            antecedenteUuid -> antecedentesRepo.findByUuid(antecedenteUuid).map(AntecedentesEntity::getIdAntecedente).orElse(null));
+                    if (serverIdAntecedente == null) {
+                        addLog(logs, "antecedentes_macs", null, null, idAntecedenteMovil,
+                                "No se pudo resolver id_antecedente por UUID", valor);
+                        continue;
+                    }
 
-                    AntecedentesMacsEntity antecedentesMacs = antecedentesMacsRepo.findByUuid(uuid)
+                    Optional<AntecedentesMacsEntity> existingOpt = antecedentesMacsRepo.findByUuid(uuid);
+                    AntecedentesMacsEntity antecedentesMacs = existingOpt
                             .orElse(new AntecedentesMacsEntity());
+                    Integer incomingLastModified = safeInt(valor, 3);
+                    if (existingOpt.isPresent()
+                            && !shouldApplyIncomingLastModified(antecedentesMacs.getLastModified(), incomingLastModified)) {
+                        conflictosLastModified++;
+                        continue;
+                    }
 
-                    antecedentesMacs
-                            .setIdAntecedente(serverIdAntecedente != null ? serverIdAntecedente : idAntecedenteMovil);
+                    antecedentesMacs.setIdAntecedente(serverIdAntecedente);
                     antecedentesMacs.setIdMac(idMac);
                     antecedentesMacs.setSqlDeleted(safeInt(valor, 2));
-                    antecedentesMacs.setLastModified(safeInt(valor, 3));
+                    antecedentesMacs.setLastModified(incomingLastModified);
                     antecedentesMacs.setUuid(uuid);
 
                     antecedentesMacsRepo.save(antecedentesMacs);
@@ -811,6 +1021,7 @@ public class ExportControler {
             response.put("antecedentesAppsGuardados", antecedentesAppsGuardados);
             response.put("antecedentesMacsGuardados", antecedentesMacsGuardados);
             response.put("etmisGuardados", etmisGuardados);
+            response.put("conflictosLastModified", conflictosLastModified);
             response.put("rechazados", logs.size());
             response.put("logs", logs);
 
@@ -833,6 +1044,7 @@ public class ExportControler {
             response.put("antecedentesAppsGuardados", antecedentesAppsGuardados);
             response.put("antecedentesMacsGuardados", antecedentesMacsGuardados);
             response.put("etmisGuardados", etmisGuardados);
+            response.put("conflictosLastModified", conflictosLastModified);
             response.put("rechazados", logs.size());
             return response;
         }

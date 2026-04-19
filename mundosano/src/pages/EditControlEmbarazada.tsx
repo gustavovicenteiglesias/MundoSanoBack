@@ -333,6 +333,11 @@ const EditControlEmbrazada: React.FC = () => {
     const OnSubmit = async (e: any) => {
         e.preventDefault()
         setLoading(true)
+        const toInt = (value: any, fallback: number = 0): number => {
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : fallback;
+        };
+        const strOrEmpty = (value: any): string => value === undefined || value === null ? "" : String(value);
 
         /*cambiar fecha contol */
         
@@ -370,18 +375,18 @@ const EditControlEmbrazada: React.FC = () => {
         let newControlEmbarazo: Control_Embarazo = {
             id_control_embarazo: control.id_control_embarazo,
             id_control: control.id_control,
-            edad_gestacional: Number(edadGestacional),
-            eco: control_embarazo.eco,
-            detalle_eco: control_embarazo.detalle_eco,
+            edad_gestacional: toInt(edadGestacional),
+            eco: strOrEmpty(control_embarazo.eco),
+            detalle_eco: strOrEmpty(control_embarazo.detalle_eco),
            
-            hpv: control_embarazo.hpv,
-            pap: control_embarazo.pap,
-            sistolica: Number(control_embarazo.sistolica),
-            diastolica: Number(control_embarazo.diastolica),
-            clinico: control_embarazo.clinico,
-            observaciones: control_embarazo.observaciones,
-            motivo: control_embarazo.motivo,
-            derivada: control.derivada,
+            hpv: strOrEmpty(control_embarazo.hpv),
+            pap: strOrEmpty(control_embarazo.pap),
+            sistolica: toInt(control_embarazo.sistolica),
+            diastolica: toInt(control_embarazo.diastolica),
+            clinico: strOrEmpty(control_embarazo.clinico),
+            observaciones: strOrEmpty(control_embarazo.observaciones),
+            motivo: toInt(control_embarazo.motivo),
+            derivada: toInt(control.derivada),
             sql_deleted: 0,
             last_modified: Math.floor(new Date().getTime() / 1000),
 
