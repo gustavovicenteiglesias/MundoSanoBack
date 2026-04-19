@@ -18,70 +18,15 @@ export class Repository<T extends object> {
         );
     }
 
-    private async getTableColumns(db: any): Promise<Set<string>> {
-        try {
-            const res = await db.query(`PRAGMA table_info(${this.tableName})`);
-            const cols = new Set<string>();
-            for (const row of res?.values || []) {
-                if (row?.name) cols.add(String(row.name));
-            }
-            return cols;
-        } catch (error) {
-            console.warn(`[Repository:${this.tableName}] No se pudieron leer columnas de tabla`, error);
-            return new Set<string>();
-        }
-    }
-
-    private filterEntityByColumns(entity: Record<string, any>, columns: Set<string>): Record<string, any> {
-        if (columns.size === 0) return entity;
-        return Object.fromEntries(
-            Object.entries(entity).filter(([key]) => columns.has(key))
-        );
-    }
-
     private toSqlValue(value: any): string {
         if (value === null) return "null";
         if (typeof value === "string") {
             return `"${value.replace(/"/g, '""')}"`;
         }
-        if (typeof value === "number" && !Number.isFinite(value)) {
-            return "null";
-        }
         if (typeof value === "boolean") {
             return value ? "1" : "0";
         }
         return String(value);
-    }
-
-    private async dropAllTriggers(db: any): Promise<void> {
-        try {
-            const triggers = await db.query(`SELECT name FROM sqlite_master WHERE type='trigger'`);
-            const names = (triggers?.values || [])
-                .map((t: any) => t?.name)
-                .filter((name: any) => typeof name === "string" && name.trim().length > 0);
-
-            for (const triggerName of names) {
-                await db.execute(`DROP TRIGGER IF EXISTS ${triggerName}`);
-            }
-            if (names.length > 0) {
-                console.warn(`[Repository:${this.tableName}] Se eliminaron triggers legacy (${names.length}) para recuperar persistencia.`);
-            }
-        } catch (e) {
-            console.warn(`[Repository:${this.tableName}] No se pudieron limpiar triggers legacy`, e);
-        }
-    }
-
-    private async executeWithRecovery(db: any, sql: string) {
-        try {
-            return await db.execute(sql);
-        } catch (error: any) {
-            const msg = String(error?.message || "").toLowerCase();
-            if (msg.includes("no such column: id")) {
-                await this.dropAllTriggers(db);
-                return await db.execute(sql);
-            }
-            throw error;
-        }
     }
 
     async getAll(): Promise<T[]> {
@@ -285,17 +230,9 @@ export class Repository<T extends object> {
             }
             (entity as any).last_modified = Math.floor(Date.now() / 1000);
 
-            const tableColumns = await this.getTableColumns(db);
-            const cleanEntity = this.filterEntityByColumns(
-                this.sanitizeEntity(entity as Record<string, any>),
-                tableColumns
-            );
+            const cleanEntity = this.sanitizeEntity(entity as Record<string, any>);
             const keys = Object.keys(cleanEntity).join(',');
             const values = Object.values(cleanEntity).map(value => this.toSqlValue(value)).join(',');
-            if (!keys) {
-                await db.close();
-                return false;
-            }
             console.log(`INSERT INTO ${this.tableName} (${keys}) VALUES (${values})`)
             const res = await this.executeWithRecovery(db, `INSERT INTO ${this.tableName} (${keys}) VALUES (${values})`);
 
@@ -325,26 +262,15 @@ export class Repository<T extends object> {
               }
               
               const now = Math.floor(Date.now() / 1000);
-              const tableColumns = await this.getTableColumns(db);
-
-              const preparedEntities = entities.map(entity => {
-                (entity as any).last_modified = now;
-                return this.filterEntityByColumns(
-                  this.sanitizeEntity(entity as Record<string, any>),
-                  tableColumns
-                );
-              });
-
-              const baseColumns = Object.keys(preparedEntities[0] || {});
-              if (baseColumns.length === 0) {
-                await db.close();
-                return false;
-              }
-
-              const values = preparedEntities
-                .map(cleanEntity => {
-                  const rowValues = baseColumns.map(col => this.toSqlValue((cleanEntity as any)[col] ?? null)).join(",");
-                  return `(${rowValues})`;
+              const values = entities
+                .map(entity => {
+                  // Inyectar last_modified
+                  (entity as any).last_modified = now;
+                  const cleanEntity = this.sanitizeEntity(entity as Record<string, any>);
+                  const keys = Object.keys(cleanEntity).join(',');
+                  const entityValues = Object.values(cleanEntity).map(value => this.toSqlValue(value)).join(',');
+        
+                  return `(${entityValues})`;
                 })
                 .join(",");
         
@@ -365,15 +291,7 @@ export class Repository<T extends object> {
             const db = await dbdb();
             await db.open();
             //const id = (entity as any).id_persona; // Assuming id_persona field is present in all interfaces
-            const tableColumns = await this.getTableColumns(db);
-            if (!tableColumns.has("id_persona") || !tableColumns.has("id_control") || !tableColumns.has("id_inmunizacion")) {
-                await db.close();
-                return false;
-            }
-            const cleanEntity = this.filterEntityByColumns(
-                this.sanitizeEntity(entity as Record<string, any>),
-                tableColumns
-            );
+            const cleanEntity = this.sanitizeEntity(entity as Record<string, any>);
             const updates = Object.entries(cleanEntity).map(([key, value]) => {
                 return `${key} = ${this.toSqlValue(value)}`;
             }).join(',');
@@ -404,22 +322,10 @@ export class Repository<T extends object> {
             const db = await dbdb();
         await db.open();
         //const id = (entity as any).id_persona; // Assuming id_persona field is present in all interfaces
-        const tableColumns = await this.getTableColumns(db);
-        if (!tableColumns.has("id_persona") || !tableColumns.has("id_control") || !tableColumns.has("id_laboratorio")) {
-            await db.close();
-            return false;
-        }
-        const cleanEntity = this.filterEntityByColumns(
-            this.sanitizeEntity(entity as Record<string, any>),
-            tableColumns
-        );
+        const cleanEntity = this.sanitizeEntity(entity as Record<string, any>);
         const updates = Object.entries(cleanEntity).map(([key, value]) => {
             return `${key} = ${this.toSqlValue(value)}`;
         }).join(',');
-        if (!updates) {
-            await db.close();
-            return false;
-        }
         const res = await this.executeWithRecovery(db, `UPDATE ${this.tableName} SET ${updates} WHERE id_persona=${id_persona} AND id_laboratorio=${id_laboratorio} AND id_control=${id_control}`);
         await db.close();
         console.log(res.changes?.changes)
@@ -442,22 +348,10 @@ export class Repository<T extends object> {
             const db = await dbdb();
         await db.open();
         //const id = (entity as any).id_persona; // Assuming id_persona field is present in all interfaces
-        const tableColumns = await this.getTableColumns(db);
-        if (!tableColumns.has("id_persona") || !tableColumns.has("id_control") || !tableColumns.has("id_etmi")) {
-            await db.close();
-            return false;
-        }
-        const cleanEntity = this.filterEntityByColumns(
-            this.sanitizeEntity(entity as Record<string, any>),
-            tableColumns
-        );
+        const cleanEntity = this.sanitizeEntity(entity as Record<string, any>);
         const updates = Object.entries(cleanEntity).map(([key, value]) => {
             return `${key} = ${this.toSqlValue(value)}`;
         }).join(',');
-        if (!updates) {
-            await db.close();
-            return false;
-        }
         const res = await this.executeWithRecovery(db, `UPDATE ${this.tableName} SET ${updates} WHERE id_persona=${id_persona} AND id_etmi=${id_etmis} AND id_control=${id_control}`);
         console.log(`UPDATE ${this.tableName} SET ${updates} WHERE id_persona=${id_persona} AND id_etmi=${id_etmis} AND id_control=${id_control}`)
         await db.close();
@@ -487,15 +381,7 @@ export class Repository<T extends object> {
             (entity as any).last_modified = Math.floor(Date.now() / 1000);
             
             //const id = (entity as any).id_persona; // Assuming id_persona field is present in all interfaces
-            const tableColumns = await this.getTableColumns(db);
-            if (!tableColumns.has(campo)) {
-                await db.close();
-                return false;
-            }
-            const cleanEntity = this.filterEntityByColumns(
-                this.sanitizeEntity(entity as Record<string, any>),
-                tableColumns
-            );
+            const cleanEntity = this.sanitizeEntity(entity as Record<string, any>);
             const updates = Object.entries(cleanEntity).map(([key, value]) => {
                 return `${key} = ${this.toSqlValue(value)}`;
             }).join(',');
