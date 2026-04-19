@@ -43,20 +43,13 @@ function combinarValores<T extends object>(interfaz: T, arrays: any[][]): T[] {
         return objeto;
     });
 }
-type SyncMode = "full" | "partial";
-type CargarBaseOptions = {
-    mode?: SyncMode;
-    since?: number | null;
-};
-
-export async function CargarBase (options?: CargarBaseOptions){ 
+export async function CargarBase (since?: number | null){ 
     const db = await dbdb();
     const MySwal = withReactContent(Swal);
     
     try {
-        const mode: SyncMode = options?.mode ?? ((options?.since !== undefined && options?.since !== null) ? "partial" : "full");
-        const endpoint = mode === "partial"
-            ? `${BASE_URL}/data/json3/partial${options?.since !== undefined && options?.since !== null ? `?since=${options.since}` : ""}`
+        const endpoint = since !== undefined && since !== null
+            ? `${BASE_URL}/data/json3/partial?since=${since}`
             : `${BASE_URL}/data/json3`;
         const resp = await axios.get(endpoint);
         

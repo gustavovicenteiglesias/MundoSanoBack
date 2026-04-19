@@ -1,0 +1,156 @@
+{"motivo":"UUID nulo o vacío en export","payload":[null,1,"Buenos Aires",12,0,1681778962,"b5949e7e-986a-4183-a0b0-83d949b2e16f"],"tabla":"provincias","ts":"2026-04-19T15:18:14.556920800"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,1,"Buenos Aires",12,0,1681778962,"b5949e7e-986a-4183-a0b0-83d949b2e16f"],"tabla":"provincias","ts":"2026-04-19T15:18:14.549801400"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,2,"Catamarca",12,0,1681778962,"684a302b-300a-4f71-a65d-bbdb73fed2e4"],"tabla":"provincias","ts":"2026-04-19T15:18:14.580079900"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,2,"Catamarca",12,0,1681778962,"684a302b-300a-4f71-a65d-bbdb73fed2e4"],"tabla":"provincias","ts":"2026-04-19T15:18:14.579065700"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,3,"Chaco",12,0,1681778962,"eab09f72-55f4-4d1a-9b04-7c0a073a38ae"],"tabla":"provincias","ts":"2026-04-19T15:18:14.581598200"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,3,"Chaco",12,0,1681778962,"eab09f72-55f4-4d1a-9b04-7c0a073a38ae"],"tabla":"provincias","ts":"2026-04-19T15:18:14.581598200"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,4,"Chubut",12,0,1681778962,"74b99368-10db-4c95-8873-d8f09858bb1e"],"tabla":"provincias","ts":"2026-04-19T15:18:14.583598300"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,4,"Chubut",12,0,1681778962,"74b99368-10db-4c95-8873-d8f09858bb1e"],"tabla":"provincias","ts":"2026-04-19T15:18:14.583598300"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,5,"Cordoba",12,0,1681778962,"0565e601-9965-4678-b3af-778e6d9d317a"],"tabla":"provincias","ts":"2026-04-19T15:18:14.586171800"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,5,"Cordoba",12,0,1681778962,"0565e601-9965-4678-b3af-778e6d9d317a"],"tabla":"provincias","ts":"2026-04-19T15:18:14.586171800"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,6,"Corrientes",12,0,1681778962,"fac604e6-7ff2-437b-bdd1-7e9e0c6d694a"],"tabla":"provincias","ts":"2026-04-19T15:18:14.588170500"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,6,"Corrientes",12,0,1681778962,"fac604e6-7ff2-437b-bdd1-7e9e0c6d694a"],"tabla":"provincias","ts":"2026-04-19T15:18:14.588170500"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,7,"Capital Federal",12,0,1681778962,"4bbae647-cbc7-4635-a4a3-12dee386a2ea"],"tabla":"provincias","ts":"2026-04-19T15:18:14.590168900"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,7,"Capital Federal",12,0,1681778962,"4bbae647-cbc7-4635-a4a3-12dee386a2ea"],"tabla":"provincias","ts":"2026-04-19T15:18:14.590168900"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,8,"Entre Rios",12,0,1681778962,"801b6baf-bc4b-4831-a9ec-5e2394f386c8"],"tabla":"provincias","ts":"2026-04-19T15:18:14.592170600"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,8,"Entre Rios",12,0,1681778962,"801b6baf-bc4b-4831-a9ec-5e2394f386c8"],"tabla":"provincias","ts":"2026-04-19T15:18:14.592170600"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,9,"Formosa",12,0,1681778962,"7d7f1444-c018-476b-864c-80192e3ef480"],"tabla":"provincias","ts":"2026-04-19T15:18:14.593677900"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,9,"Formosa",12,0,1681778962,"7d7f1444-c018-476b-864c-80192e3ef480"],"tabla":"provincias","ts":"2026-04-19T15:18:14.593677900"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,10,"Jujuy",12,0,1681778962,"6b2f4206-5a35-41a7-bdb4-949aeb18d2cc"],"tabla":"provincias","ts":"2026-04-19T15:18:14.596209400"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,10,"Jujuy",12,0,1681778962,"6b2f4206-5a35-41a7-bdb4-949aeb18d2cc"],"tabla":"provincias","ts":"2026-04-19T15:18:14.596209400"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,11,"La Pampa",12,0,1681778962,"7b6073e7-45b9-44f6-afe3-6f7b57ab76d3"],"tabla":"provincias","ts":"2026-04-19T15:18:14.597717400"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,11,"La Pampa",12,0,1681778962,"7b6073e7-45b9-44f6-afe3-6f7b57ab76d3"],"tabla":"provincias","ts":"2026-04-19T15:18:14.597717400"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,12,"La Rioja",12,0,1681778962,"945d3f9b-00e6-4839-8e8c-6995ffb88290"],"tabla":"provincias","ts":"2026-04-19T15:18:14.599726600"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,12,"La Rioja",12,0,1681778962,"945d3f9b-00e6-4839-8e8c-6995ffb88290"],"tabla":"provincias","ts":"2026-04-19T15:18:14.599726600"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,13,"Mendoza",12,0,1681778962,"bccbb608-23ae-45db-9673-f9c8fa4ea35f"],"tabla":"provincias","ts":"2026-04-19T15:18:14.601231900"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,13,"Mendoza",12,0,1681778962,"bccbb608-23ae-45db-9673-f9c8fa4ea35f"],"tabla":"provincias","ts":"2026-04-19T15:18:14.601231900"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,14,"Misiones",12,0,1681778962,"a4c84183-af32-4b57-b107-8add05e36a1c"],"tabla":"provincias","ts":"2026-04-19T15:18:14.602753900"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,14,"Misiones",12,0,1681778962,"a4c84183-af32-4b57-b107-8add05e36a1c"],"tabla":"provincias","ts":"2026-04-19T15:18:14.602753900"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,15,"Neuquen",12,0,1681778962,"8bebd550-4071-4c90-a094-9a8029f6b1da"],"tabla":"provincias","ts":"2026-04-19T15:18:14.605256"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,15,"Neuquen",12,0,1681778962,"8bebd550-4071-4c90-a094-9a8029f6b1da"],"tabla":"provincias","ts":"2026-04-19T15:18:14.605256"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,16,"Rio Negro",12,0,1681778962,"6dde72f4-9c15-4d0e-a548-1cab27d97266"],"tabla":"provincias","ts":"2026-04-19T15:18:14.607249700"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,16,"Rio Negro",12,0,1681778962,"6dde72f4-9c15-4d0e-a548-1cab27d97266"],"tabla":"provincias","ts":"2026-04-19T15:18:14.607249700"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,17,"Salta",12,0,1681778962,"ed7249fe-55cb-4a6a-81cf-7ae3cd575d36"],"tabla":"provincias","ts":"2026-04-19T15:18:14.609250700"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,17,"Salta",12,0,1681778962,"ed7249fe-55cb-4a6a-81cf-7ae3cd575d36"],"tabla":"provincias","ts":"2026-04-19T15:18:14.609250700"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,18,"San Juan",12,0,1681778962,"004a38b5-915f-4b8c-b988-c079e0fd5931"],"tabla":"provincias","ts":"2026-04-19T15:18:14.611253800"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,18,"San Juan",12,0,1681778962,"004a38b5-915f-4b8c-b988-c079e0fd5931"],"tabla":"provincias","ts":"2026-04-19T15:18:14.611253800"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,19,"San Luis",12,0,1681778962,"5c7a5549-b103-4e4d-9e52-53f2640bc799"],"tabla":"provincias","ts":"2026-04-19T15:18:14.612770100"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,19,"San Luis",12,0,1681778962,"5c7a5549-b103-4e4d-9e52-53f2640bc799"],"tabla":"provincias","ts":"2026-04-19T15:18:14.612770100"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,20,"Santa Cruz",12,0,1681778962,"2802211b-0697-40a7-a37a-f3abc2f41e9a"],"tabla":"provincias","ts":"2026-04-19T15:18:14.614294300"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,20,"Santa Cruz",12,0,1681778962,"2802211b-0697-40a7-a37a-f3abc2f41e9a"],"tabla":"provincias","ts":"2026-04-19T15:18:14.614294300"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,21,"Santa Fe",12,0,1681778962,"30339937-b3ce-40ef-970c-302349bc5d2a"],"tabla":"provincias","ts":"2026-04-19T15:18:14.615802300"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,21,"Santa Fe",12,0,1681778962,"30339937-b3ce-40ef-970c-302349bc5d2a"],"tabla":"provincias","ts":"2026-04-19T15:18:14.616334100"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,22,"Santiago del Estero",12,0,1681778962,"e679ef8c-6b55-45c8-bb2a-41057910b687"],"tabla":"provincias","ts":"2026-04-19T15:18:14.617344100"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,22,"Santiago del Estero",12,0,1681778962,"e679ef8c-6b55-45c8-bb2a-41057910b687"],"tabla":"provincias","ts":"2026-04-19T15:18:14.617344100"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,23,"Tierra del Fuego",12,0,1681778962,"1e5cee99-d5be-4ea0-bf8d-eb4234b43c2e"],"tabla":"provincias","ts":"2026-04-19T15:18:14.618350400"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,23,"Tierra del Fuego",12,0,1681778962,"1e5cee99-d5be-4ea0-bf8d-eb4234b43c2e"],"tabla":"provincias","ts":"2026-04-19T15:18:14.619344700"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,24,"Tucuman",12,0,1681778962,"9c62618e-e6dd-41e7-9c5c-8227c55a000e"],"tabla":"provincias","ts":"2026-04-19T15:18:14.619344700"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,24,"Tucuman",12,0,1681778962,"9c62618e-e6dd-41e7-9c5c-8227c55a000e"],"tabla":"provincias","ts":"2026-04-19T15:18:14.621259200"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,25,"Chuquisaca",27,0,1681778962,"53fdac3e-52b8-435d-96fc-5a5596a5051f"],"tabla":"provincias","ts":"2026-04-19T15:18:14.622270200"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,25,"Chuquisaca",27,0,1681778962,"53fdac3e-52b8-435d-96fc-5a5596a5051f"],"tabla":"provincias","ts":"2026-04-19T15:18:14.622270200"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,26,"Cochabamba",27,0,1681778962,"ad45ac52-d8a7-4467-bf70-a71891fa1893"],"tabla":"provincias","ts":"2026-04-19T15:18:14.623818400"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,26,"Cochabamba",27,0,1681778962,"ad45ac52-d8a7-4467-bf70-a71891fa1893"],"tabla":"provincias","ts":"2026-04-19T15:18:14.623818400"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,27,"El Beni",27,0,1681778962,"9792a479-f053-4045-92ff-cd2c6d37ed40"],"tabla":"provincias","ts":"2026-04-19T15:18:14.624828400"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,27,"El Beni",27,0,1681778962,"9792a479-f053-4045-92ff-cd2c6d37ed40"],"tabla":"provincias","ts":"2026-04-19T15:18:14.625829800"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,28,"La Paz",27,0,1681778962,"2e8070f6-31af-4653-8017-6e21f2bf415b"],"tabla":"provincias","ts":"2026-04-19T15:18:14.627335"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,28,"La Paz",27,0,1681778962,"2e8070f6-31af-4653-8017-6e21f2bf415b"],"tabla":"provincias","ts":"2026-04-19T15:18:14.627335"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,29,"Oruro",27,0,1681778962,"eb56289f-ffd2-4360-848d-09d29530694e"],"tabla":"provincias","ts":"2026-04-19T15:18:14.629384800"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,29,"Oruro",27,0,1681778962,"eb56289f-ffd2-4360-848d-09d29530694e"],"tabla":"provincias","ts":"2026-04-19T15:18:14.629384800"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,30,"Pando",27,0,1681778962,"6619e157-1fb0-4495-b964-0de36972ead0"],"tabla":"provincias","ts":"2026-04-19T15:18:14.631056200"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,30,"Pando",27,0,1681778962,"6619e157-1fb0-4495-b964-0de36972ead0"],"tabla":"provincias","ts":"2026-04-19T15:18:14.631056200"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,31,"Potosi",27,0,1681778962,"1b3fcefe-fc4f-4b5d-8c59-709ff1db0d2c"],"tabla":"provincias","ts":"2026-04-19T15:18:14.632064700"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,31,"Potosi",27,0,1681778962,"1b3fcefe-fc4f-4b5d-8c59-709ff1db0d2c"],"tabla":"provincias","ts":"2026-04-19T15:18:14.632064700"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,32,"Santa Cruz",27,0,1681778962,"3cb6e0fb-2721-4705-8ca5-1b68531086cd"],"tabla":"provincias","ts":"2026-04-19T15:18:14.634584"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,32,"Santa Cruz",27,0,1681778962,"3cb6e0fb-2721-4705-8ca5-1b68531086cd"],"tabla":"provincias","ts":"2026-04-19T15:18:14.634584"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,33,"Tarija",27,0,1681778962,"7cc3d45f-a34b-41ba-b877-911734e748a8"],"tabla":"provincias","ts":"2026-04-19T15:18:14.635582600"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,33,"Tarija",27,0,1681778962,"7cc3d45f-a34b-41ba-b877-911734e748a8"],"tabla":"provincias","ts":"2026-04-19T15:18:14.636581900"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,34,"Alto Parana",177,0,1681778962,"bbefba52-ddfa-4bad-afa0-3f197225b6f9"],"tabla":"provincias","ts":"2026-04-19T15:18:14.638580900"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,34,"Alto Parana",177,0,1681778962,"bbefba52-ddfa-4bad-afa0-3f197225b6f9"],"tabla":"provincias","ts":"2026-04-19T15:18:14.638580900"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,35,"Amambay",177,0,1681778962,"3395f4e5-e5f1-4cd1-9cb0-d1c56d172e1e"],"tabla":"provincias","ts":"2026-04-19T15:18:14.639583400"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,35,"Amambay",177,0,1681778962,"3395f4e5-e5f1-4cd1-9cb0-d1c56d172e1e"],"tabla":"provincias","ts":"2026-04-19T15:18:14.640581900"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,36,"Boqueron",177,0,1681778962,"936e3137-6b19-4b0a-a64a-87a900cd8336"],"tabla":"provincias","ts":"2026-04-19T15:18:14.641582100"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,36,"Boqueron",177,0,1681778962,"936e3137-6b19-4b0a-a64a-87a900cd8336"],"tabla":"provincias","ts":"2026-04-19T15:18:14.641582100"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,37,"Caaguazu",177,0,1681778962,"f7076350-4cba-499f-97f2-a7cbd585514b"],"tabla":"provincias","ts":"2026-04-19T15:18:14.642584600"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,37,"Caaguazu",177,0,1681778962,"f7076350-4cba-499f-97f2-a7cbd585514b"],"tabla":"provincias","ts":"2026-04-19T15:18:14.643583500"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,38,"Caazapa",177,0,1681778962,"380991ff-65bc-444d-a82c-8f2097d72d1f"],"tabla":"provincias","ts":"2026-04-19T15:18:14.643583500"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,38,"Caazapa",177,0,1681778962,"380991ff-65bc-444d-a82c-8f2097d72d1f"],"tabla":"provincias","ts":"2026-04-19T15:18:14.645550600"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,39,"Central",177,0,1681778962,"78ec345d-7de4-4dde-8d25-48731f767ad0"],"tabla":"provincias","ts":"2026-04-19T15:18:14.646071700"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,39,"Central",177,0,1681778962,"78ec345d-7de4-4dde-8d25-48731f767ad0"],"tabla":"provincias","ts":"2026-04-19T15:18:14.647078900"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,40,"Concepcion",177,0,1681778962,"d6fec158-dd7b-4ed1-9111-d35d628672f2"],"tabla":"provincias","ts":"2026-04-19T15:18:14.648596200"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,40,"Concepcion",177,0,1681778962,"d6fec158-dd7b-4ed1-9111-d35d628672f2"],"tabla":"provincias","ts":"2026-04-19T15:18:14.648596200"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,41,"Cordillera",177,0,1681778962,"460dc45c-4c22-4045-8e5c-25560158f871"],"tabla":"provincias","ts":"2026-04-19T15:18:14.649594700"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,41,"Cordillera",177,0,1681778962,"460dc45c-4c22-4045-8e5c-25560158f871"],"tabla":"provincias","ts":"2026-04-19T15:18:14.649594700"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,42,"Guaira",177,0,1681778962,"958b9623-8cfc-45b0-b556-c09511988853"],"tabla":"provincias","ts":"2026-04-19T15:18:14.651103100"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,42,"Guaira",177,0,1681778962,"958b9623-8cfc-45b0-b556-c09511988853"],"tabla":"provincias","ts":"2026-04-19T15:18:14.652764900"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,43,"Itapua",177,0,1681778962,"ebcd12e3-e93b-4140-ac39-481011f86ec9"],"tabla":"provincias","ts":"2026-04-19T15:18:14.653788800"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,43,"Itapua",177,0,1681778962,"ebcd12e3-e93b-4140-ac39-481011f86ec9"],"tabla":"provincias","ts":"2026-04-19T15:18:14.653788800"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,44,"Misiones",177,0,1681778962,"a8c862d0-804d-4fc9-8ad3-4ac8d20da8b3"],"tabla":"provincias","ts":"2026-04-19T15:18:14.654802800"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,44,"Misiones",177,0,1681778962,"a8c862d0-804d-4fc9-8ad3-4ac8d20da8b3"],"tabla":"provincias","ts":"2026-04-19T15:18:14.655798300"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,45,"Neembucu",177,0,1681778962,"567ca40b-e168-4d10-812a-010c0312a37e"],"tabla":"provincias","ts":"2026-04-19T15:18:14.657800"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,45,"Neembucu",177,0,1681778962,"567ca40b-e168-4d10-812a-010c0312a37e"],"tabla":"provincias","ts":"2026-04-19T15:18:14.657800"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,46,"Paraguari",177,0,1681778962,"e74f6977-051d-4a67-a460-c5088bfb3131"],"tabla":"provincias","ts":"2026-04-19T15:18:14.659798300"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,46,"Paraguari",177,0,1681778962,"e74f6977-051d-4a67-a460-c5088bfb3131"],"tabla":"provincias","ts":"2026-04-19T15:18:14.659798300"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,47,"Presidente Hayes",177,0,1681778962,"1fb1c528-7443-44b8-8f61-0b8c8e5269d7"],"tabla":"provincias","ts":"2026-04-19T15:18:14.661307800"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,47,"Presidente Hayes",177,0,1681778962,"1fb1c528-7443-44b8-8f61-0b8c8e5269d7"],"tabla":"provincias","ts":"2026-04-19T15:18:14.661841"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,48,"San Pedro",177,0,1681778962,"94d3d1df-17cf-4a62-8e79-4e861d45d11a"],"tabla":"provincias","ts":"2026-04-19T15:18:14.662360300"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,48,"San Pedro",177,0,1681778962,"94d3d1df-17cf-4a62-8e79-4e861d45d11a"],"tabla":"provincias","ts":"2026-04-19T15:18:14.662360300"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,49,"Canindeyu",177,0,1681778962,"729322ee-2570-477a-bbd8-1fa5cfc92362"],"tabla":"provincias","ts":"2026-04-19T15:18:14.663881200"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,49,"Canindeyu",177,0,1681778962,"729322ee-2570-477a-bbd8-1fa5cfc92362"],"tabla":"provincias","ts":"2026-04-19T15:18:14.664891700"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,50,"Chaco",177,0,1681778962,"cbf4bc79-e73c-4928-958d-2167bbc7dceb"],"tabla":"provincias","ts":"2026-04-19T15:18:14.664891700"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,50,"Chaco",177,0,1681778962,"cbf4bc79-e73c-4928-958d-2167bbc7dceb"],"tabla":"provincias","ts":"2026-04-19T15:18:14.666399300"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,51,"Nueva Asuncion",177,0,1681778962,"f09762d4-199c-46fd-ad7d-8270ffef906a"],"tabla":"provincias","ts":"2026-04-19T15:18:14.667416"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,51,"Nueva Asuncion",177,0,1681778962,"f09762d4-199c-46fd-ad7d-8270ffef906a"],"tabla":"provincias","ts":"2026-04-19T15:18:14.669407800"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,52,"Alto Paraguay",177,0,1681778962,"fe405210-3626-4d66-b3e2-ced43bef2dbe"],"tabla":"provincias","ts":"2026-04-19T15:18:14.669407800"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,52,"Alto Paraguay",177,0,1681778962,"fe405210-3626-4d66-b3e2-ced43bef2dbe"],"tabla":"provincias","ts":"2026-04-19T15:18:14.670451400"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,1,"Buenos Aires",12,0,1681778962,"b5949e7e-986a-4183-a0b0-83d949b2e16f"],"tabla":"provincias","ts":"2026-04-19T15:18:22.366087100"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,2,"Catamarca",12,0,1681778962,"684a302b-300a-4f71-a65d-bbdb73fed2e4"],"tabla":"provincias","ts":"2026-04-19T15:18:22.367679900"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,3,"Chaco",12,0,1681778962,"eab09f72-55f4-4d1a-9b04-7c0a073a38ae"],"tabla":"provincias","ts":"2026-04-19T15:18:22.370208800"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,4,"Chubut",12,0,1681778962,"74b99368-10db-4c95-8873-d8f09858bb1e"],"tabla":"provincias","ts":"2026-04-19T15:18:22.371724"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,5,"Cordoba",12,0,1681778962,"0565e601-9965-4678-b3af-778e6d9d317a"],"tabla":"provincias","ts":"2026-04-19T15:18:22.371724"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,6,"Corrientes",12,0,1681778962,"fac604e6-7ff2-437b-bdd1-7e9e0c6d694a"],"tabla":"provincias","ts":"2026-04-19T15:18:22.373907400"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,7,"Capital Federal",12,0,1681778962,"4bbae647-cbc7-4635-a4a3-12dee386a2ea"],"tabla":"provincias","ts":"2026-04-19T15:18:22.374922600"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,8,"Entre Rios",12,0,1681778962,"801b6baf-bc4b-4831-a9ec-5e2394f386c8"],"tabla":"provincias","ts":"2026-04-19T15:18:22.376924100"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,9,"Formosa",12,0,1681778962,"7d7f1444-c018-476b-864c-80192e3ef480"],"tabla":"provincias","ts":"2026-04-19T15:18:22.377438200"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,10,"Jujuy",12,0,1681778962,"6b2f4206-5a35-41a7-bdb4-949aeb18d2cc"],"tabla":"provincias","ts":"2026-04-19T15:18:22.379499300"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,11,"La Pampa",12,0,1681778962,"7b6073e7-45b9-44f6-afe3-6f7b57ab76d3"],"tabla":"provincias","ts":"2026-04-19T15:18:22.380767700"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,12,"La Rioja",12,0,1681778962,"945d3f9b-00e6-4839-8e8c-6995ffb88290"],"tabla":"provincias","ts":"2026-04-19T15:18:22.381786200"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,13,"Mendoza",12,0,1681778962,"bccbb608-23ae-45db-9673-f9c8fa4ea35f"],"tabla":"provincias","ts":"2026-04-19T15:18:22.383785"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,14,"Misiones",12,0,1681778962,"a4c84183-af32-4b57-b107-8add05e36a1c"],"tabla":"provincias","ts":"2026-04-19T15:18:22.385309500"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,15,"Neuquen",12,0,1681778962,"8bebd550-4071-4c90-a094-9a8029f6b1da"],"tabla":"provincias","ts":"2026-04-19T15:18:22.386589300"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,16,"Rio Negro",12,0,1681778962,"6dde72f4-9c15-4d0e-a548-1cab27d97266"],"tabla":"provincias","ts":"2026-04-19T15:18:22.388589300"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,17,"Salta",12,0,1681778962,"ed7249fe-55cb-4a6a-81cf-7ae3cd575d36"],"tabla":"provincias","ts":"2026-04-19T15:18:22.389587800"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,18,"San Juan",12,0,1681778962,"004a38b5-915f-4b8c-b988-c079e0fd5931"],"tabla":"provincias","ts":"2026-04-19T15:18:22.390588600"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,19,"San Luis",12,0,1681778962,"5c7a5549-b103-4e4d-9e52-53f2640bc799"],"tabla":"provincias","ts":"2026-04-19T15:18:22.392833700"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,20,"Santa Cruz",12,0,1681778962,"2802211b-0697-40a7-a37a-f3abc2f41e9a"],"tabla":"provincias","ts":"2026-04-19T15:18:22.393818400"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,21,"Santa Fe",12,0,1681778962,"30339937-b3ce-40ef-970c-302349bc5d2a"],"tabla":"provincias","ts":"2026-04-19T15:18:22.395383100"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,22,"Santiago del Estero",12,0,1681778962,"e679ef8c-6b55-45c8-bb2a-41057910b687"],"tabla":"provincias","ts":"2026-04-19T15:18:22.395906100"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,23,"Tierra del Fuego",12,0,1681778962,"1e5cee99-d5be-4ea0-bf8d-eb4234b43c2e"],"tabla":"provincias","ts":"2026-04-19T15:18:22.398440100"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,24,"Tucuman",12,0,1681778962,"9c62618e-e6dd-41e7-9c5c-8227c55a000e"],"tabla":"provincias","ts":"2026-04-19T15:18:22.399475700"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,25,"Chuquisaca",27,0,1681778962,"53fdac3e-52b8-435d-96fc-5a5596a5051f"],"tabla":"provincias","ts":"2026-04-19T15:18:22.401470900"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,26,"Cochabamba",27,0,1681778962,"ad45ac52-d8a7-4467-bf70-a71891fa1893"],"tabla":"provincias","ts":"2026-04-19T15:18:22.402577900"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,27,"El Beni",27,0,1681778962,"9792a479-f053-4045-92ff-cd2c6d37ed40"],"tabla":"provincias","ts":"2026-04-19T15:18:22.404106600"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,28,"La Paz",27,0,1681778962,"2e8070f6-31af-4653-8017-6e21f2bf415b"],"tabla":"provincias","ts":"2026-04-19T15:18:22.406106300"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,29,"Oruro",27,0,1681778962,"eb56289f-ffd2-4360-848d-09d29530694e"],"tabla":"provincias","ts":"2026-04-19T15:18:22.407110300"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,30,"Pando",27,0,1681778962,"6619e157-1fb0-4495-b964-0de36972ead0"],"tabla":"provincias","ts":"2026-04-19T15:18:22.408148200"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,31,"Potosi",27,0,1681778962,"1b3fcefe-fc4f-4b5d-8c59-709ff1db0d2c"],"tabla":"provincias","ts":"2026-04-19T15:18:22.409367"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,32,"Santa Cruz",27,0,1681778962,"3cb6e0fb-2721-4705-8ca5-1b68531086cd"],"tabla":"provincias","ts":"2026-04-19T15:18:22.410911100"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,33,"Tarija",27,0,1681778962,"7cc3d45f-a34b-41ba-b877-911734e748a8"],"tabla":"provincias","ts":"2026-04-19T15:18:22.411634200"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,34,"Alto Parana",177,0,1681778962,"bbefba52-ddfa-4bad-afa0-3f197225b6f9"],"tabla":"provincias","ts":"2026-04-19T15:18:22.413702"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,35,"Amambay",177,0,1681778962,"3395f4e5-e5f1-4cd1-9cb0-d1c56d172e1e"],"tabla":"provincias","ts":"2026-04-19T15:18:22.414712200"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,36,"Boqueron",177,0,1681778962,"936e3137-6b19-4b0a-a64a-87a900cd8336"],"tabla":"provincias","ts":"2026-04-19T15:18:22.414712200"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,37,"Caaguazu",177,0,1681778962,"f7076350-4cba-499f-97f2-a7cbd585514b"],"tabla":"provincias","ts":"2026-04-19T15:18:22.417659800"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,38,"Caazapa",177,0,1681778962,"380991ff-65bc-444d-a82c-8f2097d72d1f"],"tabla":"provincias","ts":"2026-04-19T15:18:22.418656900"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,39,"Central",177,0,1681778962,"78ec345d-7de4-4dde-8d25-48731f767ad0"],"tabla":"provincias","ts":"2026-04-19T15:18:22.419660100"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,40,"Concepcion",177,0,1681778962,"d6fec158-dd7b-4ed1-9111-d35d628672f2"],"tabla":"provincias","ts":"2026-04-19T15:18:22.421319500"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,41,"Cordillera",177,0,1681778962,"460dc45c-4c22-4045-8e5c-25560158f871"],"tabla":"provincias","ts":"2026-04-19T15:18:22.421871500"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,42,"Guaira",177,0,1681778962,"958b9623-8cfc-45b0-b556-c09511988853"],"tabla":"provincias","ts":"2026-04-19T15:18:22.422883300"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,43,"Itapua",177,0,1681778962,"ebcd12e3-e93b-4140-ac39-481011f86ec9"],"tabla":"provincias","ts":"2026-04-19T15:18:22.425094700"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,44,"Misiones",177,0,1681778962,"a8c862d0-804d-4fc9-8ad3-4ac8d20da8b3"],"tabla":"provincias","ts":"2026-04-19T15:18:22.425094700"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,45,"Neembucu",177,0,1681778962,"567ca40b-e168-4d10-812a-010c0312a37e"],"tabla":"provincias","ts":"2026-04-19T15:18:22.427167900"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,46,"Paraguari",177,0,1681778962,"e74f6977-051d-4a67-a460-c5088bfb3131"],"tabla":"provincias","ts":"2026-04-19T15:18:22.427689100"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,47,"Presidente Hayes",177,0,1681778962,"1fb1c528-7443-44b8-8f61-0b8c8e5269d7"],"tabla":"provincias","ts":"2026-04-19T15:18:22.429832300"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,48,"San Pedro",177,0,1681778962,"94d3d1df-17cf-4a62-8e79-4e861d45d11a"],"tabla":"provincias","ts":"2026-04-19T15:18:22.431354700"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,49,"Canindeyu",177,0,1681778962,"729322ee-2570-477a-bbd8-1fa5cfc92362"],"tabla":"provincias","ts":"2026-04-19T15:18:22.432360"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,50,"Chaco",177,0,1681778962,"cbf4bc79-e73c-4928-958d-2167bbc7dceb"],"tabla":"provincias","ts":"2026-04-19T15:18:22.433870300"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,51,"Nueva Asuncion",177,0,1681778962,"f09762d4-199c-46fd-ad7d-8270ffef906a"],"tabla":"provincias","ts":"2026-04-19T15:18:22.435051600"}
+{"motivo":"UUID nulo o vacío en export","payload":[null,52,"Alto Paraguay",177,0,1681778962,"fe405210-3626-4d66-b3e2-ced43bef2dbe"],"tabla":"provincias","ts":"2026-04-19T15:18:22.436125800"}
