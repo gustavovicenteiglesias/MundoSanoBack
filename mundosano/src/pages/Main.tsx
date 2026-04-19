@@ -141,31 +141,119 @@ const Main: React.FC<any> = () => {
 
   const exportJsontoApi = async () => {
     const db = await dbdb();
+    const uuidColumnByTable: Record<string, number> = {
+      personas: 13,
+      controles: 18,
+      ubicaciones: 10,
+      antecedentes: 14,
+      control_embarazo: 15,
+      inmunizaciones_control: 6,
+      laboratorios_realizados: 10,
+      etmis_personas: 6,
+      antecedentes_apps: 4,
+      antecedentes_macs: 4,
+    };
+
+    const validateExportPayload = (payload: any) => {
+      const tables = Array.isArray(payload?.tables) ? payload.tables : [];
+      const issues: string[] = [];
+      let totalRows = 0;
+      let invalidRows = 0;
+
+      const cleanedTables = tables.map((table: any) => {
+        const tableName = table?.name;
+        const uuidIndex = uuidColumnByTable[tableName];
+        const rows = Array.isArray(table?.values) ? table.values : [];
+
+        const cleanedValues = rows.filter((row: any, idx: number) => {
+          totalRows++;
+          if (!Array.isArray(row) || uuidIndex === undefined) return true;
+          const uuid = String(row[uuidIndex] ?? "").trim();
+          if (!uuid) {
+            invalidRows++;
+            issues.push(`Tabla ${tableName}, fila ${idx + 1}: UUID vacío`);
+            return false;
+          }
+          return true;
+        });
+
+        return {
+          ...table,
+          values: cleanedValues,
+        };
+      });
+
+      return {
+        payload: {
+          ...payload,
+          tables: cleanedTables,
+        },
+        totalRows,
+        invalidRows,
+        issues,
+      };
+    };
+
     setLoading(true);
-    axios.post(BASE_URL + "/sqlite", data).then(async (resp) => {
+    try {
+      await db.open();
+      const exported: any = await db.exportToJson("partial");
+      const payload = exported?.export;
+
+      if (!payload?.tables?.length) {
+        setLoading(false);
+        await db.close();
+        alert("No hay datos pendientes para exportar.");
+        return;
+      }
+
+      const validation = validateExportPayload(payload);
+      if (validation.invalidRows > 0) {
+        setLoading(false);
+        await db.close();
+        alert(
+          `Exportación bloqueada: ${validation.invalidRows} filas inválidas de ${validation.totalRows}.\n` +
+            `Primer error: ${validation.issues[0]}`
+        );
+        return;
+      }
+
+      const resp = await axios.post(BASE_URL + "/sqlite", validation.payload);
       console.log(resp);
-      setLoading(false);
-      
+
       if (resp.data.success) {
-        setHayExport(true)
-        await db.open();
+        setData(validation.payload);
+        setHayExport(true);
         const d = new Date();
         const de = Math.floor(new Date().getTime() / 1000);
         await db.setSyncDate(d.toISOString());
-        await db.close();
 
         const datos = {
           id: 0,
           syncDate: de,
         };
-
         console.log(`fecha ${de}`);
-        axios.post(BASE_URL + "/sync_date", datos);
+        await axios.post(BASE_URL + "/sync_date", datos);
         setColorLogo(true);
+
+        const rechazados = Number(resp?.data?.rechazados ?? 0);
+        const conflictos = Number(resp?.data?.conflictosLastModified ?? 0);
+        if (rechazados > 0 || conflictos > 0) {
+          alert(
+            `Exportación completada con observaciones.\nRechazados: ${rechazados}\nConflictos last_modified: ${conflictos}`
+          );
+        }
       } else {
         setColorLogo(false);
       }
-    });
+    } catch (error: any) {
+      console.error("Error exportando a API:", error);
+      setColorLogo(false);
+      alert("No se pudo exportar a servidor.");
+    } finally {
+      setLoading(false);
+      await db.close();
+    }
   };
 
   // Función genérica para combinar los valores de los arrays con las interfaces
