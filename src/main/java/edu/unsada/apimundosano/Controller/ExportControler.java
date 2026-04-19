@@ -257,36 +257,6 @@ import java.util.*;
         table.put("values", filtered);
     }
 
-    @SuppressWarnings("unchecked")
-    private void filterRowsBySince(Map<String, Object> table, Integer since) {
-        if (since == null) return;
-        List<Map<String, Object>> schema = (List<Map<String, Object>>) table.get("schema");
-        List<List<Object>> values = (List<List<Object>>) table.get("values");
-        if (schema == null || values == null || values.isEmpty()) return;
-
-        int lastModifiedIndex = -1;
-        for (int i = 0; i < schema.size(); i++) {
-            Object column = schema.get(i).get("column");
-            if (column != null && "last_modified".equalsIgnoreCase(column.toString().trim())) {
-                lastModifiedIndex = i;
-                break;
-            }
-        }
-        if (lastModifiedIndex < 0) return;
-
-        List<List<Object>> filtered = new ArrayList<>();
-        for (List<Object> row : values) {
-            if (row == null || lastModifiedIndex >= row.size()) {
-                continue;
-            }
-            Integer rowLastModified = safeInt(row, lastModifiedIndex);
-            if (rowLastModified != null && rowLastModified > since) {
-                filtered.add(row);
-            }
-        }
-        table.put("values", filtered);
-    }
-
     private boolean personaDisponible(Integer idPersona, Set<Integer> personasValidas) {
         if (idPersona == null) return false;
         return personasValidas.contains(idPersona) || personasRepo.existsById(idPersona);
@@ -1126,7 +1096,7 @@ import java.util.*;
         if (tablesObject instanceof List && effectiveSince != null) {
             List<Map<String, Object>> tables = (List<Map<String, Object>>) tablesObject;
             for (Map<String, Object> table : tables) {
-                filterRowsBySince(table, effectiveSince);
+                filterRowsByLastModified(table, effectiveSince);
             }
         }
         json.put("mode", "partial");
@@ -1210,3 +1180,5 @@ import java.util.*;
         return response;
     }
     }
+
+
