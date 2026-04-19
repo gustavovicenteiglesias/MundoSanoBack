@@ -1078,6 +1078,33 @@ import java.util.*;
             return errorJson;
         }
     }
+
+    @GetMapping("/data/json3/partial")
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getDataPartial(@RequestParam(value = "since", required = false) Integer since) {
+        Map<String, Object> json = getDataall();
+        if (json == null) return new HashMap<>();
+
+        Integer effectiveSince = since;
+        if (effectiveSince == null) {
+            try {
+                effectiveSince = syncTableRepo.buscarUltimoLast();
+            } catch (Exception ignored) {}
+        }
+
+        Object tablesObject = json.get("tables");
+        if (tablesObject instanceof List && effectiveSince != null) {
+            List<Map<String, Object>> tables = (List<Map<String, Object>>) tablesObject;
+            for (Map<String, Object> table : tables) {
+                filterRowsByLastModified(table, effectiveSince);
+            }
+        }
+        json.put("mode", "partial");
+        if (effectiveSince != null) {
+            json.put("since", effectiveSince);
+        }
+        return json;
+    }
     @GetMapping("/data/json")
     public ResponseEntity<String> getDataAsJson() throws JsonProcessingException {
         Iterable<PersonasEntity> data = personasRepo.findBySqlDeletedOrSqlDeletedIsNull(0);

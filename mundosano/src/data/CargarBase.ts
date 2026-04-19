@@ -43,12 +43,15 @@ function combinarValores<T extends object>(interfaz: T, arrays: any[][]): T[] {
         return objeto;
     });
 }
-export async function CargarBase (){ 
+export async function CargarBase (since?: number | null){ 
     const db = await dbdb();
     const MySwal = withReactContent(Swal);
     
     try {
-        const resp = await axios.get(BASE_URL+"/data/json3");
+        const endpoint = since !== undefined && since !== null
+            ? `${BASE_URL}/data/json3/partial?since=${since}`
+            : `${BASE_URL}/data/json3`;
+        const resp = await axios.get(endpoint);
         
         // Single Source of Truth architecture: Server provided the schema AND the values!
         // Whitelist ONLY valid keys to satisfy strict Capacitor SQLite validation
