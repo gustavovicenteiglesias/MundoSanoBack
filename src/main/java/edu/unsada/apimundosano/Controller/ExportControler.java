@@ -199,6 +199,100 @@ import java.util.*;
             System.err.println("No se pudo escribir import_sync.log: " + e.getMessage());
         }
     }
+    private void appendExportLogToFile(Map<String, Object> log) {
+        try {
+            Path folder = Path.of("logs");
+            Files.createDirectories(folder);
+            Path file = folder.resolve("export_sync.log");
+            String line = new ObjectMapper().writeValueAsString(log) + System.lineSeparator();
+            Files.writeString(file, line, StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            // Si falla el log en disco no interrumpimos el flujo
+            System.err.println("No se pudo escribir export_sync.log: " + e.getMessage());
+        }
+    }
+
+    private void logRejectedExportRow(String tabla, String motivo, List<Object> payload) {
+        Map<String, Object> log = new HashMap<>();
+        log.put("tabla", tabla);
+        log.put("motivo", motivo);
+        log.put("payload", payload);
+        log.put("ts", LocalDateTime.now().toString());
+        System.err.println("EXPORT RECHAZADO -> tabla=" + tabla + ", motivo=" + motivo + ", payload=" + payload);
+        appendExportLogToFile(log);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void filterRowsWithoutUuid(Map<String, Object> table) {
+        String tableName = String.valueOf(table.getOrDefault("name", "unknown"));
+        List<Map<String, Object>> schema = (List<Map<String, Object>>) table.get("schema");
+        List<List<Object>> values = (List<List<Object>>) table.get("values");
+        if (schema == null || values == null || values.isEmpty()) return;
+
+        int uuidIndex = -1;
+        for (int i = 0; i < schema.size(); i++) {
+            Object column = schema.get(i).get("column");
+            if (column != null && "uuid".equalsIgnoreCase(column.toString().trim())) {
+                uuidIndex = i;
+                break;
+            }
+        }
+        if (uuidIndex < 0) return;
+
+        List<List<Object>> filtered = new ArrayList<>();
+        for (List<Object> row : values) {
+            if (row == null || uuidIndex >= row.size()) {
+                logRejectedExportRow(tableName, "Fila sin columna UUID esperada por schema", row);
+                continue;
+            }
+            Object uuidValue = row.get(uuidIndex);
+            String uuid = uuidValue == null ? "" : uuidValue.toString().trim();
+            if (uuid.isEmpty()) {
+                logRejectedExportRow(tableName, "UUID nulo o vacío en export", row);
+                continue;
+            }
+            filtered.add(row);
+        }
+        table.put("values", filtered);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void filterRowsBySince(Map<String, Object> table, Integer since) {
+        if (since == null) return;
+        List<Map<String, Object>> schema = (List<Map<String, Object>>) table.get("schema");
+        List<List<Object>> values = (List<List<Object>>) table.get("values");
+        if (schema == null || values == null || values.isEmpty()) return;
+
+        int lastModifiedIndex = -1;
+        for (int i = 0; i < schema.size(); i++) {
+            Object column = schema.get(i).get("column");
+            if (column != null && "last_modified".equalsIgnoreCase(column.toString().trim())) {
+                lastModifiedIndex = i;
+                break;
+            }
+        }
+        if (lastModifiedIndex < 0) return;
+
+        List<List<Object>> filtered = new ArrayList<>();
+        for (List<Object> row : values) {
+            if (row == null || lastModifiedIndex >= row.size()) {
+                continue;
+            }
+            Integer rowLastModified = safeInt(row, lastModifiedIndex);
+            if (rowLastModified != null && rowLastModified > since) {
+                filtered.add(row);
+            }
+        }
+        table.put("values", filtered);
+    }
+
+    // Compatibilidad con ramas/editores que todavía referencian el nombre anterior
+    @SuppressWarnings("unused")
+    private void filterRowsByLastModified(Map<String, Object> table, Integer since) {
+        filterRowsBySince(table, since);
+    }
+
     private boolean personaDisponible(Integer idPersona, Set<Integer> personasValidas) {
         if (idPersona == null) return false;
         return personasValidas.contains(idPersona) || personasRepo.existsById(idPersona);
@@ -1005,6 +1099,7 @@ import java.util.*;
                         t.put("values", safeValues("parajes", () -> parajeService.valuesParajes(parajesRepo.findAll())));
                         break;
                 }
+                filterRowsWithoutUuid(t);
             }
 
             return json;
@@ -1018,6 +1113,33 @@ import java.util.*;
             errorJson.put("tables", new ArrayList<>());
             return errorJson;
         }
+    }
+
+    @GetMapping("/data/json3/partial")
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getDataPartial(@RequestParam(value = "since", required = false) Integer since) {
+        Map<String, Object> json = getDataall();
+        if (json == null) return new HashMap<>();
+
+        Integer effectiveSince = since;
+        if (effectiveSince == null) {
+            try {
+                effectiveSince = syncTableRepo.buscarUltimoLast();
+            } catch (Exception ignored) {}
+        }
+
+        Object tablesObject = json.get("tables");
+        if (tablesObject instanceof List && effectiveSince != null) {
+            List<Map<String, Object>> tables = (List<Map<String, Object>>) tablesObject;
+            for (Map<String, Object> table : tables) {
+                filterRowsBySince(table, effectiveSince);
+            }
+        }
+        json.put("mode", "partial");
+        if (effectiveSince != null) {
+            json.put("since", effectiveSince);
+        }
+        return json;
     }
     @GetMapping("/data/json")
     public ResponseEntity<String> getDataAsJson() throws JsonProcessingException {
@@ -1094,6 +1216,3 @@ import java.util.*;
         return response;
     }
     }
-
-
-

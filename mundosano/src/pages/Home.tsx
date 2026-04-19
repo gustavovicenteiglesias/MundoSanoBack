@@ -13,7 +13,6 @@ import {
 
 //import "./Home.css";
 
-import { Device } from "@capacitor/device";
 import { Network } from "@capacitor/network";
 import { UsuariosRepo } from "../repository/UsuariosRepo";
 import { useEffect, useState } from "react";
@@ -62,27 +61,6 @@ const Home: React.FC = () => {
   };
 
   useEffect(() => {
-    const checkDbAndMigrate = async () => {
-      try {
-        const existe = await sqlite.isDatabase(NOMBRE_BB_DD);
-        if (!existe.result) {
-          console.log("No DB found or tables missing. Auto-loading base...");
-          await nuevaBBDD();
-        } else {
-          // Verify if tables are fully created (e.g. usuarios)
-          const db = await dbdb();
-          await db.open();
-          const isTable = await db.isTable("usuarios");
-          await db.close();
-          if (!isTable.result) {
-            console.log("Table 'usuarios' missing. Auto-loading base...");
-            await nuevaBBDD();
-          }
-        }
-      } catch (err) {
-        console.error("DB Init error", err);
-      }
-    };
     logCurrentNetworkStatus();
   }, []);
   const dbdb = async (): Promise<SQLiteDBConnection> => {

@@ -1,14 +1,14 @@
 # TAREA UUID-007: Estabilización de Sincronización y Depuración de JSON
 ## Estado
-TODO
+DOING
 
 ## Objetivo
 Resolver el error persistente `ImportFromJson: Stringify Json Object not Valid` mediante la limpieza del payload JSON (eliminación de claves no estándar como `success`) y la eliminación de la duplicidad de llamadas entre `App.tsx` y `Home.tsx`.
 
 ## Criterios de Aceptación (Checklist)
-- [ ] **Backend**: Modificar `ExportControler.java` para retornar únicamente las 5 claves permitidas por `JsonSQLite`.
-- [ ] **Frontend**: Refactorizar `Home.tsx` para eliminar el auto-disparo de `checkDbAndMigrate` en el montaje, delegando la carga inicial a `App.tsx`.
-- [ ] **Frontend**: Refactorizar `CargarBase.ts` para aplicar un filtro de seguridad (pick) sobre las claves permitidas antes de llamar a `sqlite.importFromJson`.
+- [x] **Backend**: Modificar `ExportControler.java` para retornar únicamente las 5 claves permitidas por `JsonSQLite`.
+- [x] **Frontend**: Refactorizar `Home.tsx` para eliminar el auto-disparo de `checkDbAndMigrate` en el montaje, delegando la carga inicial a `App.tsx`.
+- [x] **Frontend**: Refactorizar `CargarBase.ts` para aplicar un filtro de seguridad (pick) sobre las claves permitidas antes de llamar a `sqlite.importFromJson`.
 - [ ] **Verificación**: Confirmar que `/json3` se llame una sola vez y la base se cargue correctamente.
 
 ## Archivos Involucrados
