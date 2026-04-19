@@ -11,7 +11,6 @@ import { Inmunizaciones_Control, InicialInmunizacionesControl } from "../models/
 import { Laboratorios_Realizados, InicialLaboratorios } from "../models/Laboratorios_Realizados";
 import { Ubicaciones, InicialUbicaciones } from "../models/Ubicaciones";
 import { Usuarios,InitialUsuario } from "../models/Usuarios";
-import { datos } from "./exportarIII..last";
 import { Repository } from "../repository/Repository";
 import { SQLiteDBConnection } from "react-sqlite-hook";
 import Swal from 'sweetalert2'
@@ -44,12 +43,22 @@ function combinarValores<T extends object>(interfaz: T, arrays: any[][]): T[] {
         return objeto;
     });
 }
-export async function CargarBase (){ 
+type SyncMode = "full" | "partial";
+type CargarBaseOptions = {
+    mode?: SyncMode;
+    since?: number | null;
+};
+
+export async function CargarBase (options?: CargarBaseOptions){ 
     const db = await dbdb();
     const MySwal = withReactContent(Swal);
     
     try {
-        const resp = await axios.get(BASE_URL+"/data/json3");
+        const mode: SyncMode = options?.mode ?? ((options?.since !== undefined && options?.since !== null) ? "partial" : "full");
+        const endpoint = mode === "partial"
+            ? `${BASE_URL}/data/json3/partial${options?.since !== undefined && options?.since !== null ? `?since=${options.since}` : ""}`
+            : `${BASE_URL}/data/json3`;
+        const resp = await axios.get(endpoint);
         
         // Single Source of Truth architecture: Server provided the schema AND the values!
         // Whitelist ONLY valid keys to satisfy strict Capacitor SQLite validation

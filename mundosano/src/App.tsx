@@ -24,7 +24,7 @@ import '@ionic/react/css/display.css';
 
 /* Theme variables */
 import './theme/variables.css';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Usuarios } from './models/Usuarios';
 import DetallePaciente from './pages/DetallePaciente';
 import Personas from './pages/Personas';
@@ -71,6 +71,7 @@ const App: React.FC = () => {
   const [showEdituser, setShowEditUser] = useState<boolean>(false);
   const [showReaduser, setShowReadUser] = useState<boolean>(false);
   const [permisGeo, setPermisGeo] = useState<boolean>(false);
+  const baseInitRef = useRef(false);
   
   existingConn = { existConn: existConn, setExistConn: setExistConn };
 
@@ -85,12 +86,31 @@ const App: React.FC = () => {
   sqlite = useSQLite();
 
   console.log(`$$$ in App sqlite.isAvailable  ${sqlite.isAvailable} $$$`);
+  const getLastSyncFromLocal = async (): Promise<number | null> => {
+    try {
+      const ret = await sqlite.checkConnectionsConsistency();
+      const isConn = (await sqlite.isConnection(NOMBRE_BB_DD)).result;
+      const conn = (ret.result && isConn)
+        ? await sqlite.retrieveConnection(NOMBRE_BB_DD)
+        : await sqlite.createConnection(NOMBRE_BB_DD);
+      await conn.open();
+      const syncDate: any = await conn.getSyncDate();
+      await conn.close();
+      if (!syncDate) return null;
+      if (typeof syncDate === "number") return syncDate;
+      const parsed = Date.parse(String(syncDate));
+      if (Number.isNaN(parsed)) return null;
+      return Math.floor(parsed / 1000);
+    } catch (e) {
+      return null;
+    }
+  };
   const Base = async (): Promise<Boolean> => {
     try {
       const platform = (await sqlite.getPlatform()).platform;
       let existe: any = await sqlite.isDatabase(NOMBRE_BB_DD)
       if (!existe.result) {
-       await  CargarBase()
+       await  CargarBase({ mode: "full" })
        
         setExistConn(true)
         console.log("se cargo base ")
@@ -100,6 +120,8 @@ const App: React.FC = () => {
         }
 
       } else {
+        const lastSync = await getLastSyncFromLocal();
+        await CargarBase({ mode: "partial", since: lastSync });
         await sqlite.createConnection(NOMBRE_BB_DD)
         console.log("ya tiene  base ")
         setExistConn(true)
@@ -143,6 +165,8 @@ const App: React.FC = () => {
     }
   }, [])
   useEffect(() => {
+    if (baseInitRef.current) return;
+    baseInitRef.current = true;
     Base()
     CheckPermitionGeoLocation()
 
