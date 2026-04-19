@@ -8,6 +8,27 @@ export class Repository<T extends object> {
         this.tableName = tableName;
     }
 
+    private sanitizeEntity(entity: Record<string, any>): Record<string, any> {
+        return Object.fromEntries(
+            Object.entries(entity).filter(([key, value]) => {
+                if (key === "id") return false; // Evita romper tablas que no usan PK genérica "id"
+                if (value === undefined) return false; // Evita SQL inválido: columna = undefined
+                return true;
+            })
+        );
+    }
+
+    private toSqlValue(value: any): string {
+        if (value === null) return "null";
+        if (typeof value === "string") {
+            return `"${value.replace(/"/g, '""')}"`;
+        }
+        if (typeof value === "boolean") {
+            return value ? "1" : "0";
+        }
+        return String(value);
+    }
+
     async getAll(): Promise<T[]> {
         try {
             const db = await getDb();
@@ -204,16 +225,14 @@ export class Repository<T extends object> {
             await db.open();
             
             // Inyectar UUID y last_modified
-            (entity as any).uuid = crypto.randomUUID();
+            if (!(entity as any).uuid) {
+                (entity as any).uuid = crypto.randomUUID();
+            }
             (entity as any).last_modified = Math.floor(Date.now() / 1000);
-            
-            const keys = Object.keys(entity).join(',');
-            const values = Object.values(entity).map(value => {
-                if (value === null) {
-                    return "null";
-                }
-                return typeof value === 'string' ? `"${value}"` : value;
-            }).join(',');
+
+            const cleanEntity = this.sanitizeEntity(entity as Record<string, any>);
+            const keys = Object.keys(cleanEntity).join(',');
+            const values = Object.values(cleanEntity).map(value => this.toSqlValue(value)).join(',');
             console.log(`INSERT INTO ${this.tableName} (${keys}) VALUES (${values})`)
             const res = await db.execute(`INSERT INTO ${this.tableName} (${keys}) VALUES (${values})`);
 
@@ -243,14 +262,9 @@ export class Repository<T extends object> {
                 .map(entity => {
                   // Inyectar last_modified
                   (entity as any).last_modified = now;
-                  
-                  const keys = Object.keys(entity).join(',');
-                  const entityValues = Object.values(entity).map(value => {
-                    if (value === null) {
-                      return "null";
-                    }
-                    return typeof value === 'string' ? `"${value}"` : value;
-                  }).join(',');
+                  const cleanEntity = this.sanitizeEntity(entity as Record<string, any>);
+                  const keys = Object.keys(cleanEntity).join(',');
+                  const entityValues = Object.values(cleanEntity).map(value => this.toSqlValue(value)).join(',');
         
                   return `(${entityValues})`;
                 })
@@ -273,8 +287,9 @@ export class Repository<T extends object> {
             const db = await dbdb();
             await db.open();
             //const id = (entity as any).id_persona; // Assuming id_persona field is present in all interfaces
-            const updates = Object.entries(entity).map(([key, value]) => {
-                return typeof value === 'string' ? `${key} = "${value}"` : `${key} = ${value}`;
+            const cleanEntity = this.sanitizeEntity(entity as Record<string, any>);
+            const updates = Object.entries(cleanEntity).map(([key, value]) => {
+                return `${key} = ${this.toSqlValue(value)}`;
             }).join(',');
             console.log(`UPDATE ${this.tableName} SET ${updates} WHERE id_persona=${id_persona} AND id_control=${id_control} AND id_inmunizacion=${id_inmunizacion}`)
             const res = await db.execute(`UPDATE ${this.tableName} SET ${updates} WHERE id_persona=${id_persona} AND id_control=${id_control} AND id_inmunizacion=${id_inmunizacion}`);
@@ -299,8 +314,9 @@ export class Repository<T extends object> {
             const db = await dbdb();
         await db.open();
         //const id = (entity as any).id_persona; // Assuming id_persona field is present in all interfaces
-        const updates = Object.entries(entity).map(([key, value]) => {
-            return typeof value === 'string' ? `${key} = "${value}"` : `${key} = ${value}`;
+        const cleanEntity = this.sanitizeEntity(entity as Record<string, any>);
+        const updates = Object.entries(cleanEntity).map(([key, value]) => {
+            return `${key} = ${this.toSqlValue(value)}`;
         }).join(',');
         const res = await db.execute(`UPDATE ${this.tableName} SET ${updates} WHERE id_persona=${id_persona} AND id_laboratorio=${id_laboratorio} AND id_control=${id_control}`);
         await db.close();
@@ -324,8 +340,9 @@ export class Repository<T extends object> {
             const db = await dbdb();
         await db.open();
         //const id = (entity as any).id_persona; // Assuming id_persona field is present in all interfaces
-        const updates = Object.entries(entity).map(([key, value]) => {
-            return typeof value === 'string' ? `${key} = "${value}"` : `${key} = ${value}`;
+        const cleanEntity = this.sanitizeEntity(entity as Record<string, any>);
+        const updates = Object.entries(cleanEntity).map(([key, value]) => {
+            return `${key} = ${this.toSqlValue(value)}`;
         }).join(',');
         const res = await db.execute(`UPDATE ${this.tableName} SET ${updates} WHERE id_persona=${id_persona} AND id_etmi=${id_etmis} AND id_control=${id_control}`);
         console.log(`UPDATE ${this.tableName} SET ${updates} WHERE id_persona=${id_persona} AND id_etmi=${id_etmis} AND id_control=${id_control}`)
@@ -356,8 +373,9 @@ export class Repository<T extends object> {
             (entity as any).last_modified = Math.floor(Date.now() / 1000);
             
             //const id = (entity as any).id_persona; // Assuming id_persona field is present in all interfaces
-            const updates = Object.entries(entity).map(([key, value]) => {
-                return typeof value === 'string' ? `${key} = "${value}"` : `${key} = ${value}`;
+            const cleanEntity = this.sanitizeEntity(entity as Record<string, any>);
+            const updates = Object.entries(cleanEntity).map(([key, value]) => {
+                return `${key} = ${this.toSqlValue(value)}`;
             }).join(',');
             console.log(`UPDATE ${this.tableName} SET ${updates} WHERE ${campo} = ${id}`)
             const res = await db.execute(`UPDATE ${this.tableName} SET ${updates} WHERE ${campo} = ${id}`);
