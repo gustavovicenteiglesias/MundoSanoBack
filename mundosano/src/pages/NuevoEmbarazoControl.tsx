@@ -191,6 +191,11 @@ const NuevoEmbarazadaControl: React.FC = () => {
     const OnSubmit = async (e: any) => {
         e.preventDefault()
         setLoading(true)
+        const toInt = (value: any, fallback: number = 0): number => {
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : fallback;
+        };
+        const strOrEmpty = (value: any): string => value === undefined || value === null ? "" : String(value);
 
         /*Tabla control_embarazo */
         const control_embarazo: any = {};
@@ -218,7 +223,7 @@ const NuevoEmbarazadaControl: React.FC = () => {
         //Insert tabla personas
  
         
-        const ultimo_id_persona=paciente.control.id_persona
+        const ultimo_id_persona = toInt(paciente.control.id_persona)
         
        
 
@@ -259,12 +264,12 @@ const NuevoEmbarazadaControl: React.FC = () => {
         //update antecedentes
         let newAntecedentes:Antecedentes={
             id_control:ultimo_id_control,    
-            edad_primer_embarazo:Number(paciente.control.edad_primer_embarazo) ,
+            edad_primer_embarazo: toInt(paciente.control.edad_primer_embarazo),
             fecha_ultimo_embarazo: paciente.control.fecha_ultimo_embarazo,
-            gestas:Number(paciente.control.gestas),
-            partos: Number(paciente.control.partos),
-            cesareas: Number(paciente.control.cesareas),
-            abortos: Number(paciente.control.abortos),
+            gestas: toInt(paciente.control.gestas),
+            partos: toInt(paciente.control.partos),
+            cesareas: toInt(paciente.control.cesareas),
+            abortos: toInt(paciente.control.abortos),
             planificado: paciente.control.planificado,
             fum: paciente.control.fum,
             fpp: paciente.control.fpp,
@@ -276,8 +281,8 @@ const NuevoEmbarazadaControl: React.FC = () => {
         
         // update app
         let newAntecedentesApps:Antecedentes_Apps={
-            id_antecedente:Number(paciente.control.id_antecedente) ,
-            id_app:Number(paciente.control.id_app),
+            id_antecedente: toInt(paciente.control.id_antecedente),
+            id_app: toInt(paciente.control.id_app),
             sql_deleted: 0,
             last_modified: Math.floor(new Date().getTime() / 1000)
             }
@@ -287,8 +292,8 @@ const NuevoEmbarazadaControl: React.FC = () => {
         //update mac
 
         let newAntecedentesMacs:Antecedentes_Macs={
-            id_antecedente: Number(paciente.control.id_antecedente),
-            id_mac: Number(paciente.control.id_mac),
+            id_antecedente: toInt(paciente.control.id_antecedente),
+            id_mac: toInt(paciente.control.id_mac),
             sql_deleted: 0,
             last_modified: Math.floor(new Date().getTime() / 1000)
         }
@@ -300,17 +305,17 @@ const NuevoEmbarazadaControl: React.FC = () => {
         const newControlEmbarazo:Control_Embarazo={
             id_control_embarazo: ultimo_id_control_embarazada + 1,
             id_control: ultimo_id_control,
-            edad_gestacional: control_embarazo.edad_gestacional,
-            eco: control_embarazo.eco,
-            detalle_eco: control_embarazo.detalle_eco,
-            hpv: control_embarazo.hpv,
-            pap: control_embarazo.pap,
-            sistolica: control_embarazo.sistolica,
-            diastolica: control_embarazo.diastolica,
-            clinico: control_embarazo.clinico,
-            observaciones:control_embarazo.observaciones,
-            motivo: control_embarazo.motivo,
-            derivada: control_embarazo.derivada,
+            edad_gestacional: toInt(control_embarazo.edad_gestacional),
+            eco: strOrEmpty(control_embarazo.eco),
+            detalle_eco: strOrEmpty(control_embarazo.detalle_eco),
+            hpv: strOrEmpty(control_embarazo.hpv),
+            pap: strOrEmpty(control_embarazo.pap),
+            sistolica: toInt(control_embarazo.sistolica),
+            diastolica: toInt(control_embarazo.diastolica),
+            clinico: strOrEmpty(control_embarazo.clinico),
+            observaciones: strOrEmpty(control_embarazo.observaciones),
+            motivo: toInt(control_embarazo.motivo),
+            derivada: toInt(control_embarazo.derivada),
             sql_deleted: 0,
             last_modified: Math.floor(new Date().getTime() / 1000),
             //usuario_modified: currentuser?.id_usuario===undefined?0:currentuser.id_usuario

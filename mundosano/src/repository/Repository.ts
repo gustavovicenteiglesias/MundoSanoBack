@@ -256,6 +256,10 @@ export class Repository<T extends object> {
             try {
               const db = await dbdb();
               await db.open();
+              if (!entities || entities.length === 0) {
+                await db.close();
+                return false;
+              }
               
               const now = Math.floor(Date.now() / 1000);
               const values = entities
@@ -268,9 +272,9 @@ export class Repository<T extends object> {
         
                   return `(${entityValues})`;
                 })
-                .join(',');
+                .join(",");
         
-              const query = `INSERT OR REPLACE INTO ${this.tableName} VALUES ${values}`;
+              const query = `INSERT OR REPLACE INTO ${this.tableName} (${baseColumns.join(",")}) VALUES ${values}`;
               console.log(query)
               const res = await this.executeWithRecovery(db, query);
               
@@ -291,6 +295,10 @@ export class Repository<T extends object> {
             const updates = Object.entries(cleanEntity).map(([key, value]) => {
                 return `${key} = ${this.toSqlValue(value)}`;
             }).join(',');
+            if (!updates) {
+                await db.close();
+                return false;
+            }
             console.log(`UPDATE ${this.tableName} SET ${updates} WHERE id_persona=${id_persona} AND id_control=${id_control} AND id_inmunizacion=${id_inmunizacion}`)
             const res = await this.executeWithRecovery(db, `UPDATE ${this.tableName} SET ${updates} WHERE id_persona=${id_persona} AND id_control=${id_control} AND id_inmunizacion=${id_inmunizacion}`);
             await db.close();
@@ -377,6 +385,10 @@ export class Repository<T extends object> {
             const updates = Object.entries(cleanEntity).map(([key, value]) => {
                 return `${key} = ${this.toSqlValue(value)}`;
             }).join(',');
+            if (!updates) {
+                await db.close();
+                return false;
+            }
             console.log(`UPDATE ${this.tableName} SET ${updates} WHERE ${campo} = ${id}`)
             const res = await this.executeWithRecovery(db, `UPDATE ${this.tableName} SET ${updates} WHERE ${campo} = ${id}`);
         
