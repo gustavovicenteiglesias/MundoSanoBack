@@ -85,6 +85,25 @@ const App: React.FC = () => {
   sqlite = useSQLite();
 
   console.log(`$$$ in App sqlite.isAvailable  ${sqlite.isAvailable} $$$`);
+  const getLastSyncFromLocal = async (): Promise<number | null> => {
+    try {
+      const ret = await sqlite.checkConnectionsConsistency();
+      const isConn = (await sqlite.isConnection(NOMBRE_BB_DD)).result;
+      const conn = (ret.result && isConn)
+        ? await sqlite.retrieveConnection(NOMBRE_BB_DD)
+        : await sqlite.createConnection(NOMBRE_BB_DD);
+      await conn.open();
+      const syncDate: any = await conn.getSyncDate();
+      await conn.close();
+      if (!syncDate) return null;
+      if (typeof syncDate === "number") return syncDate;
+      const parsed = Date.parse(String(syncDate));
+      if (Number.isNaN(parsed)) return null;
+      return Math.floor(parsed / 1000);
+    } catch (e) {
+      return null;
+    }
+  };
   const Base = async (): Promise<Boolean> => {
     try {
       const platform = (await sqlite.getPlatform()).platform;
@@ -100,6 +119,8 @@ const App: React.FC = () => {
         }
 
       } else {
+        const lastSync = await getLastSyncFromLocal();
+        await CargarBase(lastSync);
         await sqlite.createConnection(NOMBRE_BB_DD)
         console.log("ya tiene  base ")
         setExistConn(true)
