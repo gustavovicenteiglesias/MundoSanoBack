@@ -29,37 +29,6 @@ export class Repository<T extends object> {
         return String(value);
     }
 
-    private async dropAllTriggers(db: any): Promise<void> {
-        try {
-            const triggers = await db.query(`SELECT name FROM sqlite_master WHERE type='trigger'`);
-            const names = (triggers?.values || [])
-                .map((t: any) => t?.name)
-                .filter((name: any) => typeof name === "string" && name.trim().length > 0);
-
-            for (const triggerName of names) {
-                await db.execute(`DROP TRIGGER IF EXISTS ${triggerName}`);
-            }
-            if (names.length > 0) {
-                console.warn(`[Repository:${this.tableName}] Se eliminaron triggers legacy (${names.length}) para recuperar persistencia.`);
-            }
-        } catch (e) {
-            console.warn(`[Repository:${this.tableName}] No se pudieron limpiar triggers legacy`, e);
-        }
-    }
-
-    private async executeWithRecovery(db: any, sql: string) {
-        try {
-            return await db.execute(sql);
-        } catch (error: any) {
-            const msg = String(error?.message || "").toLowerCase();
-            if (msg.includes("no such column: id")) {
-                await this.dropAllTriggers(db);
-                return await db.execute(sql);
-            }
-            throw error;
-        }
-    }
-
     async getAll(): Promise<T[]> {
         try {
             const db = await getDb();

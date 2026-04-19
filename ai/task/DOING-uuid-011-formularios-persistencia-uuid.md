@@ -20,7 +20,7 @@ Evitar regresiones de persistencia local y errores SQL durante guardado en formu
 
 ## Criterios de Aceptación
 - [ ] Ningún formulario de la lista falla con `no such column: id` al guardar.
-- [x] Los repositorios no envían `id` genérico ni valores `undefined` en SQL.
+- [ ] Los repositorios no envían `id` genérico ni valores `undefined` en SQL.
 - [ ] Se mantiene `last_modified` en updates/inserts.
 - [ ] Se preserva `uuid` existente y solo se genera si falta en create.
 - [ ] El flujo "editar presión sistólica y guardar" persiste localmente sin error.
