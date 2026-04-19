@@ -62,4 +62,9 @@ public class EtmisPersonasEntityPK implements Serializable {
         result = 31 * result + idControl;
         return result;
     }
+
+    @Override
+    public String toString() {
+        return idPersona + "-" + idEtmi + "-" + idControl;
+    }
 }

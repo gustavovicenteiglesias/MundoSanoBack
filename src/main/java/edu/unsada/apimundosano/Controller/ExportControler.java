@@ -260,6 +260,11 @@ import java.util.*;
         int antecedentesMacsGuardados = 0;
         int etmisGuardados = 0;
 
+        // Mapas de traducción de IDs (Mobile ID -> Server ID)
+        Map<Integer, Integer> mapPersonas = new HashMap<>();
+        Map<Integer, Integer> mapControles = new HashMap<>();
+        Map<Integer, Integer> mapAntecedentes = new HashMap<>();
+
         try {
             Map<String, List<List>> tablas = new HashMap<>();
 
@@ -278,26 +283,25 @@ import java.util.*;
             List<List> antecedentesMacsValues = tablas.getOrDefault("antecedentes_macs", new ArrayList<>());
             List<List> etmisValues = tablas.getOrDefault("etmis_personas", new ArrayList<>());
 
-            Set<Integer> personasValidas = new HashSet<>();
-            Set<Integer> controlesValidos = new HashSet<>();
-            Set<Integer> antecedentesValidos = new HashSet<>();
-
             /*
              * =========================
              * 1) PERSONAS
              * =========================
              */
             for (List valor : personasValues) {
-                Integer idPersona = safeInt(valor, 0);
+                Integer idPersonaMovil = safeInt(valor, 0);
+                String uuid = safeString(valor, 13);
 
                 try {
-                    if (idPersona == null) {
-                        addLog(logs, "personas", null, null, null, "id_persona nulo o inválido", valor);
+                    if (uuid == null || uuid.isEmpty()) {
+                        addLog(logs, "personas", idPersonaMovil, null, null, "UUID nulo o vacío", valor);
                         continue;
                     }
 
-                    PersonasEntity personas = new PersonasEntity();
-                    personas.setIdPersona(idPersona);
+                    // Look-up by UUID (Deterministic Identity)
+                    PersonasEntity personas = personasRepo.findByUuid(uuid).orElse(new PersonasEntity());
+                    
+                    // Si es nuevo, dejamos que la DB asigne el ID; si existe, conservamos el ID del servidor.
                     personas.setApellido(safeString(valor, 1));
                     personas.setNombre(safeString(valor, 2));
                     personas.setDocumento(safeString(valor, 3));
@@ -310,13 +314,18 @@ import java.util.*;
                     personas.setNacidoVivo(safeInt(valor, 10));
                     personas.setSqlDeleted(safeInt(valor, 11));
                     personas.setLastModified(safeInt(valor, 12));
+                    personas.setUuid(uuid);
 
                     personasRepo.save(personas);
-                    personasValidas.add(idPersona);
+                    
+                    // Guardamos el mapeo para descendientes
+                    if (idPersonaMovil != null) {
+                        mapPersonas.put(idPersonaMovil, personas.getIdPersona());
+                    }
                     personasGuardadas++;
 
                 } catch (Exception e) {
-                    addLog(logs, "personas", idPersona, null, idPersona, e.getMessage(), valor);
+                    addLog(logs, "personas", idPersonaMovil, null, null, e.getMessage(), valor);
                 }
             }
 
@@ -326,25 +335,27 @@ import java.util.*;
              * =========================
              */
             for (List valor : controlesValues) {
-                Integer idControl = safeInt(valor, 0);
-                Integer idPersona = safeInt(valor, 2);
+                Integer idControlMovil = safeInt(valor, 0);
+                Integer idPersonaMovil = safeInt(valor, 2);
+                String uuid = safeString(valor, 18);
 
                 try {
-                    if (idControl == null) {
-                        addLog(logs, "controles", idPersona, null, null, "id_control nulo o inválido", valor);
+                    if (uuid == null || uuid.isEmpty()) {
+                        addLog(logs, "controles", idPersonaMovil, idControlMovil, null, "UUID de control nulo", valor);
                         continue;
                     }
 
-                    if (idPersona == null || !personaDisponible(idPersona, personasValidas)) {
-                        addLog(logs, "controles", idPersona, idControl, idControl,
-                                "control rechazado porque la persona no existe ni en el payload ni en la base", valor);
-                        continue;
+                    // Traducción de ID de Persona
+                    Integer serverIdPersona = mapPersonas.get(idPersonaMovil);
+                    if (serverIdPersona == null) {
+                        // Si no estaba en el payload, intentamos buscarlo en la DB si existe la persona
+                        serverIdPersona = idPersonaMovil; // Fallback al ID original por ahora
                     }
 
-                    ControlesEntity controles = new ControlesEntity();
-                    controles.setIdControl(idControl);
+                    ControlesEntity controles = controlesRepo.findByUuid(uuid).orElse(new ControlesEntity());
+                    
                     controles.setFecha(parseSqlDate(getValue(valor, 1)));
-                    controles.setIdPersona(idPersona);
+                    controles.setIdPersona(serverIdPersona);
                     controles.setControlNumero(safeInt(valor, 3));
                     controles.setIdEstado(safeInt(valor, 4));
                     controles.setIdSeguimientoChagas(safeInt(valor, 5));
@@ -360,13 +371,17 @@ import java.util.*;
                     controles.setGeoreferencia(safeString(valor, 15));
                     controles.setSqlDeleted(safeInt(valor, 16));
                     controles.setLastModified(safeInt(valor, 17));
+                    controles.setUuid(uuid);
 
                     controlesRepo.save(controles);
-                    controlesValidos.add(idControl);
+                    
+                    if (idControlMovil != null) {
+                        mapControles.put(idControlMovil, controles.getIdControl());
+                    }
                     controlesGuardados++;
 
                 } catch (Exception e) {
-                    addLog(logs, "controles", idPersona, idControl, idControl, e.getMessage(), valor);
+                    addLog(logs, "controles", idPersonaMovil, idControlMovil, null, e.getMessage(), valor);
                 }
             }
 
@@ -376,19 +391,24 @@ import java.util.*;
              * =========================
              */
             for (List valor : ubicacionesValues) {
-                Integer idUbicacion = safeInt(valor, 0);
-                Integer idPersona = safeInt(valor, 1);
+                Integer idUbicacionMovil = safeInt(valor, 0);
+                Integer idPersonaMovil = safeInt(valor, 1);
+                String uuid = safeString(valor, 10);
 
                 try {
-                    if (idPersona == null || !personaDisponible(idPersona, personasValidas)) {
-                        addLog(logs, "ubicaciones", idPersona, null, idUbicacion,
-                                "ubicacion rechazada porque la persona no existe ni en el payload ni en la base", valor);
+                    if (uuid == null || uuid.isEmpty()) {
+                        addLog(logs, "ubicaciones", idPersonaMovil, null, idUbicacionMovil, "UUID de ubicación nulo", valor);
                         continue;
                     }
 
-                    UbicacionesEntity ubicaciones = new UbicacionesEntity();
-                    ubicaciones.setIdUbicacion(idUbicacion);
-                    ubicaciones.setIdPersona(idPersona);
+                    Integer serverIdPersona = mapPersonas.get(idPersonaMovil);
+                    if (serverIdPersona == null) {
+                        serverIdPersona = idPersonaMovil;
+                    }
+
+                    UbicacionesEntity ubicaciones = ubicacionesRepo.findByUuid(uuid).orElse(new UbicacionesEntity());
+                    
+                    ubicaciones.setIdPersona(serverIdPersona);
                     ubicaciones.setIdParaje(safeInt(valor, 2));
                     ubicaciones.setIdArea(safeInt(valor, 3));
                     ubicaciones.setNumVivienda(safeString(valor, 4));
@@ -397,12 +417,13 @@ import java.util.*;
                     ubicaciones.setIdPais(safeInt(valor, 7));
                     ubicaciones.setSqlDeleted(safeInt(valor, 8));
                     ubicaciones.setLastModified(safeInt(valor, 9));
+                    ubicaciones.setUuid(uuid);
 
                     ubicacionesRepo.save(ubicaciones);
                     ubicacionesGuardadas++;
 
                 } catch (Exception e) {
-                    addLog(logs, "ubicaciones", idPersona, null, idUbicacion, e.getMessage(), valor);
+                    addLog(logs, "ubicaciones", idPersonaMovil, null, idUbicacionMovil, e.getMessage(), valor);
                 }
             }
 
@@ -412,27 +433,24 @@ import java.util.*;
              * =========================
              */
             for (List valor : antecedentesValues) {
-                Integer idAntecedente = safeInt(valor, 0);
-                Integer idPersona = safeInt(valor, 1);
-                Integer idControl = safeInt(valor, 2);
+                Integer idAntecedenteMovil = safeInt(valor, 0);
+                Integer idPersonaMovil = safeInt(valor, 1);
+                Integer idControlMovil = safeInt(valor, 2);
+                String uuid = safeString(valor, 14);
 
                 try {
-                    if (idPersona == null || !personaDisponible(idPersona, personasValidas)) {
-                        addLog(logs, "antecedentes", idPersona, idControl, idAntecedente,
-                                "antecedente rechazado porque la persona no existe ni en el payload ni en la base", valor);
+                    if (uuid == null || uuid.isEmpty()) {
+                        addLog(logs, "antecedentes", idPersonaMovil, idControlMovil, idAntecedenteMovil, "UUID de antecedente nulo", valor);
                         continue;
                     }
 
-                    if (idControl == null || !controlDisponible(idControl, controlesValidos)) {
-                        addLog(logs, "antecedentes", idPersona, idControl, idAntecedente,
-                                "antecedente rechazado porque el control no existe ni en el payload ni en la base", valor);
-                        continue;
-                    }
+                    Integer serverIdPersona = mapPersonas.get(idPersonaMovil);
+                    Integer serverIdControl = mapControles.get(idControlMovil);
 
-                    AntecedentesEntity antecedentes = new AntecedentesEntity();
-                    antecedentes.setIdAntecedente(idAntecedente);
-                    antecedentes.setIdPersona(idPersona);
-                    antecedentes.setIdControl(idControl);
+                    AntecedentesEntity antecedentes = antecedentesRepo.findByUuid(uuid).orElse(new AntecedentesEntity());
+                    
+                    antecedentes.setIdPersona(serverIdPersona != null ? serverIdPersona : idPersonaMovil);
+                    antecedentes.setIdControl(serverIdControl != null ? serverIdControl : idControlMovil);
                     antecedentes.setEdadPrimerEmbarazo(safeInt(valor, 3));
                     antecedentes.setFechaUltimoEmbarazo(parseSqlDate(getValue(valor, 4)));
                     antecedentes.setGestas(safeInt(valor, 5));
@@ -444,17 +462,18 @@ import java.util.*;
                     antecedentes.setFpp(parseSqlDate(getValue(valor, 11)));
                     antecedentes.setLastModified(safeInt(valor, 12));
                     antecedentes.setSqlDeleted(safeInt(valor, 13));
+                    antecedentes.setUuid(uuid);
 
                     antecedentesRepo.save(antecedentes);
 
-                    if (idAntecedente != null) {
-                        antecedentesValidos.add(idAntecedente);
+                    if (idAntecedenteMovil != null) {
+                        mapAntecedentes.put(idAntecedenteMovil, antecedentes.getIdAntecedente());
                     }
 
                     antecedentesGuardados++;
 
                 } catch (Exception e) {
-                    addLog(logs, "antecedentes", idPersona, idControl, idAntecedente, e.getMessage(), valor);
+                    addLog(logs, "antecedentes", idPersonaMovil, idControlMovil, idAntecedenteMovil, e.getMessage(), valor);
                 }
             }
 
@@ -464,27 +483,21 @@ import java.util.*;
              * =========================
              */
             for (List valor : controlEmbarazoValues) {
-                Integer idControlEmbarazo = safeInt(valor, 0);
-                Integer idControl = safeInt(valor, 1);
+                Integer idControlEmbarazoMovil = safeInt(valor, 0);
+                Integer idControlMovil = safeInt(valor, 1);
+                String uuid = safeString(valor, 15);
 
                 try {
-                    if (idControl == null || !controlDisponible(idControl, controlesValidos)) {
-                        addLog(logs, "control_embarazo", null, idControl, idControlEmbarazo,
-                                "control_embarazo rechazado porque el control no existe ni en el payload ni en la base", valor);
+                    if (uuid == null || uuid.isEmpty()) {
+                        addLog(logs, "control_embarazo", null, idControlMovil, idControlEmbarazoMovil, "UUID de control_embarazo nulo", valor);
                         continue;
                     }
 
-                    if (idControlEmbarazo == null) {
-                        addLog(logs, "control_embarazo", null, idControl, null,
-                                "control_embarazo rechazado porque id_control_embarazo es nulo o inválido", valor);
-                        continue;
-                    }
+                    Integer serverIdControl = mapControles.get(idControlMovil);
 
-                    ControlEmbarazoEntity controlEmbarazo = controlEmbarazoRepo.findById(idControlEmbarazo)
-                            .orElseGet(ControlEmbarazoEntity::new);
+                    ControlEmbarazoEntity controlEmbarazo = controlEmbarazoRepo.findByUuid(uuid).orElse(new ControlEmbarazoEntity());
 
-                    controlEmbarazo.setIdControlEmbarazo(idControlEmbarazo);
-                    controlEmbarazo.setIdControl(idControl);
+                    controlEmbarazo.setIdControl(serverIdControl != null ? serverIdControl : idControlMovil);
                     controlEmbarazo.setEdadGestacional(safeInt(valor, 2));
                     controlEmbarazo.setEco(safeStringNotNull(valor, 3));
                     controlEmbarazo.setDetalleEco(safeStringNotNull(valor, 4));
@@ -498,12 +511,13 @@ import java.util.*;
                     controlEmbarazo.setDerivada(safeInt(valor, 12));
                     controlEmbarazo.setSqlDeleted(safeInt(valor, 13));
                     controlEmbarazo.setLastModified(safeInt(valor, 14));
+                    controlEmbarazo.setUuid(uuid);
 
                     controlEmbarazoRepo.save(controlEmbarazo);
                     controlEmbarazoGuardados++;
 
                 } catch (Exception e) {
-                    addLog(logs, "control_embarazo", null, idControl, idControlEmbarazo, e.getMessage(), valor);
+                    addLog(logs, "control_embarazo", null, idControlMovil, idControlEmbarazoMovil, e.getMessage(), valor);
                 }
             }
             /*
@@ -512,46 +526,36 @@ import java.util.*;
              * =========================
              */
             for (List valor : inmunizacionesValues) {
-                Integer idPersona = safeInt(valor, 0);
-                Integer idControl = safeInt(valor, 1);
+                Integer idPersonaMovil = safeInt(valor, 0);
+                Integer idControlMovil = safeInt(valor, 1);
                 Integer idInmunizacion = safeInt(valor, 2);
+                String uuid = safeString(valor, 6);
 
                 try {
-                    if (idPersona == null || !personaDisponible(idPersona, personasValidas)) {
-                        addLog(logs, "inmunizaciones_control", idPersona, idControl, idInmunizacion,
-                                "inmunizacion rechazada porque la persona no existe ni en el payload ni en la base", valor);
+                    if (uuid == null || uuid.isEmpty()) {
+                        addLog(logs, "inmunizaciones_control", idPersonaMovil, idControlMovil, idInmunizacion, "UUID de inmunización nulo", valor);
                         continue;
                     }
 
-                    if (idControl == null || !controlDisponible(idControl, controlesValidos)) {
-                        addLog(logs, "inmunizaciones_control", idPersona, idControl, idInmunizacion,
-                                "inmunizacion rechazada porque el control no existe ni en el payload ni en la base", valor);
-                        continue;
-                    }
+                    Integer serverIdPersona = mapPersonas.get(idPersonaMovil);
+                    Integer serverIdControl = mapControles.get(idControlMovil);
 
-                    if (idInmunizacion == null) {
-                        addLog(logs, "inmunizaciones_control", idPersona, idControl, null,
-                                "inmunizacion rechazada porque id_inmunizacion es nulo o inválido", valor);
-                        continue;
-                    }
+                    InmunizacionesControlEntity inmunizacionesControl = 
+                            inmunizacionesControlRepo.findByUuid(uuid).orElse(new InmunizacionesControlEntity());
 
-                    InmunizacionesControlEntity inmunizacionesControl =
-                            inmunizacionesControlRepo
-                                    .findByIdPersonaAndIdControlAndIdInmunizacion(idPersona, idControl, idInmunizacion)
-                                    .orElseGet(InmunizacionesControlEntity::new);
-
-                    inmunizacionesControl.setIdPersona(idPersona);
-                    inmunizacionesControl.setIdControl(idControl);
+                    inmunizacionesControl.setIdPersona(serverIdPersona != null ? serverIdPersona : idPersonaMovil);
+                    inmunizacionesControl.setIdControl(serverIdControl != null ? serverIdControl : idControlMovil);
                     inmunizacionesControl.setIdInmunizacion(idInmunizacion);
                     inmunizacionesControl.setEstado(safeStringNotNull(valor, 3));
                     inmunizacionesControl.setSqlDeleted(safeInt(valor, 4));
                     inmunizacionesControl.setLastModified(safeInt(valor, 5));
+                    inmunizacionesControl.setUuid(uuid);
 
                     inmunizacionesControlRepo.save(inmunizacionesControl);
                     inmunizacionesGuardadas++;
 
                 } catch (Exception e) {
-                    addLog(logs, "inmunizaciones_control", idPersona, idControl, idInmunizacion, e.getMessage(), valor);
+                    addLog(logs, "inmunizaciones_control", idPersonaMovil, idControlMovil, idInmunizacion, e.getMessage(), valor);
                 }
             }
             /*
@@ -560,36 +564,25 @@ import java.util.*;
              * =========================
              */
             for (List valor : laboratoriosValues) {
-                Integer idPersona = safeInt(valor, 0);
-                Integer idControl = safeInt(valor, 1);
+                Integer idPersonaMovil = safeInt(valor, 0);
+                Integer idControlMovil = safeInt(valor, 1);
                 Integer idLaboratorio = safeInt(valor, 2);
+                String uuid = safeString(valor, 10);
 
                 try {
-                    if (idPersona == null || !personaDisponible(idPersona, personasValidas)) {
-                        addLog(logs, "laboratorios_realizados", idPersona, idControl, idLaboratorio,
-                                "laboratorio rechazado porque la persona no existe ni en el payload ni en la base", valor);
+                    if (uuid == null || uuid.isEmpty()) {
+                        addLog(logs, "laboratorios_realizados", idPersonaMovil, idControlMovil, idLaboratorio, "UUID de laboratorio nulo", valor);
                         continue;
                     }
 
-                    if (idControl == null || !controlDisponible(idControl, controlesValidos)) {
-                        addLog(logs, "laboratorios_realizados", idPersona, idControl, idLaboratorio,
-                                "laboratorio rechazado porque el control no existe ni en el payload ni en la base", valor);
-                        continue;
-                    }
+                    Integer serverIdPersona = mapPersonas.get(idPersonaMovil);
+                    Integer serverIdControl = mapControles.get(idControlMovil);
 
-                    if (idLaboratorio == null) {
-                        addLog(logs, "laboratorios_realizados", idPersona, idControl, null,
-                                "laboratorio rechazado porque id_laboratorio es nulo o inválido", valor);
-                        continue;
-                    }
+                    LaboratoriosRealizadosEntity laboratoriosRealizados = 
+                            laboratoriosRealizadosRepo.findByUuid(uuid).orElse(new LaboratoriosRealizadosEntity());
 
-                    LaboratoriosRealizadosEntity laboratoriosRealizados =
-                            laboratoriosRealizadosRepo
-                                    .findByIdPersonaAndIdControlAndIdLaboratorio(idPersona, idControl, idLaboratorio)
-                                    .orElseGet(LaboratoriosRealizadosEntity::new);
-
-                    laboratoriosRealizados.setIdPersona(idPersona);
-                    laboratoriosRealizados.setIdControl(idControl);
+                    laboratoriosRealizados.setIdPersona(serverIdPersona != null ? serverIdPersona : idPersonaMovil);
+                    laboratoriosRealizados.setIdControl(serverIdControl != null ? serverIdControl : idControlMovil);
                     laboratoriosRealizados.setIdLaboratorio(idLaboratorio);
                     laboratoriosRealizados.setTrimestre(safeInt(valor, 3));
                     laboratoriosRealizados.setFechaRealizado(parseSqlDate(getValue(valor, 4)));
@@ -598,12 +591,13 @@ import java.util.*;
                     laboratoriosRealizados.setIdEtmi(safeInt(valor, 7));
                     laboratoriosRealizados.setSqlDeleted(safeInt(valor, 8));
                     laboratoriosRealizados.setLastModified(safeInt(valor, 9));
+                    laboratoriosRealizados.setUuid(uuid);
 
                     laboratoriosRealizadosRepo.save(laboratoriosRealizados);
                     laboratoriosGuardados++;
 
                 } catch (Exception e) {
-                    addLog(logs, "laboratorios_realizados", idPersona, idControl, idLaboratorio, e.getMessage(), valor);
+                    addLog(logs, "laboratorios_realizados", idPersonaMovil, idControlMovil, idLaboratorio, e.getMessage(), valor);
                 }
             }
 
@@ -613,46 +607,36 @@ import java.util.*;
              * =========================
              */
             for (List valor : etmisValues) {
-                Integer idPersona = safeInt(valor, 0);
+                Integer idPersonaMovil = safeInt(valor, 0);
                 Integer idEtmi = safeInt(valor, 1);
-                Integer idControl = safeInt(valor, 2);
+                Integer idControlMovil = safeInt(valor, 2);
+                String uuid = safeString(valor, 6);
 
                 try {
-                    if (idPersona == null || !personaDisponible(idPersona, personasValidas)) {
-                        addLog(logs, "etmis_personas", idPersona, idControl, idEtmi,
-                                "etmi rechazada porque la persona no existe ni en el payload ni en la base", valor);
+                    if (uuid == null || uuid.isEmpty()) {
+                        addLog(logs, "etmis_personas", idPersonaMovil, idControlMovil, idEtmi, "UUID de ETMI nulo", valor);
                         continue;
                     }
 
-                    if (idControl == null || !controlDisponible(idControl, controlesValidos)) {
-                        addLog(logs, "etmis_personas", idPersona, idControl, idEtmi,
-                                "etmi rechazada porque el control no existe ni en el payload ni en la base", valor);
-                        continue;
-                    }
+                    Integer serverIdPersona = mapPersonas.get(idPersonaMovil);
+                    Integer serverIdControl = mapControles.get(idControlMovil);
 
-                    if (idEtmi == null) {
-                        addLog(logs, "etmis_personas", idPersona, idControl, null,
-                                "etmi rechazada porque id_etmi es nulo o inválido", valor);
-                        continue;
-                    }
+                    EtmisPersonasEntity etmisPersonasEntity = 
+                            etmisPersonasRepo.findByUuid(uuid).orElse(new EtmisPersonasEntity());
 
-                    EtmisPersonasEntity etmisPersonasEntity =
-                            etmisPersonasRepo
-                                    .findByIdPersonaAndIdEtmiAndIdControl(idPersona, idEtmi, idControl)
-                                    .orElseGet(EtmisPersonasEntity::new);
-
-                    etmisPersonasEntity.setIdPersona(idPersona);
+                    etmisPersonasEntity.setIdPersona(serverIdPersona != null ? serverIdPersona : idPersonaMovil);
                     etmisPersonasEntity.setIdEtmi(idEtmi);
-                    etmisPersonasEntity.setIdControl(idControl);
+                    etmisPersonasEntity.setIdControl(serverIdControl != null ? serverIdControl : idControlMovil);
                     etmisPersonasEntity.setConfirmada(safeInt(valor, 3));
                     etmisPersonasEntity.setSqlDeleted(safeInt(valor, 4));
                     etmisPersonasEntity.setLastModified(safeInt(valor, 5));
+                    etmisPersonasEntity.setUuid(uuid);
 
                     etmisPersonasRepo.save(etmisPersonasEntity);
                     etmisGuardados++;
 
                 } catch (Exception e) {
-                    addLog(logs, "etmis_personas", idPersona, idControl, idEtmi, e.getMessage(), valor);
+                    addLog(logs, "etmis_personas", idPersonaMovil, idControlMovil, idEtmi, e.getMessage(), valor);
                 }
             }
             /*
@@ -661,27 +645,32 @@ import java.util.*;
              * =========================
              */
             for (List valor : antecedentesAppsValues) {
-                Integer idAntecedente = safeInt(valor, 0);
+                Integer idAntecedenteMovil = safeInt(valor, 0);
                 Integer idApp = safeInt(valor, 1);
+                String uuid = safeString(valor, 4);
 
                 try {
-                    if (idAntecedente == null || !antecedenteDisponible(idAntecedente, antecedentesValidos)) {
-                        addLog(logs, "antecedentes_apps", null, null, idAntecedente,
-                                "antecedente_app rechazado porque el antecedente no existe ni en el payload ni en la base", valor);
+                    if (uuid == null || uuid.isEmpty()) {
+                        addLog(logs, "antecedentes_apps", null, null, idAntecedenteMovil, "UUID de antecedente_app nulo", valor);
                         continue;
                     }
 
-                    AntecedentesAppsEntity antecedentesApps = new AntecedentesAppsEntity();
-                    antecedentesApps.setIdAntecedente(idAntecedente);
+                    Integer serverIdAntecedente = mapAntecedentes.get(idAntecedenteMovil);
+
+                    AntecedentesAppsEntity antecedentesApps = 
+                            antecedentesAppsRepo.findByUuid(uuid).orElse(new AntecedentesAppsEntity());
+
+                    antecedentesApps.setIdAntecedente(serverIdAntecedente != null ? serverIdAntecedente : idAntecedenteMovil);
                     antecedentesApps.setIdApp(idApp);
                     antecedentesApps.setLastModified(safeInt(valor, 2));
-                    antecedentesApps.setSqlDelete(safeInt(valor, 3));
+                    antecedentesApps.setSqlDeleted(safeInt(valor, 3));
+                    antecedentesApps.setUuid(uuid);
 
                     antecedentesAppsRepo.save(antecedentesApps);
                     antecedentesAppsGuardados++;
 
                 } catch (Exception e) {
-                    addLog(logs, "antecedentes_apps", null, null, idAntecedente, e.getMessage(), valor);
+                    addLog(logs, "antecedentes_apps", null, null, idAntecedenteMovil, e.getMessage(), valor);
                 }
             }
 
@@ -691,32 +680,37 @@ import java.util.*;
              * =========================
              */
             for (List valor : antecedentesMacsValues) {
-                Integer idAntecedente = safeInt(valor, 0);
+                Integer idAntecedenteMovil = safeInt(valor, 0);
                 Integer idMac = safeInt(valor, 1);
+                String uuid = safeString(valor, 4);
 
                 try {
-                    if (idAntecedente == null || !antecedenteDisponible(idAntecedente, antecedentesValidos)) {
-                        addLog(logs, "antecedentes_macs", null, null, idAntecedente,
-                                "antecedente_mac rechazado porque el antecedente no existe ni en el payload ni en la base", valor);
+                    if (uuid == null || uuid.isEmpty()) {
+                        addLog(logs, "antecedentes_macs", null, null, idAntecedenteMovil, "UUID de antecedente_mac nulo", valor);
                         continue;
                     }
 
-                    AntecedentesMacsEntity antecedentesMacs = new AntecedentesMacsEntity();
-                    antecedentesMacs.setIdAntecedente(idAntecedente);
+                    Integer serverIdAntecedente = mapAntecedentes.get(idAntecedenteMovil);
+
+                    AntecedentesMacsEntity antecedentesMacs = 
+                            antecedentesMacsRepo.findByUuid(uuid).orElse(new AntecedentesMacsEntity());
+
+                    antecedentesMacs.setIdAntecedente(serverIdAntecedente != null ? serverIdAntecedente : idAntecedenteMovil);
                     antecedentesMacs.setIdMac(idMac);
                     antecedentesMacs.setSqlDeleted(safeInt(valor, 2));
                     antecedentesMacs.setLastModified(safeInt(valor, 3));
+                    antecedentesMacs.setUuid(uuid);
 
                     antecedentesMacsRepo.save(antecedentesMacs);
                     antecedentesMacsGuardados++;
 
                 } catch (Exception e) {
-                    addLog(logs, "antecedentes_macs", null, null, idAntecedente, e.getMessage(), valor);
+                    addLog(logs, "antecedentes_macs", null, null, idAntecedenteMovil, e.getMessage(), valor);
                 }
             }
 
             response.put("success", true);
-            response.put("message", "Importación procesada con tolerancia a errores");
+            response.put("message", "Importación procesada con arquitectura UUID");
             response.put("personasGuardadas", personasGuardadas);
             response.put("controlesGuardados", controlesGuardados);
             response.put("controlEmbarazoGuardados", controlEmbarazoGuardados);
@@ -924,14 +918,19 @@ import java.util.*;
     }
     @GetMapping("/data/json3")
     public Map<String, Object> getDataall() {
-        Map<String, Object> json = new HashMap<>();
-        List<Object> row = new ArrayList<>();
+        Map<String, Object> errorJson = new HashMap<>();
 
         try {
+            ObjectMapper mapper = new ObjectMapper();
+            java.io.InputStream is = new org.springframework.core.io.ClassPathResource("schema.json").getInputStream();
+            Map<String, Object> json = mapper.readValue(is, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>(){});
+            
             json.put("database", bbdd);
             json.put("version", 2);
             json.put("encrypted", false);
             json.put("mode", "partial");
+            
+            List<Map<String, Object>> tables = (List<Map<String, Object>>) json.get("tables");
 
             PersonaSrevice ps = new PersonaSrevice();
             ControlesService cs = new ControlesService();
@@ -948,64 +947,76 @@ import java.util.*;
             AreasService areaServices = new AreasService();
             ParajeService parajeService = new ParajeService();
 
-            row.add(buildTable("personas",
-                    safeValues("personas", () -> ps.valuesPersonas(personasRepo.findBySqlDeletedOrSqlDeletedIsNull(0))))));
+            for (Map<String, Object> t : tables) {
+                String tName = (String) t.get("name");
+                if (tName == null) continue;
+                
+                // Trim schema column names dynamically just in case
+                List<Map<String, Object>> schema = (List<Map<String, Object>>) t.get("schema");
+                if (schema != null) {
+                    for (Map<String, Object> s : schema) {
+                        if (s.containsKey("column")) {
+                            s.put("column", ((String) s.get("column")).trim());
+                        }
+                    }
+                }
 
-            row.add(buildTable("usuarios",
-                    safeValues("usuarios", () -> us.valuesUsuarios(usuarioRepo.findAll()))));
+                switch(tName) {
+                    case "personas":
+                        t.put("values", safeValues("personas", () -> ps.valuesPersonas(personasRepo.findBySqlDeletedOrSqlDeletedIsNull(0))));
+                        break;
+                    case "usuarios":
+                        t.put("values", safeValues("usuarios", () -> us.valuesUsuarios(usuarioRepo.findAll())));
+                        break;
+                    case "controles":
+                        t.put("values", safeValues("controles", () -> cs.valuesControles(controlesRepo.findAll())));
+                        break;
+                    case "control_embarazo":
+                        t.put("values", safeValues("control_embarazo", () -> ce.valuesControlEmbarazo(controlEmbarazoRepo.findAll())));
+                        break;
+                    case "inmunizaciones_control":
+                        t.put("values", safeValues("inmunizaciones_control", () -> ic.InmunizacionesControl(inmunizacionesControlRepo.findAll())));
+                        break;
+                    case "laboratorios_realizados":
+                        t.put("values", safeValues("laboratorios_realizados", () -> lr.LaboratoriosRealizados(laboratoriosRealizadosRepo.findAll())));
+                        break;
+                    case "ubicaciones":
+                        t.put("values", safeValues("ubicaciones", () -> ub.UbicacionesValues(ubicacionesRepo.findAll())));
+                        break;
+                    case "antecedentes":
+                        t.put("values", safeValues("antecedentes", () -> an.AntecedentesValues(antecedentesRepo.findAll())));
+                        break;
+                    case "antecedentes_apps":
+                        t.put("values", safeValues("antecedentes_apps", () -> aapps.AntecedentesAppsValues(antecedentesAppsRepo.findAll())));
+                        break;
+                    case "antecedentes_macs":
+                        t.put("values", safeValues("antecedentes_macs", () -> amacs.AntecedentesMacsValues(antecedentesMacsRepo.findAll())));
+                        break;
+                    case "etmis_personas":
+                        t.put("values", safeValues("etmis_personas", () -> ep.EtmisPersonasValues(etmisPersonasRepo.findAll())));
+                        break;
+                    case "paises":
+                        t.put("values", safeValues("paises", () -> paisesServices.valuesPaises(paisesRepo.findAll())));
+                        break;
+                    case "areas":
+                        t.put("values", safeValues("areas", () -> areaServices.valuesAreas(areasRepo.findAll())));
+                        break;
+                    case "parajes":
+                        t.put("values", safeValues("parajes", () -> parajeService.valuesParajes(parajesRepo.findAll())));
+                        break;
+                }
+            }
 
-            row.add(buildTable("controles",
-                    safeValues("controles", () -> cs.valuesControles(controlesRepo.findAll()))));
-
-            row.add(buildTable("control_embarazo",
-                    safeValues("control_embarazo", () -> ce.valuesControlEmbarazo(controlEmbarazoRepo.findAll()))));
-
-            row.add(buildTable("inmunizaciones_control",
-                    safeValues("inmunizaciones_control", () ->
-                            ic.InmunizacionesControl(inmunizacionesControlRepo.findAll()))));
-
-            row.add(buildTable("laboratorios_realizados",
-                    safeValues("laboratorios_realizados", () ->
-                            lr.LaboratoriosRealizados(laboratoriosRealizadosRepo.findAll()))));
-
-            row.add(buildTable("ubicaciones",
-                    safeValues("ubicaciones", () -> ub.UbicacionesValues(ubicacionesRepo.findAll()))));
-
-            row.add(buildTable("antecedentes",
-                    safeValues("antecedentes", () -> an.AntecedentesValues(antecedentesRepo.findAll()))));
-
-            row.add(buildTable("antecedentes_apps",
-                    safeValues("antecedentes_apps", () -> aapps.AntecedentesAppsValues(antecedentesAppsRepo.findAll()))));
-
-            row.add(buildTable("antecedentes_macs",
-                    safeValues("antecedentes_macs", () -> amacs.AntecedentesMacsValues(antecedentesMacsRepo.findAll()))));
-
-            row.add(buildTable("etmis_personas",
-                    safeValues("etmis_personas", () -> ep.EtmisPersonasValues(etmisPersonasRepo.findAll()))));
-
-            row.add(buildTable("paises",
-                    safeValues("paises", () -> paisesServices.valuesPaises(paisesRepo.findAll()))));
-
-            row.add(buildTable("areas",
-                    safeValues("areas", () -> areaServices.valuesAreas(areasRepo.findAll()))));
-
-            row.add(buildTable("parajes",
-                    safeValues("parajes", () -> parajeService.valuesParajes(parajesRepo.findAll()))));
-
-            json.put("tables", row);
-            json.put("success", true);
             return json;
 
         } catch (Exception e) {
             e.printStackTrace();
-            json.put("database", bbdd);
-            json.put("version", 2);
-            json.put("encrypted", false);
-            json.put("mode", "partial");
-            json.put("tables", row);
-            json.put("success", false);
-            json.put("error", e.toString());
-            return json;
+            errorJson.put("database", bbdd);
+            errorJson.put("version", 2);
+            errorJson.put("encrypted", false);
+            errorJson.put("mode", "partial");
+            errorJson.put("tables", new ArrayList<>());
+            return errorJson;
         }
     }
     @GetMapping("/data/json")
@@ -1057,7 +1068,7 @@ import java.util.*;
             _device.setNroDevice(device.getNroDevice());
             _device.setMinId(device.getMinId());
             _device.setMaxId(device.getMaxId());
-            _device.setSqlDelete(device.getSqlDelete());
+            _device.setSqlDeleted(device.getSqlDeleted());
             _device.setLastModified(device.getLastModified());
             Integer id=idSegunDeviceRepo.save(_device).getIdDevice();
             response.put("data",id);

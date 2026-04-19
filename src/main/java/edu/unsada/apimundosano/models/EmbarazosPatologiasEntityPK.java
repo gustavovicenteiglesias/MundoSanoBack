@@ -48,4 +48,9 @@ public class EmbarazosPatologiasEntityPK implements Serializable {
         result = 31 * result + idPatologiaEmbarazo;
         return result;
     }
+
+    @Override
+    public String toString() {
+        return idControlEmbarazoPatologico + "-" + idPatologiaEmbarazo;
+    }
 }

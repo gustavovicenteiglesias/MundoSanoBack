@@ -1,34 +1,17 @@
 package edu.unsada.apimundosano.models;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
-@jakarta.persistence.Entity
 @Entity
-@Table(name = "origenes", schema = "tripleconlast", catalog = "")
-@jakarta.persistence.Table(name = "origenes", schema = "tripleconlast", catalog = "")
-public class OrigenesEntity {
-    @jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
-    @jakarta.persistence.Id
-
+@Table(name = "origenes")
+public class OrigenesEntity extends BaseEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_origen")
-    @jakarta.persistence.Column(name = "id_origen")
     private int idOrigen;
-    @jakarta.persistence.Basic
-    @Basic
+
     @Column(name = "nombre")
-    @jakarta.persistence.Column(name = "nombre")
     private String nombre;
-    @jakarta.persistence.Basic
-    @Basic
-    @Column(name = "sql_deleted")
-    @jakarta.persistence.Column(name = "sql_deleted")
-    private Byte sqlDeleted;
-    @jakarta.persistence.Basic
-    @Basic
-    @Column(name = "last_modified")
-    @jakarta.persistence.Column(name = "last_modified")
-    private Integer lastModified;
 
     public int getIdOrigen() {
         return idOrigen;
@@ -44,22 +27,6 @@ public class OrigenesEntity {
 
     public void setNombre(String nombre) {
         this.nombre = nombre;
-    }
-
-    public Byte getSqlDeleted() {
-        return sqlDeleted;
-    }
-
-    public void setSqlDeleted(Byte sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
-
-    public Integer getLastModified() {
-        return lastModified;
-    }
-
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
     }
 
     @Override
@@ -86,3 +53,5 @@ public class OrigenesEntity {
         return result;
     }
 }
+
+

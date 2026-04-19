@@ -50,4 +50,9 @@ public class AntecedentesMacsEntityPK implements Serializable {
         result = 31 * result + idMac;
         return result;
     }
+
+    @Override
+    public String toString() {
+        return idAntecedente + "-" + idMac;
+    }
 }

@@ -88,4 +88,9 @@ public class LaboratoriosRealizadosEntityPK implements Serializable {
         result = 31 * result + idEtmi;
         return result;
     }
+
+    @Override
+    public String toString() {
+        return idPersona + "-" + idControl + "-" + idLaboratorio + "-" + trimestre + "-" + idEtmi;
+    }
 }

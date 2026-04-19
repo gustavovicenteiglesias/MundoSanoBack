@@ -3,9 +3,9 @@ package edu.unsada.apimundosano.models;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "embarazos_patologias", schema = "tripleconlast", catalog = "")
+@Table(name = "embarazos_patologias")
 @IdClass(EmbarazosPatologiasEntityPK.class)
-public class EmbarazosPatologiasEntity {
+public class EmbarazosPatologiasEntity extends BaseEntity {
 
     @Id
     @Column(name = "id_control_embarazo_patologico")
@@ -14,12 +14,8 @@ public class EmbarazosPatologiasEntity {
     @Id
     @Column(name = "id_patologia_embarazo")
     private int idPatologiaEmbarazo;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Byte sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
+    
+    
     @ManyToOne
     @JoinColumn(name = "id_control_embarazo_patologico", referencedColumnName = "id_control_emb_patologico", nullable = false, insertable = false, updatable = false)
     private ControlEmbPatologicoEntity controlEmbPatologicoByIdControlEmbarazoPatologico;
@@ -43,21 +39,13 @@ public class EmbarazosPatologiasEntity {
         this.idPatologiaEmbarazo = idPatologiaEmbarazo;
     }
 
-    public Byte getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
-    public void setSqlDeleted(Byte sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
+    
 
-    public Integer getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
     @Override
     public boolean equals(Object o) {
@@ -99,3 +87,5 @@ public class EmbarazosPatologiasEntity {
         this.patologiasEmbarazosByIdPatologiaEmbarazo = patologiasEmbarazosByIdPatologiaEmbarazo;
     }
 }
+
+

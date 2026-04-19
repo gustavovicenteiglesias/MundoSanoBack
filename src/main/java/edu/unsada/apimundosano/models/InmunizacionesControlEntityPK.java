@@ -77,4 +77,9 @@ public class InmunizacionesControlEntityPK implements Serializable {
         result = 31 * result + idInmunizacion;
         return result;
     }
+
+    @Override
+    public String toString() {
+        return idPersona + "-" + idControl + "-" + idInmunizacion;
+    }
 }

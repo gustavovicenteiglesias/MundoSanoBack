@@ -1,4 +1,5 @@
 export interface MotivoDeDerivacion{
+    uuid?: string;
     id_motivo:number;
     nombre:string;
     //sql_deleted

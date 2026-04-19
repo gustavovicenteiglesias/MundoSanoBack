@@ -1,5 +1,6 @@
 
 export interface Controles{
+    uuid?: string;
     id_control:number;
     fecha:Date|string;
     id_persona:number;
@@ -23,6 +24,7 @@ export interface Controles{
 }
 
 export const InicialControl:Controles={
+    uuid: "",
     id_control: 0,
     fecha: "",
     id_persona: 0,

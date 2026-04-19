@@ -11,6 +11,7 @@ public class PaisesService {
         List<List<Object>> values = new ArrayList<>();
         for (PaisesEntity item : data) {
             List<Object> row = new ArrayList<>();
+            row.add(item.getUuid());
             row.add(item.getIdPais());
             row.add(item.getCodigo());
             row.add(item.getNombre());

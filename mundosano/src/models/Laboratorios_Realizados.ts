@@ -1,4 +1,5 @@
 export interface Laboratorios_Realizados{
+    uuid?: string;
     id_persona?:number;
     id_control?:number;
     id_laboratorio?:number;
@@ -14,6 +15,7 @@ last_modified?:number;
 }
 
 export const InicialLaboratorios:Laboratorios_Realizados={
+    uuid: "",
     id_persona:0,
     id_control:0,
     id_laboratorio:0,

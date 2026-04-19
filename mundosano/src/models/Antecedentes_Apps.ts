@@ -1,4 +1,5 @@
 export interface Antecedentes_Apps {
+    uuid?: string;
     id_antecedente: number;
     id_app: number;
    sql_deleted:number;
@@ -7,6 +8,7 @@ export interface Antecedentes_Apps {
 }
 
 export const InicialAntecedentes_Apps:Antecedentes_Apps={
+    uuid: "",
     id_antecedente: 0,
     id_app: 0,
     sql_deleted: 0,

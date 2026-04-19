@@ -3,20 +3,16 @@ package edu.unsada.apimundosano.models;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "tratchagas_eventosadv", schema = "tripleconlast", catalog = "")
-public class TratchagasEventosadvEntity {
+@Table(name = "tratchagas_eventosadv")
+public class TratchagasEventosadvEntity extends BaseEntity {
     @Basic
     @Column(name = "id_tratamiento_chagas")
     private int idTratamientoChagas;
     @Basic
     @Column(name = "id_evento_adverso")
     private int idEventoAdverso;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Byte sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
+    
+    
     @Basic
     @Id
     @Column(name = "id")
@@ -38,21 +34,13 @@ public class TratchagasEventosadvEntity {
         this.idEventoAdverso = idEventoAdverso;
     }
 
-    public Byte getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
-    public void setSqlDeleted(Byte sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
+    
 
-    public Integer getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
     @Override
     public boolean equals(Object o) {
@@ -90,3 +78,5 @@ public class TratchagasEventosadvEntity {
         this.id = id;
     }
 }
+
+

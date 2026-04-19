@@ -1,4 +1,5 @@
 export interface Control_Embarazo{
+    uuid?: string;
     id_control_embarazo: number;
     id_control:number;
     edad_gestacional:number;
@@ -18,6 +19,7 @@ export interface Control_Embarazo{
 }
 
 export const InicialControlEmbarazo:Control_Embarazo={
+    uuid: "",
     id_control_embarazo: 0,
     id_control: 0,
     edad_gestacional: 0,

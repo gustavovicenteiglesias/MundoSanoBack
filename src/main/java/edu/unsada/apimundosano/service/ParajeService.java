@@ -11,6 +11,7 @@ public class ParajeService {
         List<List<Object>> values =new ArrayList<>();
         for (ParajesEntity item:data){
             List<Object> row=new ArrayList<>();
+            row.add(item.getUuid());
             row.add(item.getIdParaje());
             row.add(item.getIdArea());
             row.add(item.getNombre());

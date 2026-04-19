@@ -3,9 +3,9 @@ package edu.unsada.apimundosano.models;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "embarazos", schema = "tripleconlast", catalog = "")
+@Table(name = "embarazos")
 @IdClass(EmbarazosEntityPK.class)
-public class EmbarazosEntity {
+public class EmbarazosEntity extends BaseEntity {
 
     @Id
     @Column(name = "id_persona")
@@ -18,12 +18,8 @@ public class EmbarazosEntity {
     @Id
     @Column(name = "id_tipo_embarazo")
     private int idTipoEmbarazo;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Byte sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
+    
+    
     @ManyToOne
  @JoinColumn(name = "id_persona", referencedColumnName = "id_persona", nullable = false,insertable=false, updatable=false)
     private PersonasEntity personasByIdPersona;
@@ -58,21 +54,13 @@ public class EmbarazosEntity {
         this.idTipoEmbarazo = idTipoEmbarazo;
     }
 
-    public Byte getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
-    public void setSqlDeleted(Byte sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
+    
 
-    public Integer getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
     @Override
     public boolean equals(Object o) {
@@ -124,3 +112,5 @@ public class EmbarazosEntity {
         this.tiposEmbarazosByIdTipoEmbarazo = tiposEmbarazosByIdTipoEmbarazo;
     }
 }
+
+

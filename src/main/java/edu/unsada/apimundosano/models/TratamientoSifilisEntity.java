@@ -5,8 +5,8 @@ import java.sql.Date;
 import java.util.Collection;
 
 @Entity
-@Table(name = "tratamiento_sifilis", schema = "tripleconlast", catalog = "")
-public class TratamientoSifilisEntity {
+@Table(name = "tratamiento_sifilis")
+public class TratamientoSifilisEntity extends BaseEntity {
 
     @Id
     @Column(name = "id_tratamiento_sifilis")
@@ -23,12 +23,8 @@ public class TratamientoSifilisEntity {
     @Basic
     @Column(name = "dosis_numero")
     private Integer dosisNumero;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Byte sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
+    
+    
     @OneToMany(mappedBy = "tratamientoSifilisByIdTratamientoSifilis")
     private Collection<ControlesEntity> controlesByIdTratamientoSifilis;
 
@@ -72,21 +68,13 @@ public class TratamientoSifilisEntity {
         this.dosisNumero = dosisNumero;
     }
 
-    public Byte getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
-    public void setSqlDeleted(Byte sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
+    
 
-    public Integer getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
     @Override
     public boolean equals(Object o) {
@@ -127,3 +115,5 @@ public class TratamientoSifilisEntity {
         this.controlesByIdTratamientoSifilis = controlesByIdTratamientoSifilis;
     }
 }
+
+

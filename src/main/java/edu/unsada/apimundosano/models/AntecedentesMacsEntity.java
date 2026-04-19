@@ -5,9 +5,9 @@ import jakarta.persistence.*;
 import java.util.Objects;
 
 @Entity
-@Table(name = "antecedentes_macs", schema = "tripleconlast", catalog = "")
+@Table(name = "antecedentes_macs")
 @IdClass(AntecedentesMacsEntityPK.class)
-public class AntecedentesMacsEntity {
+public class AntecedentesMacsEntity extends BaseEntity {
 
 
     @Id
@@ -18,12 +18,8 @@ public class AntecedentesMacsEntity {
     @Id
     @Column(name = "id_mac")
     private int idMac;
-    @Basic
-    @Column(name = "last_modified")
-    private int lastModified;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Integer sqlDeleted;
+    
+    
 
     public int getIdAntecedente() {
         return idAntecedente;
@@ -41,23 +37,15 @@ public class AntecedentesMacsEntity {
         this.idMac = idMac;
     }
 
-    public int getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(int lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
-    public Integer getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
 
 
-    public void setSqlDeleted(Integer sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
+    
 
     @Override
     public boolean equals(Object o) {
@@ -82,3 +70,5 @@ public class AntecedentesMacsEntity {
                 '}';
     }
 }
+
+

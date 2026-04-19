@@ -1,4 +1,5 @@
 export interface Antecedentes{
+    uuid?: string;
     id_antecedente?:number;
     id_persona?:number;
     id_control?:number;
@@ -17,6 +18,7 @@ export interface Antecedentes{
 
 }
 export const InicialAntecedentes:Antecedentes={
+    uuid: "",
     id_antecedente: 0,
     id_persona: 0,
     id_control: 0,

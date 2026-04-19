@@ -6,8 +6,8 @@ import java.sql.Date;
 import java.util.Collection;
 
 @Entity
-@Table(name = "controles", schema = "tripleconlast", catalog = "")
-public class ControlesEntity {
+@Table(name = "controles")
+public class ControlesEntity extends BaseEntity {
 
 
 
@@ -59,12 +59,8 @@ public class ControlesEntity {
     @Basic
     @Column(name = "georeferencia")
     private String georeferencia;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Integer sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
+    
+    
     @JsonIgnore
     @OneToMany(mappedBy = "controlesByIdControl")
     private Collection<AntecedentesEntity> antecedentesByIdControl;
@@ -263,23 +259,15 @@ public class ControlesEntity {
         this.georeferencia = georeferencia;
     }
 
-    public Integer getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
 
 
-    public void setSqlDeleted(Integer sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
+    
 
-    public Integer getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
     @Override
     public boolean equals(Object o) {
@@ -496,3 +484,5 @@ public class ControlesEntity {
         this.laboratoriosRealizadosByIdControl = laboratoriosRealizadosByIdControl;
     }
 }
+
+

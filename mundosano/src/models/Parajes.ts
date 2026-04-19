@@ -1,4 +1,5 @@
 export interface Parajes{
+    uuid?: string;
     id_paraje:number;
     id_area:number;
     nombre:string;
@@ -8,6 +9,7 @@ export interface Parajes{
 }
 
 export const InicialParajes:Parajes={
+    uuid: "",
     id_paraje: 0,
     id_area: 0,
     nombre: "",

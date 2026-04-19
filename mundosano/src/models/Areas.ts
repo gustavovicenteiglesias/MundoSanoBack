@@ -1,4 +1,5 @@
 export interface Areas{
+    uuid?: string;
     id_area:number;
     id_pais:number;
     nombre:string;
@@ -9,6 +10,7 @@ export interface Areas{
 }
 
 export const InicialAreas:Areas={
+    uuid: "",
     id_area: 0,
     id_pais: 0,
     nombre: "",

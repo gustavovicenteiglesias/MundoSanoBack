@@ -1,20 +1,6 @@
 import { getDb } from "../data/db";
 const dbdb = getDb;
-const max = () => {
-    const maxId = JSON.parse(localStorage.getItem("user") || "")
-    if (maxId !== "") {
-        console.log("MAximo " + maxId.maxId)
-        return maxId.maxId
-    }
-}
 
-const min = () => {
-    const minId = JSON.parse(localStorage.getItem("user") || "")
-    if (minId !== "") {
-        console.log("Minimo " + minId.minId)
-        return minId.minId
-    }
-}
 export class Repository<T extends object> {
     private tableName: string;
 
@@ -71,21 +57,21 @@ export class Repository<T extends object> {
         try {
             const db = await dbdb();
             await db.open();
-            const res = await db.query(`SELECT * FROM ${this.tableName} WHERE ${campo} BETWEEN ${min()} AND ${max()} ORDER BY ${campo} DESC LIMIT 1`);
+            const res = await db.query(`SELECT * FROM ${this.tableName} ORDER BY ${campo} DESC LIMIT 1`);
             await db.close();
             if (res.values !== undefined ) {
                 if (Object.keys(res.values).length !== 0){
                     return res.values[0][campo];
                  }else{
-                    return min()
+                    return 0
                  }
                 
             }
-            return min();
+            return 0;
             
         } catch (error) {
             console.log(error)
-            return min()
+            return 0
         }
        
         
@@ -122,7 +108,7 @@ export class Repository<T extends object> {
         try {
             const db = await dbdb();
         await db.open();
-        const res = await db.query(`SELECT * FROM ${this.tableName} WHERE ${campo} BETWEEN ${min()} AND ${max()} ORDER BY ${campo} DESC LIMIT 1`);
+        const res = await db.query(`SELECT * FROM ${this.tableName} ORDER BY ${campo} DESC LIMIT 1`);
         await db.close();
         if (res.values !== undefined ) {
             if (Object.keys(res.values).length !== 0){
@@ -156,7 +142,7 @@ export class Repository<T extends object> {
              }
             
         }
-        return min();
+        return 0;
         } catch (error) {
             console.log(error)
             return 0
@@ -215,16 +201,21 @@ export class Repository<T extends object> {
     async create(entity: T): Promise<boolean> {
         try {
             const db = await dbdb();
-        await db.open();
-        const keys = Object.keys(entity).join(',');
-        const values = Object.values(entity).map(value => {
-            if (value === null) {
-                return "null";
-            }
-            return typeof value === 'string' ? `"${value}"` : value;
-        }).join(',');
-        console.log(`INSERT INTO ${this.tableName} (${keys}) VALUES (${values})`)
-        const res = await db.execute(`INSERT INTO ${this.tableName} (${keys}) VALUES (${values})`);
+            await db.open();
+            
+            // Inyectar UUID y last_modified
+            (entity as any).uuid = crypto.randomUUID();
+            (entity as any).last_modified = Math.floor(Date.now() / 1000);
+            
+            const keys = Object.keys(entity).join(',');
+            const values = Object.values(entity).map(value => {
+                if (value === null) {
+                    return "null";
+                }
+                return typeof value === 'string' ? `"${value}"` : value;
+            }).join(',');
+            console.log(`INSERT INTO ${this.tableName} (${keys}) VALUES (${values})`)
+            const res = await db.execute(`INSERT INTO ${this.tableName} (${keys}) VALUES (${values})`);
 
         await db.close();
 
@@ -247,8 +238,12 @@ export class Repository<T extends object> {
               const db = await dbdb();
               await db.open();
               
+              const now = Math.floor(Date.now() / 1000);
               const values = entities
                 .map(entity => {
+                  // Inyectar last_modified
+                  (entity as any).last_modified = now;
+                  
                   const keys = Object.keys(entity).join(',');
                   const entityValues = Object.values(entity).map(value => {
                     if (value === null) {
@@ -355,13 +350,17 @@ export class Repository<T extends object> {
     async update(entity: T, campo: string, id: number): Promise<boolean> {
         try {
             const db = await dbdb();
-        await db.open();
-        //const id = (entity as any).id_persona; // Assuming id_persona field is present in all interfaces
-        const updates = Object.entries(entity).map(([key, value]) => {
-            return typeof value === 'string' ? `${key} = "${value}"` : `${key} = ${value}`;
-        }).join(',');
-        console.log(`UPDATE ${this.tableName} SET ${updates} WHERE ${campo} = ${id}`)
-        const res = await db.execute(`UPDATE ${this.tableName} SET ${updates} WHERE ${campo} = ${id}`);
+            await db.open();
+            
+            // Inyectar last_modified
+            (entity as any).last_modified = Math.floor(Date.now() / 1000);
+            
+            //const id = (entity as any).id_persona; // Assuming id_persona field is present in all interfaces
+            const updates = Object.entries(entity).map(([key, value]) => {
+                return typeof value === 'string' ? `${key} = "${value}"` : `${key} = ${value}`;
+            }).join(',');
+            console.log(`UPDATE ${this.tableName} SET ${updates} WHERE ${campo} = ${id}`)
+            const res = await db.execute(`UPDATE ${this.tableName} SET ${updates} WHERE ${campo} = ${id}`);
         
         await db.close();
         console.log(res.changes?.changes)

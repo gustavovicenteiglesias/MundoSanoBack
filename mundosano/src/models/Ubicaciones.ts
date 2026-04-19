@@ -1,4 +1,5 @@
 export interface Ubicaciones {
+    uuid?: string;
     id_ubicacion: number;
     id_persona: number;
     id_paraje: number | null;
@@ -14,6 +15,7 @@ export interface Ubicaciones {
 }
 
 export const InicialUbicaciones:Ubicaciones={
+    uuid: "",
     id_ubicacion: 0,
     id_persona: 0,
     id_paraje: null,

@@ -1,4 +1,5 @@
 export interface Personas {
+    uuid?: string;
     id_persona: number;
     apellido: string;
     nombre: string;
@@ -17,6 +18,7 @@ export interface Personas {
 }
 
 export let InicialPersona:Personas={
+    uuid: "",
     
         id_persona: 0,
         apellido: "",

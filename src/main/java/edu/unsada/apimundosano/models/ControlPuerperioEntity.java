@@ -3,8 +3,8 @@ package edu.unsada.apimundosano.models;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "control_puerperio", schema = "tripleconlast", catalog = "")
-public class ControlPuerperioEntity {
+@Table(name = "control_puerperio")
+public class ControlPuerperioEntity extends BaseEntity {
 
     @Id
     @Column(name = "id_control_puerperio")
@@ -21,12 +21,8 @@ public class ControlPuerperioEntity {
     @Basic
     @Column(name = "derivacion")
     private String derivacion;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Byte sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
+    
+    
     @ManyToOne
     @JoinColumn(name = "id_control", referencedColumnName = "id_control", nullable = false,insertable=false, updatable=false)
     private ControlesEntity controlesByIdControl;
@@ -71,21 +67,13 @@ public class ControlPuerperioEntity {
         this.derivacion = derivacion;
     }
 
-    public Byte getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
-    public void setSqlDeleted(Byte sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
+    
 
-    public Integer getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
     @Override
     public boolean equals(Object o) {
@@ -126,3 +114,5 @@ public class ControlPuerperioEntity {
         this.controlesByIdControl = controlesByIdControl;
     }
 }
+
+

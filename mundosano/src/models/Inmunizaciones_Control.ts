@@ -1,4 +1,5 @@
 export interface Inmunizaciones_Control{
+    uuid?: string;
     id_persona?:number;
     id_control?:number;
     id_inmunizacion?:number;
@@ -9,6 +10,7 @@ export interface Inmunizaciones_Control{
 }
 
 export const InicialInmunizacionesControl:Inmunizaciones_Control={
+    uuid: "",
     id_persona:0,
     id_control:0,
     id_inmunizacion:0,

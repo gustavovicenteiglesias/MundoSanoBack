@@ -10,8 +10,8 @@ import java.sql.Date;
 import java.util.Collection;
 
 @Entity
-@Table(name = "personas", schema = "tripleconlast", catalog = "")
-public class PersonasEntity {
+@Table(name = "personas")
+public class PersonasEntity extends BaseEntity {
 
 
 
@@ -48,12 +48,8 @@ public class PersonasEntity {
     @Basic
     @Column(name = "nacido_vivo")
     private Integer nacidoVivo;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Integer sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
+    
+    
     @JsonIgnore
     @OneToMany(mappedBy = "personasByIdPersona")
     private Collection<AntecedentesEntity> antecedentesByIdPersona;
@@ -190,23 +186,15 @@ public class PersonasEntity {
         this.nacidoVivo = nacidoVivo;
     }
 
-    public Integer getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
 
 
-    public void setSqlDeleted(Integer sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
+    
 
-    public Integer getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
     @Override
     public boolean equals(Object o) {
@@ -301,3 +289,5 @@ public class PersonasEntity {
 
 
 }
+
+

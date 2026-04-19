@@ -10,6 +10,7 @@ public class AntededentesMacs {
         List<List<Object>> values = new ArrayList<>();
         for (AntecedentesMacsEntity item : data) {
             List<Object> row = new ArrayList<>();
+            row.add(item.getUuid());
             row.add(item.getIdAntecedente());
             row.add(item.getIdMac());
             row.add(item.getSqlDeleted());

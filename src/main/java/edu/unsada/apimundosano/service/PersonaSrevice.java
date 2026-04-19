@@ -10,6 +10,7 @@ public class PersonaSrevice {
         List<List<Object>> values = new ArrayList<>();
         for (PersonasEntity item : data) {
             List<Object> row = new ArrayList<>();
+            row.add(item.getUuid());
             row.add(item.getIdPersona());
             row.add(item.getApellido());
             row.add(item.getNombre());

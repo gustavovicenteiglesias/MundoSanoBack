@@ -12,6 +12,7 @@ public class UsuarioService {
         List<List<Object>> values = new ArrayList<>();
         for (UsuariosEntity item : data) {
             List<Object> row = new ArrayList<>();
+            row.add(item.getUuid());
             row.add(item.getIdUsuario());
             row.add(item.getUsuario());
             row.add(item.getPassword());

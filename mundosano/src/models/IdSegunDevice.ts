@@ -1,4 +1,5 @@
 export interface IdSegunDevice{
+    uuid?: string;
     id_device?:number;
     nro_device:string;
 	min_id:number;

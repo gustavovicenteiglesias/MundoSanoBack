@@ -52,4 +52,9 @@ public class AntecedentesAppsEntityPK implements Serializable {
         result = 31 * result + idApp;
         return result;
     }
+
+    @Override
+    public String toString() {
+        return idAntecedente + "-" + idApp;
+    }
 }

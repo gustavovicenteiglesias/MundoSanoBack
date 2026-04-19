@@ -3,8 +3,8 @@ package edu.unsada.apimundosano.models;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "ciudades", schema = "tripleconlast", catalog = "")
-public class CiudadesEntity {
+@Table(name = "ciudades")
+public class CiudadesEntity extends BaseEntity {
 
     @Id
     @Column(name = "id_ciudad")
@@ -15,12 +15,8 @@ public class CiudadesEntity {
     @Basic
     @Column(name = "id_provincia")
     private int idProvincia;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Byte sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
+    
+    
     @ManyToOne
    @JoinColumn(name = "id_provincia", referencedColumnName = "id_provincia", nullable = false,insertable=false, updatable=false)
     private ProvinciasEntity provinciasByIdProvincia;
@@ -49,21 +45,13 @@ public class CiudadesEntity {
         this.idProvincia = idProvincia;
     }
 
-    public Byte getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
-    public void setSqlDeleted(Byte sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
+    
 
-    public Integer getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
     @Override
     public boolean equals(Object o) {
@@ -99,3 +87,5 @@ public class CiudadesEntity {
         this.provinciasByIdProvincia = provinciasByIdProvincia;
     }
 }
+
+

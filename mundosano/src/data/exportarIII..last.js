@@ -27,15 +27,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ],
-            "triggers": [
+            ,
                 {
-                    "name": "estados_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE estados SET last_modified= (strftime('%s', 'now')) WHERE id_estado=OLD.id_estado;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
-                }
-            ],
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "values": [
                 [
                     1,
@@ -112,7 +108,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "fk_origenes_idx",
@@ -125,14 +125,6 @@ export const datos={
                 {
                     "name": "madre",
                     "value": "`madre` DESC"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "personas_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE apps SET last_modified= (strftime('%s', 'now')) WHERE id_persona=OLD.id_persona;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
             
@@ -156,20 +148,16 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "nombre_apps_UNIQUE",
                     "value": "`nombre` DESC",
                     "mode": "UNIQUE"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "apps_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE apps SET last_modified= (strftime('%s', 'now')) WHERE id_app=OLD.id_app;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
             "values": [
@@ -338,7 +326,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ]
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }]
         },
         {
             "name": "paises",
@@ -363,7 +355,11 @@ export const datos={
                      "column": "sql_deleted",
                      "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
                  }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "codigo",
@@ -374,14 +370,6 @@ export const datos={
                     "name": "nombre",
                     "value": "`nombre` DESC",
                     "mode": "UNIQUE"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "paises_derivacion_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE paises SET last_modified= (strftime('%s', 'now')) WHERE id_pais=OLD.id_pais;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
             
@@ -413,7 +401,11 @@ export const datos={
                     "constraint": "`fk_provincias_paises`",
                     "value": "FOREIGN KEY (`id_pais`) REFERENCES paises (`id_pais`) ON DELETE RESTRICT ON UPDATE RESTRICT"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "id_pais_provincias",
@@ -806,15 +798,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ],
-            "triggers": [
+            ,
                 {
-                    "name": "motivos_derivacion_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE motivos_derivacion SET last_modified= (strftime('%s', 'now')) WHERE id_motivo=OLD.id_motivo;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
-                }
-            ],
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "values": [
                 [
                     1,
@@ -919,7 +907,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ]
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }]
         },
         {
             "name": "seguimiento_sifilis",
@@ -992,7 +984,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ]
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }]
         },
         {
             "name": "seguimiento_vhb",
@@ -1029,7 +1025,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ]
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }]
         },
         {
             "name": "tipos_fin_embarazos",
@@ -1050,7 +1050,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "values": [
                 [
                     1,
@@ -1124,7 +1128,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "id_motivo_finalizacion",
@@ -1151,20 +1159,16 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "nombre_etmis_UNIQUE",
                     "value": "`nombre` DESC",
                     "mode": "UNIQUE"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "etmis_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE etmis SET last_modified= (strftime('%s', 'now')) WHERE id_etmi=OLD.id_etmi;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
             "values": [
@@ -1219,20 +1223,16 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "nombre_inmi_UNIQUE",
                     "value": "`nombre` DESC",
                     "mode": "UNIQUE"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "inmunizaciones_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE inmunizaciones SET last_modified= (strftime('%s', 'now')) WHERE id_inmunizacion=OLD.id_inmunizacion;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
             "values": [
@@ -1285,7 +1285,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ]
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }]
         },
         {
             "name": "laboratorios",
@@ -1314,20 +1318,16 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "nombre_labo_UNIQUE",
                     "value": "`nombre` DESC,`confirmacion` DESC",
                     "mode": "UNIQUE"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "laboratorios_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE laboratorios SET last_modified= (strftime('%s', 'now')) WHERE id_laboratorio=OLD.id_laboratorio;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
             "values": [
@@ -1520,15 +1520,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ],
-            "triggers": [
+            ,
                 {
-                    "name": "eventos_adversos_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE eventos_adversos SET last_modified= (strftime('%s', 'now')) WHERE id_evento_adverso=OLD.id_evento_adverso;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
-                }
-            ],
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "values": [
                 [
                     1,
@@ -1677,7 +1673,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ]
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }]
         },
         {
             "name": "macs",
@@ -1698,15 +1698,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ],
-            "triggers": [
+            ,
                 {
-                    "name": "macs_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE macs SET last_modified= (strftime('%s', 'now')) WHERE id_mac=OLD.id_mac;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
-                }
-            ],
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "values": [
                 [
                     1,
@@ -1761,7 +1757,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ]
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }]
         },
         {
             "name": "controles",
@@ -1882,7 +1882,11 @@ export const datos={
                     "constraint": "`fk_tipo_fin_emb`",
                     "value": "FOREIGN KEY (`id_tipos_fin_embarazos`) REFERENCES tipos_fin_embarazos (`id_tipos_fin_embarazos`) ON DELETE RESTRICT ON UPDATE RESTRICT"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "fecha",
@@ -1934,14 +1938,6 @@ export const datos={
                     "value": "`id_tipos_fin_embarazos` DESC"
                 }
             ],
-            "triggers": [
-                {
-                    "name": "controles_trigger_last_modified",
-                    "logic": "BEGIN  UPDATE controles SET last_modified= strftime('%s', 'now') WHERE id_control=OLD.id_control;END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
-                }
-            ],
            
         },
         {
@@ -1963,15 +1959,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ],
-            "triggers": [
+            ,
                 {
-                    "name": "motivo_finalizacion_tratamiento_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE motivo_finalizacion_tratamiento SET last_modified= (strftime('%s', 'now')) WHERE id_motivo_finalizacion_tratamiento=OLD.id_motivo_finalizacion_tratamiento;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
-                }
-            ],
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "values": [
                 [
                     1,
@@ -2024,7 +2016,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "nombre_pe_UNIQUE",
@@ -2156,15 +2152,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ],
-            "triggers": [
+            ,
                 {
-                    "name": "niveles_acceso_derivacion_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE niveles_acceso SET last_modified= (strftime('%s', 'now')) WHERE id_nivel_acceso=OLD.id_nivel_acceso;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
-                }
-            ],
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "values": [
                 [
                     1,
@@ -2199,20 +2191,16 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "nombre_origenes",
                     "value": "`nombre` DESC",
                     "mode": "UNIQUE"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "origenes_derivacion_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE origenes SET last_modified= (strftime('%s', 'now')) WHERE id_origen=OLD.id_origen;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
             "values": [
@@ -2257,19 +2245,15 @@ export const datos={
                     "constraint": "`fk_paises`",
                     "value": "FOREIGN KEY (`id_pais`) REFERENCES paises (`id_pais`) ON DELETE RESTRICT ON UPDATE RESTRICT"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "id_pais",
                     "value": "`id_pais` DESC"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "areas_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE areas SET last_modified= (strftime('%s', 'now')) WHERE id_area=OLD.id_area;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
            
@@ -2301,19 +2285,15 @@ export const datos={
                     "constraint": "`fk_ciudad_provincias`",
                     "value": "FOREIGN KEY (`id_provincia`) REFERENCES provincias (`id_provincia`) ON DELETE RESTRICT ON UPDATE RESTRICT"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "id_provincia",
                     "value": "`id_provincia` DESC"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "ciudades_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE ciudades SET last_modified= (strftime('%s', 'now')) WHERE id_ciudad=OLD.id_ciudad;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
             "values": [
@@ -5176,7 +5156,11 @@ export const datos={
                     "constraint": "`fk_motivo`",
                     "value": "FOREIGN KEY (`motivo`) REFERENCES motivos_derivacion (`id_motivo`) ON DELETE RESTRICT ON UPDATE RESTRICT"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "id_control",
@@ -5185,14 +5169,6 @@ export const datos={
                 {
                     "name": "fk_motivo",
                     "value": "`motivo` DESC"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "control_embarazo_trigger_last_modified",
-                    "logic": "BEGIN  UPDATE control_embarazo SET last_modified= (strftime('%s', 'now')) WHERE id_control_embarazo=OLD.id_control_embarazo;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
            
@@ -5216,7 +5192,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "values": [
                 [
                     1,
@@ -5307,19 +5287,15 @@ export const datos={
                     "constraint": "`fk_areas`",
                     "value": "FOREIGN KEY (`id_area`) REFERENCES areas (`id_area`) ON DELETE RESTRICT ON UPDATE RESTRICT"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "id_area",
                     "value": "`id_area` DESC"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "parajes_derivacion_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE parajes SET last_modified= (strftime('%s', 'now')) WHERE id_paraje=OLD.id_paraje;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
             
@@ -5363,20 +5339,16 @@ export const datos={
                     "constraint": "`fk_control_emb`",
                     "value": "FOREIGN KEY (`id_control_embarazo`) REFERENCES control_embarazo (`id_control_embarazo`) ON DELETE RESTRICT ON UPDATE RESTRICT"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "id_control_embarazo",
                     "value": "`id_control_embarazo` DESC",
                     "mode": "UNIQUE"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "control_emb_patologico_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE control_emb_patologico SET last_modified= (strftime('%s', 'now')) WHERE id_control_emb_patologico=OLD.id_control_emb_patologico;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ]
         },
@@ -5415,7 +5387,11 @@ export const datos={
                     "constraint": "`fk_control_puer_control`",
                     "value": "FOREIGN KEY (`id_control`) REFERENCES controles (`id_control`) ON DELETE RESTRICT ON UPDATE RESTRICT"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "id_control_puerperio",
@@ -5425,14 +5401,6 @@ export const datos={
                 {
                     "name": "fk_control_puer_control",
                     "value": "`id_control` DESC"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "control_puerperio_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE control_puerperio SET last_modified= (strftime('%s', 'now')) WHERE id_control_puerperio=OLD.id_control_puerperio;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
            
@@ -5516,7 +5484,11 @@ export const datos={
                     "constraint": "`fk_controlrn_control`",
                     "value": "FOREIGN KEY (`id_control`) REFERENCES controles (`id_control`) ON DELETE RESTRICT ON UPDATE RESTRICT"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "id_control_rn",
@@ -5526,14 +5498,6 @@ export const datos={
                 {
                     "name": "fk_controlrn_control",
                     "value": "`id_control` DESC"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "control_rn_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE control_rn SET last_modified= (strftime('%s', 'now')) WHERE id_control_rn=OLD.id_control_rn;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
            
@@ -5557,7 +5521,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "nombre_UNIQUE",
@@ -5626,7 +5594,11 @@ export const datos={
                     "constraint": "`fk_embarazos_tipo_embarazo`",
                     "value": "FOREIGN KEY (`id_tipo_embarazo`) REFERENCES tipos_embarazos (`id_tipo_embarazo`) ON DELETE NO ACTION ON UPDATE NO ACTION"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "fk_persona_idx",
@@ -5639,14 +5611,6 @@ export const datos={
                 {
                     "name": "fk_tipo_embarazo_idx",
                     "value": "`id_tipo_embarazo` DESC"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "embarazos_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE embarazos SET last_modified= (strftime('%s', 'now')) WHERE id_persona=OLD.id_persona;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ]
         },
@@ -5681,19 +5645,15 @@ export const datos={
                     "constraint": "`fk_pat_embs`",
                     "value": "FOREIGN KEY (`id_patologia_embarazo`) REFERENCES patologias_embarazos (`id_patologia_embarazo`) ON DELETE RESTRICT ON UPDATE RESTRICT"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "fk_pat_embs",
                     "value": "`id_patologia_embarazo` DESC"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "embarazos_patologias_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE embarazos_patologias SET last_modified= (strftime('%s', 'now')) WHERE id_control_emb_patologico=OLD.id_control_emb_patologico;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ]
         },
@@ -5740,7 +5700,11 @@ export const datos={
                     "constraint": "`fk_etmis_personas_personas`",
                     "value": "FOREIGN KEY (`id_persona`) REFERENCES personas (`id_persona`) ON DELETE NO ACTION ON UPDATE NO ACTION"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "fk_etmi_idx",
@@ -5749,14 +5713,6 @@ export const datos={
                 {
                     "name": "fk_control_ep_idx",
                     "value": "`id_control` DESC"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "etmis_personas_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE etmis_personas SET last_modified= (strftime('%s', 'now')) WHERE id_persona=OLD.id_persona;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
            
@@ -5807,7 +5763,11 @@ export const datos={
                     "constraint": "`fk_inmunicaciones_control_persona`",
                     "value": "FOREIGN KEY (`id_persona`) REFERENCES personas (`id_persona`) ON DELETE NO ACTION ON UPDATE NO ACTION"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
            
             "indexes": [
                 {
@@ -5821,14 +5781,6 @@ export const datos={
                 {
                     "name": "fk_inmunizaciones_control_persona",
                     "value": "`id_persona` DESC"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "inmunizaciones_control_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE inmunizaciones_control SET last_modified= (strftime('%s', 'now')) WHERE id_inmunizacion=OLD.id_inmunizacion;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
            
@@ -5894,7 +5846,11 @@ export const datos={
                     "constraint": "`fk_laboratorios_realizados_etmis`",
                     "value": "FOREIGN KEY (`id_etmi`) REFERENCES etmis (`id_etmi`) ON DELETE NO ACTION ON UPDATE NO ACTION"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "fk_control_idx",
@@ -5907,14 +5863,6 @@ export const datos={
                 {
                     "name": "fk_etmis_idx",
                     "value": "`id_etmi` DESC"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "laboratorios_realizados_trigger_last_modified",
-                    "logic": "BEGIN  UPDATE laboratorios_realizados SET last_modified= strftime('%s', 'now') WHERE id_persona=OLD.id_persona ; END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
           
@@ -5938,7 +5886,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "id_tratamiento_chagas",
@@ -5993,7 +5945,11 @@ export const datos={
                     "column": "last_modified",
                     "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "ck",
@@ -6011,14 +5967,6 @@ export const datos={
                 {
                     "name": "fk_ubicaciones_parajes",
                     "value": "`id_paraje` DESC"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "ubicaciones_trigger_last_modified",
-                    "logic": "BEGIN     UPDATE ubicaciones SET last_modified= (strftime('%s', 'now')) WHERE id_ubicacion=OLD.id_ubicacion;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
          
@@ -6058,7 +6006,11 @@ export const datos={
                     "column": "sql_deleted",
                     "value": "BOOLEAN DEFAULT 0 CHECK (sql_deleted IN (0, 1))"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "usuario",
@@ -6068,13 +6020,6 @@ export const datos={
                 {
                     "name": "nivel_acceso",
                     "value": "`nivel_acceso` DESC"
-                }
-            ],"triggers": [
-                {
-                    "name": "usuarios_trigger_last_modified",
-                    "logic": "BEGIN     UPDATE usuarios SET last_modified= (strftime('%s', 'now')) WHERE id_usuario=OLD.id_usuario;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
             
@@ -6150,7 +6095,11 @@ export const datos={
                     "constraint": "CPK_id_antecedente",
                     "value": "PRIMARY KEY(id_antecedente)"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "ck_ante",
@@ -6160,14 +6109,6 @@ export const datos={
                 {
                     "name": "fk_control_ante_idx",
                     "value": "id_control DESC"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "antecedentes_trigger_last_modified",
-                    "logic": "BEGIN     UPDATE antecedentes SET last_modified= (strftime('%s', 'now')) WHERE id_antecedente=OLD.id_antecedente;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
           
@@ -6203,20 +6144,16 @@ export const datos={
                     "constraint": "CPK_id_antecedente_id_app",
                     "value": "PRIMARY KEY(id_antecedente,id_app)"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 
                 {
                     "name": "fk_apps_idx",
                     "value": "id_app DESC"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "antecedentes_apps_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE antecedentes_apps SET last_modified= (strftime('%s', 'now')) WHERE id_antecedente=OLD.id_antecedente;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
            
@@ -6252,19 +6189,15 @@ export const datos={
                     "constraint": "CPK_id_antecedente_id_mac",
                     "value": "PRIMARY KEY(id_antecedente,id_mac)"
                 }
-            ],
+            ,
+                {
+                    "column": "uuid",
+                    "value": "VARCHAR(36) UNIQUE NOT NULL"
+                }],
             "indexes": [
                 {
                     "name": "fk_macs_idx",
                     "value": "id_mac DESC"
-                }
-            ],
-            "triggers": [
-                {
-                    "name": "antecedentes_macs_trigger_last_modified",
-                    "logic": "BEGIN      UPDATE antecedentes_macs SET last_modified= (strftime('%s', 'now')) WHERE id_antecedente=OLD.id_antecedente;  END",
-                    "condition": "FOR EACH ROW WHEN NEW.last_modified < OLD.last_modified",
-                    "timeevent": "AFTER UPDATE ON"
                 }
             ],
            

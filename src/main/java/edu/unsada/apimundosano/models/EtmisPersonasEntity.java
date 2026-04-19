@@ -3,9 +3,9 @@ package edu.unsada.apimundosano.models;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "etmis_personas",  catalog = "")
+@Table(name = "etmis_personas")
 @IdClass(EtmisPersonasEntityPK.class)
-public class EtmisPersonasEntity {
+public class EtmisPersonasEntity extends BaseEntity {
 
     @Id
     @Column(name = "id_persona")
@@ -21,12 +21,8 @@ public class EtmisPersonasEntity {
     @Basic
     @Column(name = "confirmada")
     private int confirmada;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Integer sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private  Integer  lastModified;
+    
+    
     @ManyToOne
     @JoinColumn(name = "id_persona", referencedColumnName = "id_persona", nullable = false,insertable=false, updatable=false)
     private PersonasEntity personasByIdPersona;
@@ -69,21 +65,13 @@ public class EtmisPersonasEntity {
         this.confirmada = confirmada;
     }
 
-    public Integer getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
-    public void setSqlDeleted(Integer sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
+    
 
-    public int getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(int lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
     public PersonasEntity getPersonasByIdPersona() {
         return personasByIdPersona;
@@ -124,3 +112,5 @@ public class EtmisPersonasEntity {
                 '}';
     }
 }
+
+

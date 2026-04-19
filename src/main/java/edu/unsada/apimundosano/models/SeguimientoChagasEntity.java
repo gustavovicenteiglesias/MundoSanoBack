@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import java.util.Collection;
 
 @Entity
-@Table(name = "seguimiento_chagas", schema = "tripleconlast", catalog = "")
-public class SeguimientoChagasEntity {
+@Table(name = "seguimiento_chagas")
+public class SeguimientoChagasEntity extends BaseEntity {
 
     @Id
     @Column(name = "id_seguimiento_chagas")
@@ -76,12 +76,8 @@ public class SeguimientoChagasEntity {
     @Basic
     @Column(name = "detalle_hemograma")
     private String detalleHemograma;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Byte sqlDeleted;
-    @Basic
-    @Column(name = "last_modified")
-    private Integer lastModified;
+    
+    
     @OneToMany(mappedBy = "seguimientoChagasByIdSeguimientoChagas")
     private Collection<ControlesEntity> controlesByIdSeguimientoChagas;
 
@@ -269,21 +265,13 @@ public class SeguimientoChagasEntity {
         this.detalleHemograma = detalleHemograma;
     }
 
-    public Byte getSqlDeleted() {
-        return sqlDeleted;
-    }
+    
 
-    public void setSqlDeleted(Byte sqlDeleted) {
-        this.sqlDeleted = sqlDeleted;
-    }
+    
 
-    public Integer getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(Integer lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
     @Override
     public boolean equals(Object o) {
@@ -366,3 +354,5 @@ public class SeguimientoChagasEntity {
         this.controlesByIdSeguimientoChagas = controlesByIdSeguimientoChagas;
     }
 }
+
+

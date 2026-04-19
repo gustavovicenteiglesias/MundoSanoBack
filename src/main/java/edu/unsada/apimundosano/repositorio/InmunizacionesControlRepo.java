@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 
 public interface InmunizacionesControlRepo extends CrudRepository<InmunizacionesControlEntity,Integer> {
+
+    Optional<InmunizacionesControlEntity> findByUuid(String uuid);
     @Modifying
     @Query(value = "SELECT * FROM inmunizaciones_control WHERE last_modified>:last", nativeQuery = true)
     Iterable<InmunizacionesControlEntity> findBYLast (@Param("last") Integer last );
@@ -19,3 +21,4 @@ public interface InmunizacionesControlRepo extends CrudRepository<Inmunizaciones
             Integer idInmunizacion
     );
 }
+

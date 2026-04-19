@@ -3,8 +3,8 @@ package edu.unsada.apimundosano.models;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "idsegundevice", schema = "tripleconlast", catalog = "")
-public class IdsegundeviceEntity {
+@Table(name = "idsegundevice")
+public class IdsegundeviceEntity extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(name = "id_device")
@@ -18,12 +18,8 @@ public class IdsegundeviceEntity {
     @Basic
     @Column(name = "max_id")
     private Integer maxId;
-    @Basic
-    @Column(name = "sql_delete")
-    private int sqlDelete;
-    @Basic
-    @Column(name = "last_modified")
-    private int lastModified;
+    
+    
 
     public int getIdDevice() {
         return idDevice;
@@ -57,21 +53,13 @@ public class IdsegundeviceEntity {
         this.maxId = maxId;
     }
 
-    public int getSqlDelete() {
-        return sqlDelete;
-    }
+    
 
-    public void setSqlDelete(int sqlDelete) {
-        this.sqlDelete = sqlDelete;
-    }
+    
 
-    public int getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(int lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
     @Override
     public boolean equals(Object o) {
@@ -81,7 +69,7 @@ public class IdsegundeviceEntity {
         IdsegundeviceEntity that = (IdsegundeviceEntity) o;
 
         if (idDevice != that.idDevice) return false;
-        if (sqlDelete != that.sqlDelete) return false;
+        if (sqlDeleted != that.sqlDeleted) return false;
         if (lastModified != that.lastModified) return false;
         if (nroDevice != null ? !nroDevice.equals(that.nroDevice) : that.nroDevice != null) return false;
         if (minId != null ? !minId.equals(that.minId) : that.minId != null) return false;
@@ -96,8 +84,10 @@ public class IdsegundeviceEntity {
         result = 31 * result + (nroDevice != null ? nroDevice.hashCode() : 0);
         result = 31 * result + (minId != null ? minId.hashCode() : 0);
         result = 31 * result + (maxId != null ? maxId.hashCode() : 0);
-        result = 31 * result + sqlDelete;
+        result = 31 * result + sqlDeleted;
         result = 31 * result + lastModified;
         return result;
     }
 }
+
+

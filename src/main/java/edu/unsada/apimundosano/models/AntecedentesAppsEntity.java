@@ -4,9 +4,9 @@ package edu.unsada.apimundosano.models;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "antecedentes_apps",  catalog = "")
+@Table(name = "antecedentes_apps")
 @IdClass(AntecedentesAppsEntityPK.class)
-public class AntecedentesAppsEntity {
+public class AntecedentesAppsEntity extends BaseEntity {
 
 
     @Id
@@ -17,12 +17,8 @@ public class AntecedentesAppsEntity {
     @Id
     @Column(name = "id_app")
     private int idApp;
-    @Basic
-    @Column(name = "last_modified")
-    private int lastModified;
-    @Basic
-    @Column(name = "sql_deleted")
-    private Integer sqlDelete;
+    
+    
 
 
     public int getIdAntecedente() {
@@ -41,21 +37,13 @@ public class AntecedentesAppsEntity {
         this.idApp = idApp;
     }
 
-    public int getLastModified() {
-        return lastModified;
-    }
+    
 
-    public void setLastModified(int lastModified) {
-        this.lastModified = lastModified;
-    }
+    
 
-    public Integer getSqlDelete() {
-        return sqlDelete;
-    }
+    
 
-    public void setSqlDelete(Integer sqlDelete) {
-        this.sqlDelete = sqlDelete;
-    }
+    
 
     @Override
     public String toString() {
@@ -63,7 +51,7 @@ public class AntecedentesAppsEntity {
                 "idAntecedente=" + idAntecedente +
                 ", idApp=" + idApp +
                 ", lastModified=" + lastModified +
-                ", sqlDelete=" + sqlDelete +
+                ", sqlDeleted=" + sqlDeleted +
                 '}';
     }
 
@@ -77,7 +65,7 @@ public class AntecedentesAppsEntity {
         if (idAntecedente != that.idAntecedente) return false;
         if (idApp != that.idApp) return false;
         if (lastModified != that.lastModified) return false;
-        if (sqlDelete != that.sqlDelete) return false;
+        if (sqlDeleted != that.sqlDeleted) return false;
 
         return true;
     }
@@ -87,9 +75,11 @@ public class AntecedentesAppsEntity {
         int result = idAntecedente;
         result = 31 * result + idApp;
         result = 31 * result + lastModified;
-        result = 31 * result + (int) sqlDelete;
+        result = 31 * result + (int) sqlDeleted;
         return result;
     }
 
 
 }
+
+

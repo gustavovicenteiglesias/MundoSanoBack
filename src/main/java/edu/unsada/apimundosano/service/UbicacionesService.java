@@ -11,6 +11,7 @@ public class UbicacionesService {
         List<List<Object>> values = new ArrayList<>();
         for (UbicacionesEntity item : data) {
             List<Object> row = new ArrayList<>();
+            row.add(item.getUuid());
             row.add(item.getIdUbicacion());
             row.add(item.getIdPersona());
             row.add(item.getIdParaje());

@@ -1,4 +1,5 @@
 export interface Paises{
+    uuid?: string;
     id_pais:number;
     codigo:string;
     nombre:string;
@@ -7,6 +8,7 @@ export interface Paises{
   }
 
   export const InicialPaises:Paises= {
+    uuid: "",
       id_pais: 0,
       codigo: "",
       nombre: "",

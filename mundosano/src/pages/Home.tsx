@@ -62,49 +62,27 @@ const Home: React.FC = () => {
   };
 
   useEffect(() => {
-    async function de_vice() {
-      let info = await Device.getId();
-      /*.then((info) => {
-        //console.log(info.identifier)
-        idDevice =  info.identifier
-      })*/
-      return info;
-    }
-
-    de_vice().then(async (info) => {
+    const checkDbAndMigrate = async () => {
       try {
-        const lastRow = await get<any>(
-          "/findbynrodevice/" + info?.identifier
-        ).then(async (res) => {
-          console.log("id ultimo " + res);
-          let currentUser = localStorage.getItem("user");
-          if (currentUser === null) {
-            console.log("No es igual");
-            const ultimoLastRow = await get<any>("/ultimarowdevice").then(
-              async (resp) => {
-                console.log("ultimo " + JSON.stringify(resp));
-                const data: any = {
-                  nroDevice: info?.identifier,
-                  minId: resp[0].minId + 100000,
-                  maxId: resp[0].maxId + 100000,
-                  sqlDelete: 0,
-                  lastModified: Math.floor(new Date().getTime() / 1000),
-                };
-                console.log("dta " + JSON.stringify(data));
-                localStorage.setItem("user", JSON.stringify(data));
-                await post<IdSegunDevice, any>("/crearultimoid", data).then(
-                  (res) => {
-                    console.log("res " + JSON.stringify(res));
-                  }
-                );
-              }
-            );
+        const existe = await sqlite.isDatabase(NOMBRE_BB_DD);
+        if (!existe.result) {
+          console.log("No DB found or tables missing. Auto-loading base...");
+          await nuevaBBDD();
+        } else {
+          // Verify if tables are fully created (e.g. usuarios)
+          const db = await dbdb();
+          await db.open();
+          const isTable = await db.isTable("usuarios");
+          await db.close();
+          if (!isTable.result) {
+            console.log("Table 'usuarios' missing. Auto-loading base...");
+            await nuevaBBDD();
           }
-        });
-      } catch (error) {
-        console.log("error");
+        }
+      } catch (err) {
+        console.error("DB Init error", err);
       }
-    });
+    };
     logCurrentNetworkStatus();
   }, []);
   const dbdb = async (): Promise<SQLiteDBConnection> => {
@@ -128,7 +106,7 @@ const Home: React.FC = () => {
       hasData = !!pending?.export?.tables?.some((t: any) => Array.isArray(t.values) && t.values.length > 0);
     } catch (err:any) {
       const msg = (err?.message || "").toLowerCase();
-      if (!msg.includes("object is empty")) {
+      if (!msg.includes("object is empty") && !msg.includes("table's names failed")) {
         await db.close();
         alert("No se pudo verificar datos locales: " + err);
         return;

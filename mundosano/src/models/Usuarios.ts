@@ -1,4 +1,5 @@
 export interface Usuarios {
+    uuid?: string;
     id_usuario: number;
     usuario: string;
     password: string;
@@ -14,6 +15,7 @@ export interface Usuarios {
 }
 
 export const InitialUsuario: Usuarios = {
+    uuid: "",
     id_usuario: 0,
     usuario: "",
     password: "",

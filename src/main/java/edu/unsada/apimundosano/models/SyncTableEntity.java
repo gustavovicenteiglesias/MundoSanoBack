@@ -3,8 +3,8 @@ package edu.unsada.apimundosano.models;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "sync_table", schema = "tripleconlast", catalog = "")
-public class SyncTableEntity {
+@Table(name = "sync_table")
+public class SyncTableEntity extends BaseEntity {
 
     @Id
     @Column(name = "id")
@@ -57,3 +57,5 @@ public class SyncTableEntity {
                 '}';
     }
 }
+
+
