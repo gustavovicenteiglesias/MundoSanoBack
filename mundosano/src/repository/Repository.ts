@@ -234,7 +234,7 @@ export class Repository<T extends object> {
             const keys = Object.keys(cleanEntity).join(',');
             const values = Object.values(cleanEntity).map(value => this.toSqlValue(value)).join(',');
             console.log(`INSERT INTO ${this.tableName} (${keys}) VALUES (${values})`)
-            const res = await this.executeWithRecovery(db, `INSERT INTO ${this.tableName} (${keys}) VALUES (${values})`);
+            const res = await db.execute(`INSERT INTO ${this.tableName} (${keys}) VALUES (${values})`);
 
         await db.close();
 
@@ -253,38 +253,37 @@ export class Repository<T extends object> {
 
         async insert(entities: T[]): Promise<boolean> {
         
-            try {
-              const db = await dbdb();
-              await db.open();
-              if (!entities || entities.length === 0) {
-                await db.close();
-                return false;
-              }
-              
-              const now = Math.floor(Date.now() / 1000);
-              const values = entities
-                .map(entity => {
-                  // Inyectar last_modified
-                  (entity as any).last_modified = now;
-                  const cleanEntity = this.sanitizeEntity(entity as Record<string, any>);
-                  const keys = Object.keys(cleanEntity).join(',');
-                  const entityValues = Object.values(cleanEntity).map(value => this.toSqlValue(value)).join(',');
-        
-                  return `(${entityValues})`;
-                })
-                .join(",");
-        
-              const query = `INSERT OR REPLACE INTO ${this.tableName} (${baseColumns.join(",")}) VALUES ${values}`;
-              console.log(query)
-              const res = await this.executeWithRecovery(db, query);
-              
-              await db.close();
-        
-              return res.changes?.changes !== undefined && res.changes.changes > 0;
-            } catch (error) {
-              console.error('Error in create:', error);
-              return false;
-            }
+                try {
+                        const db = await dbdb();
+                        await db.open();
+                        if (!entities || entities.length === 0) {
+                                await db.close();
+                                return false;
+                        }
+                        // Preparar entidades: asegurar uuid y last_modified
+                        const preparedEntities = entities.map(entity => {
+                                if (!(entity as any).uuid || (entity as any).uuid === "") {
+                                        (entity as any).uuid = (window.crypto?.randomUUID ? window.crypto.randomUUID() : (Math.random().toString(36).substring(2, 18) + Date.now()));
+                                }
+                                if (!(entity as any).last_modified) {
+                                        (entity as any).last_modified = Math.floor(Date.now() / 1000);
+                                }
+                                return this.sanitizeEntity(entity as Record<string, any>);
+                        });
+                        // Usar las columnas de la primera entidad limpia
+                        const baseColumns = Object.keys(preparedEntities[0]);
+                        const values = preparedEntities.map(cleanEntity => {
+                                return `(${baseColumns.map(col => this.toSqlValue(cleanEntity[col])).join(",")})`;
+                        }).join(",");
+                        const query = `INSERT OR REPLACE INTO ${this.tableName} (${baseColumns.join(",")}) VALUES ${values}`;
+                        console.log(query);
+                        const res = await db.execute(query);
+                        await db.close();
+                        return res.changes?.changes !== undefined && res.changes.changes > 0;
+                } catch (error) {
+                        console.error('Error in insert:', error);
+                        return false;
+                }
           }
     async updateInmunizaciones(entity: T, id_persona: number, id_control: number, id_inmunizacion: number): Promise<boolean> {
         try {
@@ -300,7 +299,7 @@ export class Repository<T extends object> {
                 return false;
             }
             console.log(`UPDATE ${this.tableName} SET ${updates} WHERE id_persona=${id_persona} AND id_control=${id_control} AND id_inmunizacion=${id_inmunizacion}`)
-            const res = await this.executeWithRecovery(db, `UPDATE ${this.tableName} SET ${updates} WHERE id_persona=${id_persona} AND id_control=${id_control} AND id_inmunizacion=${id_inmunizacion}`);
+            const res = await db.execute(`UPDATE ${this.tableName} SET ${updates} WHERE id_persona=${id_persona} AND id_control=${id_control} AND id_inmunizacion=${id_inmunizacion}`);
             await db.close();
             console.log(res.changes?.changes)
             if (res.changes?.changes !== undefined) {
@@ -326,7 +325,7 @@ export class Repository<T extends object> {
         const updates = Object.entries(cleanEntity).map(([key, value]) => {
             return `${key} = ${this.toSqlValue(value)}`;
         }).join(',');
-        const res = await this.executeWithRecovery(db, `UPDATE ${this.tableName} SET ${updates} WHERE id_persona=${id_persona} AND id_laboratorio=${id_laboratorio} AND id_control=${id_control}`);
+        const res = await db.execute(`UPDATE ${this.tableName} SET ${updates} WHERE id_persona=${id_persona} AND id_laboratorio=${id_laboratorio} AND id_control=${id_control}`);
         await db.close();
         console.log(res.changes?.changes)
         if (res.changes?.changes !== undefined) {
@@ -352,7 +351,7 @@ export class Repository<T extends object> {
         const updates = Object.entries(cleanEntity).map(([key, value]) => {
             return `${key} = ${this.toSqlValue(value)}`;
         }).join(',');
-        const res = await this.executeWithRecovery(db, `UPDATE ${this.tableName} SET ${updates} WHERE id_persona=${id_persona} AND id_etmi=${id_etmis} AND id_control=${id_control}`);
+        const res = await db.execute(`UPDATE ${this.tableName} SET ${updates} WHERE id_persona=${id_persona} AND id_etmi=${id_etmis} AND id_control=${id_control}`);
         console.log(`UPDATE ${this.tableName} SET ${updates} WHERE id_persona=${id_persona} AND id_etmi=${id_etmis} AND id_control=${id_control}`)
         await db.close();
         console.log(res.changes?.changes)
@@ -390,7 +389,7 @@ export class Repository<T extends object> {
                 return false;
             }
             console.log(`UPDATE ${this.tableName} SET ${updates} WHERE ${campo} = ${id}`)
-            const res = await this.executeWithRecovery(db, `UPDATE ${this.tableName} SET ${updates} WHERE ${campo} = ${id}`);
+            const res = await db.execute(`UPDATE ${this.tableName} SET ${updates} WHERE ${campo} = ${id}`);
         
         await db.close();
         console.log(res.changes?.changes)

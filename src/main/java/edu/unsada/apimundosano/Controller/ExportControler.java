@@ -1,21 +1,21 @@
 package edu.unsada.apimundosano.Controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.unsada.apimundosano.models.*;
 import edu.unsada.apimundosano.repositorio.*;
-
 import edu.unsada.apimundosano.service.*;
 import edu.unsada.apimundosano.utilidades.JsonSqlite;
 import edu.unsada.apimundosano.utilidades.JsonTable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,14 +23,21 @@ import java.nio.file.StandardOpenOption;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api")
-
 public class ExportControler {
+
+    private static final int EXPORT_VERSION = 2;
+    private static final String MODE_FULL = "full";
+    private static final String MODE_PARTIAL = "partial";
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
     private PersonasRepo personasRepo;
@@ -40,135 +47,1126 @@ public class ExportControler {
     private ControlEmbarazoRepo controlEmbarazoRepo;
     @Autowired
     private InmunizacionesControlRepo inmunizacionesControlRepo;
-
     @Autowired
     private LaboratoriosRealizadosRepo laboratoriosRealizadosRepo;
     @Autowired
     private UbicacionesRepo ubicacionesRepo;
-
     @Autowired
     private AntecedentesRepo antecedentesRepo;
     @Autowired
     private AntecedentesAppsRepo antecedentesAppsRepo;
-
     @Autowired
     private AntecedentesMacsRepo antecedentesMacsRepo;
-
+    @Autowired
+    private UniversalUpsertService universalUpsertService;
     @Autowired
     private SyncTableRepo syncTableRepo;
-
     @Autowired
     private EtmisPersonasRepo etmisPersonasRepo;
-
     @Autowired
     private UsuarioRepo usuarioRepo;
-
-    @Autowired
-    private IdSegunDevice idSegunDeviceRepo;
-
     @Autowired
     private PaisesRepo paisesRepo;
-
     @Autowired
     private AreasRepo areasRepo;
-
     @Autowired
     private ParajesRepo parajesRepo;
 
     @Value("${mundosano.app.bbdd}")
     private String bbdd;
 
-    @GetMapping("/persona")
-    public HashMap<String, Object> getAllPersonas() {
+    @PostMapping("/sqlite")
+    @Transactional
+    public HashMap<String, Object> postSqlite(@RequestBody JsonSqlite json) {
         HashMap<String, Object> response = new HashMap<>();
+        List<Map<String, Object>> logs = new ArrayList<>();
+
+        int personasGuardadas = 0;
+        int controlesGuardados = 0;
+        int controlEmbarazoGuardados = 0;
+        int inmunizacionesGuardadas = 0;
+        int laboratoriosGuardados = 0;
+        int ubicacionesGuardadas = 0;
+        int antecedentesGuardados = 0;
+        int antecedentesAppsGuardados = 0;
+        int antecedentesMacsGuardados = 0;
+        int etmisGuardados = 0;
+        AtomicInteger conflictosLastModified = new AtomicInteger(0);
+
+        Map<Integer, Integer> mapPersonas = new HashMap<>();
+        Map<Integer, Integer> mapControles = new HashMap<>();
+        Map<Integer, Integer> mapAntecedentes = new HashMap<>();
+        Map<Integer, String> mapPersonaUuidByMobileId = new HashMap<>();
+        Map<Integer, String> mapControlUuidByMobileId = new HashMap<>();
+        Map<Integer, String> mapAntecedenteUuidByMobileId = new HashMap<>();
+
         try {
-            Iterable<PersonasEntity> personas = personasRepo.findBySqlDeletedOrSqlDeletedIsNull(0);
-            response.put("data", personas);
-            response.put("success", true);
+            Map<String, List<List>> tablas = extractTables(json);
+            Map<String, List<String>> columnsByTable = loadSchemaColumns();
+
+            List<List> personasValues = getTableValues(tablas, "personas");
+            List<List> controlesValues = getTableValues(tablas, "controles");
+            List<List> controlEmbarazoValues = getTableValues(tablas, "control_embarazo");
+            List<List> inmunizacionesValues = getTableValues(tablas, "inmunizaciones_control");
+            List<List> laboratoriosValues = getTableValues(tablas, "laboratorios_realizados");
+            List<List> ubicacionesValues = getTableValues(tablas, "ubicaciones");
+            List<List> antecedentesValues = getTableValues(tablas, "antecedentes");
+            List<List> antecedentesAppsValues = getTableValues(tablas, "antecedentes_apps");
+            List<List> antecedentesMacsValues = getTableValues(tablas, "antecedentes_macs");
+            List<List> etmisValues = getTableValues(tablas, "etmis_personas");
+
+            preScanUuids(personasValues, controlesValues, antecedentesValues,
+                    columnsByTable,
+                    mapPersonaUuidByMobileId,
+                    mapControlUuidByMobileId,
+                    mapAntecedenteUuidByMobileId);
+
+            /*
+             * =========================
+             * 1) PERSONAS
+             * =========================
+             */
+            for (List valor : personasValues) {
+                Map<String, Object> row = rowToMap("personas", valor, columnsByTable);
+                Integer idPersonaMovil = safeInt(row.get("id_persona"));
+                String uuid = safeString(row.get("uuid"));
+
+                try {
+                    if (uuid == null || uuid.isBlank()) {
+                        addImportLog(logs, "personas", idPersonaMovil, null, null, "UUID nulo o vacío", valor);
+                        continue;
+                    }
+
+                    Integer incomingLastModified = safeInt(row.get("last_modified"));
+
+                    PersonasEntity nuevaPersona = new PersonasEntity();
+                    nuevaPersona.setApellido(safeString(row.get("apellido")));
+                    nuevaPersona.setNombre(safeString(row.get("nombre")));
+                    nuevaPersona.setDocumento(safeString(row.get("documento")));
+                    nuevaPersona.setFechaNacimiento(parseSqlDate(row.get("fecha_nacimiento")));
+                    nuevaPersona.setIdOrigen(safeInt(row.get("id_origen")));
+                    nuevaPersona.setNacionalidad(safeInt(row.get("nacionalidad")));
+                    nuevaPersona.setSexo(safeString(row.get("sexo")));
+                    nuevaPersona.setMadre(safeInt(row.get("madre")));
+                    nuevaPersona.setAlta(safeInt(row.get("alta")));
+                    nuevaPersona.setNacidoVivo(safeInt(row.get("nacido_vivo")));
+                    nuevaPersona.setSqlDeleted(safeInt(row.get("sql_deleted")));
+                    nuevaPersona.setLastModified(incomingLastModified);
+                    nuevaPersona.setUuid(uuid);
+
+                    PersonasEntity personaPersistida = universalUpsertService.upsertByUuid(
+                            uuid,
+                            personasRepo::findByUuid,
+                            existente -> {
+                                if (!shouldApplyIncomingLastModified(existente.getLastModified(),
+                                        incomingLastModified)) {
+                                    if (idPersonaMovil != null) {
+                                        mapPersonas.put(idPersonaMovil, existente.getIdPersona());
+                                    }
+                                    conflictosLastModified.incrementAndGet();
+                                    throw new RuntimeException("Conflicto lastModified");
+                                }
+                                return copyPersona(existente, nuevaPersona);
+                            },
+                            nuevaPersona,
+                            PersonasEntity.class,
+                            "idPersona");
+
+                    if (idPersonaMovil != null) {
+                        mapPersonas.put(idPersonaMovil, personaPersistida.getIdPersona());
+                    }
+                    personasGuardadas++;
+                } catch (Exception e) {
+                    if (!"Conflicto lastModified".equals(e.getMessage())) {
+                        addImportLog(logs, "personas", idPersonaMovil, null, null, e.getMessage(), valor);
+                    }
+                }
+            }
+
+            /*
+             * =========================
+             * 2) CONTROLES
+             * =========================
+             */
+            for (List valor : controlesValues) {
+                Map<String, Object> row = rowToMap("controles", valor, columnsByTable);
+                Integer idControlMovil = safeInt(row.get("id_control"));
+                Integer idPersonaMovil = safeInt(row.get("id_persona"));
+                String uuid = safeString(row.get("uuid"));
+
+                try {
+                    if (uuid == null || uuid.isBlank()) {
+                        addImportLog(logs, "controles", idPersonaMovil, idControlMovil, null, "UUID de control nulo",
+                                valor);
+                        continue;
+                    }
+
+                    Integer serverIdPersona = coalesceServerIdByUuid(
+                            mapPersonas.get(idPersonaMovil),
+                            mapPersonaUuidByMobileId.get(idPersonaMovil),
+                            personaUuid -> personasRepo.findByUuid(personaUuid)
+                                    .map(PersonasEntity::getIdPersona)
+                                    .orElse(null));
+
+                    if (serverIdPersona == null) {
+                        addImportLog(logs, "controles", idPersonaMovil, idControlMovil, null,
+                                "No se pudo resolver id_persona por UUID", valor);
+                        continue;
+                    }
+
+                    Integer incomingLastModified = safeInt(row.get("last_modified"));
+
+                    ControlesEntity nuevoControl = new ControlesEntity();
+                    nuevoControl.setFecha(parseSqlDate(row.get("fecha")));
+                    nuevoControl.setIdPersona(serverIdPersona);
+                    nuevoControl.setControlNumero(safeInt(row.get("control_numero")));
+                    nuevoControl.setIdEstado(safeInt(row.get("id_estado")));
+                    nuevoControl.setIdSeguimientoChagas(safeInt(row.get("id_seguimiento_chagas")));
+                    nuevoControl.setIdTratamientoChagas(safeInt(row.get("id_tratamiento_chagas")));
+                    nuevoControl.setIdSeguimientoHiv(safeInt(row.get("id_seguimiento_hiv")));
+                    nuevoControl.setIdTratamientoHiv(safeInt(row.get("id_tratamiento_hiv")));
+                    nuevoControl.setIdSeguimientoSifilis(safeInt(row.get("id_seguimiento_sifilis")));
+                    nuevoControl.setIdTratamientoSifilis(safeInt(row.get("id_tratamiento_sifilis")));
+                    nuevoControl.setIdSeguimientoVhb(safeInt(row.get("id_seguimiento_vhb")));
+                    nuevoControl.setIdTratamientoVhb(safeInt(row.get("id_tratamiento_vhb")));
+                    nuevoControl.setFechaFinEmbarazo(parseSqlDate(row.get("fecha_fin_embarazo")));
+                    nuevoControl.setIdTiposFinEmbarazos(safeInt(row.get("id_tipos_fin_embarazos")));
+                    nuevoControl.setGeoreferencia(safeString(row.get("georeferencia")));
+                    nuevoControl.setSqlDeleted(safeInt(row.get("sql_deleted")));
+                    nuevoControl.setLastModified(incomingLastModified);
+                    nuevoControl.setUuid(uuid);
+
+                    ControlesEntity controlPersistido = universalUpsertService.upsertByUuid(
+                            uuid,
+                            controlesRepo::findByUuid,
+                            existente -> {
+                                if (!shouldApplyIncomingLastModified(existente.getLastModified(),
+                                        incomingLastModified)) {
+                                    if (idControlMovil != null) {
+                                        mapControles.put(idControlMovil, existente.getIdControl());
+                                    }
+                                    conflictosLastModified.incrementAndGet();
+                                    throw new RuntimeException("Conflicto lastModified");
+                                }
+                                return copyControl(existente, nuevoControl);
+                            },
+                            nuevoControl,
+                            ControlesEntity.class,
+                            "idControl");
+
+                    if (idControlMovil != null) {
+                        mapControles.put(idControlMovil, controlPersistido.getIdControl());
+                    }
+                    controlesGuardados++;
+                } catch (Exception e) {
+                    if (!"Conflicto lastModified".equals(e.getMessage())) {
+                        addImportLog(logs, "controles", idPersonaMovil, idControlMovil, null, e.getMessage(), valor);
+                    }
+                }
+            }
+
+            /*
+             * =========================
+             * 3) UBICACIONES (dependen de persona)
+             * =========================
+             */
+            for (List valor : ubicacionesValues) {
+                Map<String, Object> row = rowToMap("ubicaciones", valor, columnsByTable);
+                Integer idUbicacionMovil = safeInt(row.get("id_ubicacion"));
+                Integer idPersonaMovil = safeInt(row.get("id_persona"));
+                String uuid = safeString(row.get("uuid"));
+
+                try {
+                    if (uuid == null || uuid.isBlank()) {
+                        addImportLog(logs, "ubicaciones", idPersonaMovil, null, idUbicacionMovil,
+                                "UUID de ubicación nulo", valor);
+                        continue;
+                    }
+
+                    Integer serverIdPersona = coalesceServerIdByUuid(
+                            mapPersonas.get(idPersonaMovil),
+                            mapPersonaUuidByMobileId.get(idPersonaMovil),
+                            personaUuid -> personasRepo.findByUuid(personaUuid)
+                                    .map(PersonasEntity::getIdPersona)
+                                    .orElse(null));
+
+                    if (serverIdPersona == null) {
+                        addImportLog(logs, "ubicaciones", idPersonaMovil, null, idUbicacionMovil,
+                                "No se pudo resolver id_persona por UUID", valor);
+                        continue;
+                    }
+
+                    Integer incomingLastModified = safeInt(row.get("last_modified"));
+
+                    UbicacionesEntity nuevaUbicacion = new UbicacionesEntity();
+                    nuevaUbicacion.setIdPersona(serverIdPersona);
+                    nuevaUbicacion.setIdParaje(safeInt(row.get("id_paraje")));
+                    nuevaUbicacion.setIdArea(safeInt(row.get("id_area")));
+                    nuevaUbicacion.setNumVivienda(safeString(row.get("num_vivienda")));
+                    nuevaUbicacion.setFecha(parseSqlDate(row.get("fecha")));
+                    nuevaUbicacion.setGeoreferencia(safeString(row.get("georeferencia")));
+                    nuevaUbicacion.setIdPais(safeInt(row.get("id_pais")));
+                    nuevaUbicacion.setSqlDeleted(safeInt(row.get("sql_deleted")));
+                    nuevaUbicacion.setLastModified(incomingLastModified);
+                    nuevaUbicacion.setUuid(uuid);
+
+                    UbicacionesEntity ubicacionPersistida = universalUpsertService.upsertByUuid(
+                            uuid,
+                            ubicacionesRepo::findByUuid,
+                            existente -> {
+                                if (!shouldApplyIncomingLastModified(existente.getLastModified(),
+                                        incomingLastModified)) {
+                                    conflictosLastModified.incrementAndGet();
+                                    throw new RuntimeException("Conflicto lastModified");
+                                }
+                                return copyUbicacion(existente, nuevaUbicacion);
+                            },
+                            nuevaUbicacion,
+                            UbicacionesEntity.class,
+                            "idUbicacion");
+
+                    ubicacionesGuardadas++;
+                } catch (Exception e) {
+                    if (!"Conflicto lastModified".equals(e.getMessage())) {
+                        addImportLog(logs, "ubicaciones", idPersonaMovil, null, idUbicacionMovil, e.getMessage(),
+                                valor);
+                    }
+                }
+            }
+
+            /*
+             * =========================
+             * 4) ANTECEDENTES (dependen de persona + control)
+             * =========================
+             */
+            for (List valor : antecedentesValues) {
+                Map<String, Object> row = rowToMap("antecedentes", valor, columnsByTable);
+                Integer idAntecedenteMovil = safeInt(row.get("id_antecedente"));
+                Integer idPersonaMovil = safeInt(row.get("id_persona"));
+                Integer idControlMovil = safeInt(row.get("id_control"));
+                String uuid = safeString(row.get("uuid"));
+
+                try {
+                    if (uuid == null || uuid.isBlank()) {
+                        addImportLog(logs, "antecedentes", idPersonaMovil, idControlMovil, idAntecedenteMovil,
+                                "UUID de antecedente nulo", valor);
+                        continue;
+                    }
+
+                    Integer serverIdPersona = coalesceServerIdByUuid(
+                            mapPersonas.get(idPersonaMovil),
+                            mapPersonaUuidByMobileId.get(idPersonaMovil),
+                            personaUuid -> personasRepo.findByUuid(personaUuid)
+                                    .map(PersonasEntity::getIdPersona)
+                                    .orElse(null));
+
+                    Integer serverIdControl = coalesceServerIdByUuid(
+                            mapControles.get(idControlMovil),
+                            mapControlUuidByMobileId.get(idControlMovil),
+                            controlUuid -> controlesRepo.findByUuid(controlUuid)
+                                    .map(ControlesEntity::getIdControl)
+                                    .orElse(null));
+
+                    if (serverIdPersona == null || serverIdControl == null) {
+                        addImportLog(logs, "antecedentes", idPersonaMovil, idControlMovil, idAntecedenteMovil,
+                                "No se pudo resolver relación persona/control por UUID", valor);
+                        continue;
+                    }
+
+                    Integer incomingLastModified = safeInt(row.get("last_modified"));
+
+                    AntecedentesEntity nuevoAntecedente = new AntecedentesEntity();
+                    nuevoAntecedente.setIdPersona(serverIdPersona);
+                    nuevoAntecedente.setIdControl(serverIdControl);
+                    nuevoAntecedente.setEdadPrimerEmbarazo(safeInt(row.get("edad_primer_embarazo")));
+                    nuevoAntecedente.setFechaUltimoEmbarazo(parseSqlDate(row.get("fecha_ultimo_embarazo")));
+                    nuevoAntecedente.setGestas(safeInt(row.get("gestas")));
+                    nuevoAntecedente.setPartos(safeInt(row.get("partos")));
+                    nuevoAntecedente.setCesareas(safeInt(row.get("cesareas")));
+                    nuevoAntecedente.setAbortos(safeInt(row.get("abortos")));
+                    nuevoAntecedente.setPlanificado(safeInt(row.get("planificado")));
+                    nuevoAntecedente.setFum(parseSqlDate(row.get("fum")));
+                    nuevoAntecedente.setFpp(parseSqlDate(row.get("fpp")));
+                    nuevoAntecedente.setLastModified(incomingLastModified);
+                    nuevoAntecedente.setSqlDeleted(safeInt(row.get("sql_deleted")));
+                    nuevoAntecedente.setUuid(uuid);
+
+                    AntecedentesEntity antecedentePersistido = universalUpsertService.upsertByUuid(
+                            uuid,
+                            antecedentesRepo::findByUuid,
+                            existente -> {
+                                if (!shouldApplyIncomingLastModified(existente.getLastModified(),
+                                        incomingLastModified)) {
+                                    if (idAntecedenteMovil != null) {
+                                        mapAntecedentes.put(idAntecedenteMovil, existente.getIdAntecedente());
+                                    }
+                                    conflictosLastModified.incrementAndGet();
+                                    throw new RuntimeException("Conflicto lastModified");
+                                }
+                                return copyAntecedente(existente, nuevoAntecedente);
+                            },
+                            nuevoAntecedente,
+                            AntecedentesEntity.class,
+                            "idAntecedente");
+
+                    if (idAntecedenteMovil != null) {
+                        mapAntecedentes.put(idAntecedenteMovil, antecedentePersistido.getIdAntecedente());
+                    }
+                    antecedentesGuardados++;
+                } catch (Exception e) {
+                    if (!"Conflicto lastModified".equals(e.getMessage())) {
+                        addImportLog(logs, "antecedentes", idPersonaMovil, idControlMovil, idAntecedenteMovil,
+                                e.getMessage(), valor);
+                    }
+                }
+            }
+
+            /*
+             * =========================
+             * 5) CONTROL EMBARAZO (depende de control)
+             * =========================
+             */
+            for (List valor : controlEmbarazoValues) {
+                Map<String, Object> row = rowToMap("control_embarazo", valor, columnsByTable);
+                Integer idControlEmbarazoMovil = safeInt(row.get("id_control_embarazo"));
+                Integer idControlMovil = safeInt(row.get("id_control"));
+                String uuid = safeString(row.get("uuid"));
+
+                try {
+                    if (uuid == null || uuid.isBlank()) {
+                        addImportLog(logs, "control_embarazo", null, idControlMovil, idControlEmbarazoMovil,
+                                "UUID de control_embarazo nulo", valor);
+                        continue;
+                    }
+
+                    Integer serverIdControl = coalesceServerIdByUuid(
+                            mapControles.get(idControlMovil),
+                            mapControlUuidByMobileId.get(idControlMovil),
+                            controlUuid -> controlesRepo.findByUuid(controlUuid)
+                                    .map(ControlesEntity::getIdControl)
+                                    .orElse(null));
+
+                    if (serverIdControl == null) {
+                        addImportLog(logs, "control_embarazo", null, idControlMovil, idControlEmbarazoMovil,
+                                "No se pudo resolver id_control por UUID", valor);
+                        continue;
+                    }
+
+                    Integer incomingLastModified = safeInt(row.get("last_modified"));
+
+                    ControlEmbarazoEntity nuevoControlEmbarazo = new ControlEmbarazoEntity();
+                    nuevoControlEmbarazo.setIdControl(serverIdControl);
+                    nuevoControlEmbarazo.setEdadGestacional(safeInt(row.get("edad_gestacional")));
+                    nuevoControlEmbarazo.setEco(safeStringNotNull(row.get("eco")));
+                    nuevoControlEmbarazo.setDetalleEco(safeStringNotNull(row.get("detalle_eco")));
+                    nuevoControlEmbarazo.setHpv(safeStringNotNull(row.get("hpv")));
+                    nuevoControlEmbarazo.setPap(safeStringNotNull(row.get("pap")));
+                    nuevoControlEmbarazo.setSistolica(safeInt(row.get("sistolica")));
+                    nuevoControlEmbarazo.setDiastolica(safeInt(row.get("diastolica")));
+                    nuevoControlEmbarazo.setClinico(safeStringNotNull(row.get("clinico")));
+                    nuevoControlEmbarazo.setObservaciones(safeStringNotNull(row.get("observaciones")));
+                    nuevoControlEmbarazo.setMotivo(safeInt(row.get("motivo")));
+                    nuevoControlEmbarazo.setDerivada(safeInt(row.get("derivada")));
+                    nuevoControlEmbarazo.setSqlDeleted(safeInt(row.get("sql_deleted")));
+                    nuevoControlEmbarazo.setLastModified(incomingLastModified);
+                    nuevoControlEmbarazo.setUuid(uuid);
+
+                    universalUpsertService.upsertByUuid(
+                            uuid,
+                            controlEmbarazoRepo::findByUuid,
+                            existente -> {
+                                if (!shouldApplyIncomingLastModified(existente.getLastModified(),
+                                        incomingLastModified)) {
+                                    conflictosLastModified.incrementAndGet();
+                                    throw new RuntimeException("Conflicto lastModified");
+                                }
+                                return copyControlEmbarazo(existente, nuevoControlEmbarazo);
+                            },
+                            nuevoControlEmbarazo,
+                            ControlEmbarazoEntity.class,
+                            "idControlEmbarazo");
+
+                    controlEmbarazoGuardados++;
+                } catch (Exception e) {
+                    if (!"Conflicto lastModified".equals(e.getMessage())) {
+                        addImportLog(logs, "control_embarazo", null, idControlMovil, idControlEmbarazoMovil,
+                                e.getMessage(), valor);
+                    }
+                }
+            }
+
+            /*
+             * =========================
+             * 6) INMUNIZACIONES (dependen de persona + control)
+             * =========================
+             */
+            for (List valor : inmunizacionesValues) {
+                Map<String, Object> row = rowToMap("inmunizaciones_control", valor, columnsByTable);
+                Integer idPersonaMovil = safeInt(row.get("id_persona"));
+                Integer idControlMovil = safeInt(row.get("id_control"));
+                Integer idInmunizacion = safeInt(row.get("id_inmunizacion"));
+                String uuid = safeString(row.get("uuid"));
+
+                try {
+                    if (uuid == null || uuid.isBlank()) {
+                        addImportLog(logs, "inmunizaciones_control", idPersonaMovil, idControlMovil, idInmunizacion,
+                                "UUID de inmunización nulo", valor);
+                        continue;
+                    }
+
+                    Integer serverIdPersona = coalesceServerIdByUuid(
+                            mapPersonas.get(idPersonaMovil),
+                            mapPersonaUuidByMobileId.get(idPersonaMovil),
+                            personaUuid -> personasRepo.findByUuid(personaUuid)
+                                    .map(PersonasEntity::getIdPersona)
+                                    .orElse(null));
+
+                    Integer serverIdControl = coalesceServerIdByUuid(
+                            mapControles.get(idControlMovil),
+                            mapControlUuidByMobileId.get(idControlMovil),
+                            controlUuid -> controlesRepo.findByUuid(controlUuid)
+                                    .map(ControlesEntity::getIdControl)
+                                    .orElse(null));
+
+                    if (serverIdPersona == null || serverIdControl == null) {
+                        addImportLog(logs, "inmunizaciones_control", idPersonaMovil, idControlMovil, idInmunizacion,
+                                "No se pudo resolver relación persona/control por UUID", valor);
+                        continue;
+                    }
+
+                    Integer incomingLastModified = safeInt(row.get("last_modified"));
+
+                    InmunizacionesControlEntity nuevaInmunizacion = new InmunizacionesControlEntity();
+                    nuevaInmunizacion.setIdPersona(serverIdPersona);
+                    nuevaInmunizacion.setIdControl(serverIdControl);
+                    nuevaInmunizacion.setIdInmunizacion(idInmunizacion);
+                    nuevaInmunizacion.setEstado(safeStringNotNull(row.get("estado")));
+                    nuevaInmunizacion.setSqlDeleted(safeInt(row.get("sql_deleted")));
+                    nuevaInmunizacion.setLastModified(incomingLastModified);
+                    nuevaInmunizacion.setUuid(uuid);
+
+                    universalUpsertService.upsertByUuid(
+                            uuid,
+                            inmunizacionesControlRepo::findByUuid,
+                            existente -> {
+                                if (!shouldApplyIncomingLastModified(existente.getLastModified(),
+                                        incomingLastModified)) {
+                                    conflictosLastModified.incrementAndGet();
+                                    throw new RuntimeException("Conflicto lastModified");
+                                }
+                                return copyInmunizacion(existente, nuevaInmunizacion);
+                            },
+                            nuevaInmunizacion,
+                            InmunizacionesControlEntity.class,
+                            "idInmunizacionesControl");
+
+                    inmunizacionesGuardadas++;
+                } catch (Exception e) {
+                    if (!"Conflicto lastModified".equals(e.getMessage())) {
+                        addImportLog(logs, "inmunizaciones_control", idPersonaMovil, idControlMovil, idInmunizacion,
+                                e.getMessage(), valor);
+                    }
+                }
+            }
+
+            /*
+             * =========================
+             * 7) LABORATORIOS (dependen de persona + control)
+             * =========================
+             */
+            for (List valor : laboratoriosValues) {
+                Map<String, Object> row = rowToMap("laboratorios_realizados", valor, columnsByTable);
+                Integer idPersonaMovil = safeInt(row.get("id_persona"));
+                Integer idControlMovil = safeInt(row.get("id_control"));
+                Integer idLaboratorio = safeInt(row.get("id_laboratorio"));
+                String uuid = safeString(row.get("uuid"));
+
+                try {
+                    if (uuid == null || uuid.isBlank()) {
+                        addImportLog(logs, "laboratorios_realizados", idPersonaMovil, idControlMovil, idLaboratorio,
+                                "UUID de laboratorio nulo", valor);
+                        continue;
+                    }
+
+                    Integer serverIdPersona = coalesceServerIdByUuid(
+                            mapPersonas.get(idPersonaMovil),
+                            mapPersonaUuidByMobileId.get(idPersonaMovil),
+                            personaUuid -> personasRepo.findByUuid(personaUuid)
+                                    .map(PersonasEntity::getIdPersona)
+                                    .orElse(null));
+
+                    Integer serverIdControl = coalesceServerIdByUuid(
+                            mapControles.get(idControlMovil),
+                            mapControlUuidByMobileId.get(idControlMovil),
+                            controlUuid -> controlesRepo.findByUuid(controlUuid)
+                                    .map(ControlesEntity::getIdControl)
+                                    .orElse(null));
+
+                    if (serverIdPersona == null || serverIdControl == null) {
+                        addImportLog(logs, "laboratorios_realizados", idPersonaMovil, idControlMovil, idLaboratorio,
+                                "No se pudo resolver relación persona/control por UUID", valor);
+                        continue;
+                    }
+
+                    Integer incomingLastModified = safeInt(row.get("last_modified"));
+
+                    LaboratoriosRealizadosEntity nuevoLaboratorio = new LaboratoriosRealizadosEntity();
+                    nuevoLaboratorio.setIdPersona(serverIdPersona);
+                    nuevoLaboratorio.setIdControl(serverIdControl);
+                    nuevoLaboratorio.setIdLaboratorio(idLaboratorio);
+                    nuevoLaboratorio.setTrimestre(safeInt(row.get("trimestre")));
+                    nuevoLaboratorio.setFechaRealizado(parseSqlDate(row.get("fecha_realizado")));
+                    nuevoLaboratorio.setFechaResultados(parseSqlDate(row.get("fecha_resultados")));
+                    nuevoLaboratorio.setResultado(safeStringNotNull(row.get("resultado")));
+                    nuevoLaboratorio.setIdEtmi(safeInt(row.get("id_etmi")));
+                    nuevoLaboratorio.setSqlDeleted(safeInt(row.get("sql_deleted")));
+                    nuevoLaboratorio.setLastModified(incomingLastModified);
+                    nuevoLaboratorio.setUuid(uuid);
+
+                    Optional<LaboratoriosRealizadosEntity> existingOpt = laboratoriosRealizadosRepo.findByUuid(uuid);
+                    if (existingOpt.isPresent()
+                            && !shouldApplyIncomingLastModified(existingOpt.get().getLastModified(),
+                                    incomingLastModified)) {
+                        conflictosLastModified.incrementAndGet();
+                        continue;
+                    }
+
+                    LaboratoriosRealizadosEntity persistir = existingOpt.orElse(new LaboratoriosRealizadosEntity());
+                    laboratoriosRealizadosRepo.save(copyLaboratorio(persistir, nuevoLaboratorio));
+                    laboratoriosGuardados++;
+                } catch (Exception e) {
+                    addImportLog(logs, "laboratorios_realizados", idPersonaMovil, idControlMovil, idLaboratorio,
+                            e.getMessage(), valor);
+                }
+            }
+
+            /*
+             * =========================
+             * 8) ETMIS (dependen de persona + control)
+             * =========================
+             */
+            for (List valor : etmisValues) {
+                Map<String, Object> row = rowToMap("etmis_personas", valor, columnsByTable);
+                Integer idPersonaMovil = safeInt(row.get("id_persona"));
+                Integer idEtmi = safeInt(row.get("id_etmi"));
+                Integer idControlMovil = safeInt(row.get("id_control"));
+                String uuid = safeString(row.get("uuid"));
+
+                try {
+                    if (uuid == null || uuid.isBlank()) {
+                        addImportLog(logs, "etmis_personas", idPersonaMovil, idControlMovil, idEtmi,
+                                "UUID de ETMI nulo", valor);
+                        continue;
+                    }
+
+                    Integer serverIdPersona = coalesceServerIdByUuid(
+                            mapPersonas.get(idPersonaMovil),
+                            mapPersonaUuidByMobileId.get(idPersonaMovil),
+                            personaUuid -> personasRepo.findByUuid(personaUuid)
+                                    .map(PersonasEntity::getIdPersona)
+                                    .orElse(null));
+
+                    Integer serverIdControl = coalesceServerIdByUuid(
+                            mapControles.get(idControlMovil),
+                            mapControlUuidByMobileId.get(idControlMovil),
+                            controlUuid -> controlesRepo.findByUuid(controlUuid)
+                                    .map(ControlesEntity::getIdControl)
+                                    .orElse(null));
+
+                    if (serverIdPersona == null || serverIdControl == null) {
+                        addImportLog(logs, "etmis_personas", idPersonaMovil, idControlMovil, idEtmi,
+                                "No se pudo resolver relación persona/control por UUID", valor);
+                        continue;
+                    }
+
+                    Integer incomingLastModified = safeInt(row.get("last_modified"));
+
+                    EtmisPersonasEntity nuevaEtmi = new EtmisPersonasEntity();
+                    nuevaEtmi.setIdPersona(serverIdPersona);
+                    nuevaEtmi.setIdEtmi(idEtmi);
+                    nuevaEtmi.setIdControl(serverIdControl);
+                    nuevaEtmi.setConfirmada(safeInt(row.get("confirmada")));
+                    nuevaEtmi.setSqlDeleted(safeInt(row.get("sql_deleted")));
+                    nuevaEtmi.setLastModified(incomingLastModified);
+                    nuevaEtmi.setUuid(uuid);
+
+                    Optional<EtmisPersonasEntity> existingOpt = etmisPersonasRepo.findByUuid(uuid);
+                    if (existingOpt.isPresent()
+                            && !shouldApplyIncomingLastModified(existingOpt.get().getLastModified(),
+                                    incomingLastModified)) {
+                        conflictosLastModified.incrementAndGet();
+                        continue;
+                    }
+
+                    EtmisPersonasEntity persistir = existingOpt.orElse(new EtmisPersonasEntity());
+                    etmisPersonasRepo.save(copyEtmi(persistir, nuevaEtmi));
+                    etmisGuardados++;
+                } catch (Exception e) {
+                    addImportLog(logs, "etmis_personas", idPersonaMovil, idControlMovil, idEtmi, e.getMessage(), valor);
+                }
+            }
+
+            /*
+             * =========================
+             * 9) ANTECEDENTES_APPS (dependen de antecedente)
+             * =========================
+             */
+            for (List valor : antecedentesAppsValues) {
+                Map<String, Object> row = rowToMap("antecedentes_apps", valor, columnsByTable);
+                Integer idAntecedenteMovil = safeInt(row.get("id_antecedente"));
+                Integer idApp = safeInt(row.get("id_app"));
+                String uuid = safeString(row.get("uuid"));
+
+                try {
+                    if (uuid == null || uuid.isBlank()) {
+                        addImportLog(logs, "antecedentes_apps", null, null, idAntecedenteMovil,
+                                "UUID de antecedente_app nulo", valor);
+                        continue;
+                    }
+
+                    Integer serverIdAntecedente = coalesceServerIdByUuid(
+                            mapAntecedentes.get(idAntecedenteMovil),
+                            mapAntecedenteUuidByMobileId.get(idAntecedenteMovil),
+                            antecedenteUuid -> antecedentesRepo.findByUuid(antecedenteUuid)
+                                    .map(AntecedentesEntity::getIdAntecedente)
+                                    .orElse(null));
+
+                    if (serverIdAntecedente == null) {
+                        addImportLog(logs, "antecedentes_apps", null, null, idAntecedenteMovil,
+                                "No se pudo resolver id_antecedente por UUID", valor);
+                        continue;
+                    }
+
+                    Integer incomingLastModified = safeInt(row.get("last_modified"));
+
+                    AntecedentesAppsEntity nuevoAntecedenteApp = new AntecedentesAppsEntity();
+                    nuevoAntecedenteApp.setIdAntecedente(serverIdAntecedente);
+                    nuevoAntecedenteApp.setIdApp(idApp);
+                    nuevoAntecedenteApp.setLastModified(incomingLastModified);
+                    nuevoAntecedenteApp.setSqlDeleted(safeInt(row.get("sql_deleted")));
+                    nuevoAntecedenteApp.setUuid(uuid);
+
+                    Optional<AntecedentesAppsEntity> existingOpt = antecedentesAppsRepo.findByUuid(uuid);
+                    if (existingOpt.isPresent()
+                            && !shouldApplyIncomingLastModified(existingOpt.get().getLastModified(),
+                                    incomingLastModified)) {
+                        conflictosLastModified.incrementAndGet();
+                        continue;
+                    }
+
+                    AntecedentesAppsEntity persistir = existingOpt.orElse(new AntecedentesAppsEntity());
+                    antecedentesAppsRepo.save(copyAntecedenteApp(persistir, nuevoAntecedenteApp));
+                    antecedentesAppsGuardados++;
+                } catch (Exception e) {
+                    addImportLog(logs, "antecedentes_apps", null, null, idAntecedenteMovil, e.getMessage(), valor);
+                }
+            }
+
+            /*
+             * =========================
+             * 10) ANTECEDENTES_MACS (dependen de antecedente)
+             * =========================
+             */
+            for (List valor : antecedentesMacsValues) {
+                Map<String, Object> row = rowToMap("antecedentes_macs", valor, columnsByTable);
+                Integer idAntecedenteMovil = safeInt(row.get("id_antecedente"));
+                Integer idMac = safeInt(row.get("id_mac"));
+                String uuid = safeString(row.get("uuid"));
+
+                try {
+                    if (uuid == null || uuid.isBlank()) {
+                        addImportLog(logs, "antecedentes_macs", null, null, idAntecedenteMovil,
+                                "UUID de antecedente_mac nulo", valor);
+                        continue;
+                    }
+
+                    Integer serverIdAntecedente = coalesceServerIdByUuid(
+                            mapAntecedentes.get(idAntecedenteMovil),
+                            mapAntecedenteUuidByMobileId.get(idAntecedenteMovil),
+                            antecedenteUuid -> antecedentesRepo.findByUuid(antecedenteUuid)
+                                    .map(AntecedentesEntity::getIdAntecedente)
+                                    .orElse(null));
+
+                    if (serverIdAntecedente == null) {
+                        addImportLog(logs, "antecedentes_macs", null, null, idAntecedenteMovil,
+                                "No se pudo resolver id_antecedente por UUID", valor);
+                        continue;
+                    }
+
+                    Integer incomingLastModified = safeInt(row.get("last_modified"));
+
+                    AntecedentesMacsEntity nuevoAntecedenteMac = new AntecedentesMacsEntity();
+                    nuevoAntecedenteMac.setIdAntecedente(serverIdAntecedente);
+                    nuevoAntecedenteMac.setIdMac(idMac);
+                    nuevoAntecedenteMac.setSqlDeleted(safeInt(row.get("sql_deleted")));
+                    nuevoAntecedenteMac.setLastModified(incomingLastModified);
+                    nuevoAntecedenteMac.setUuid(uuid);
+
+                    Optional<AntecedentesMacsEntity> existingOpt = antecedentesMacsRepo.findByUuid(uuid);
+                    if (existingOpt.isPresent()
+                            && !shouldApplyIncomingLastModified(existingOpt.get().getLastModified(),
+                                    incomingLastModified)) {
+                        conflictosLastModified.incrementAndGet();
+                        continue;
+                    }
+
+                    AntecedentesMacsEntity persistir = existingOpt.orElse(new AntecedentesMacsEntity());
+                    antecedentesMacsRepo.save(copyAntecedenteMac(persistir, nuevoAntecedenteMac));
+                    antecedentesMacsGuardados++;
+                } catch (Exception e) {
+                    addImportLog(logs, "antecedentes_macs", null, null, idAntecedenteMovil, e.getMessage(), valor);
+                }
+            }
+
+            fillImportResponse(response, true, "Importación procesada con arquitectura UUID",
+                    personasGuardadas, controlesGuardados, controlEmbarazoGuardados,
+                    inmunizacionesGuardadas, laboratoriosGuardados, ubicacionesGuardadas,
+                    antecedentesGuardados, antecedentesAppsGuardados, antecedentesMacsGuardados,
+                    etmisGuardados, conflictosLastModified.get(), logs, null);
+
             return response;
         } catch (Exception e) {
+            e.printStackTrace();
+            fillImportResponse(response, true, "Importación completada con errores parciales (no se bloqueó la sync)",
+                    personasGuardadas, controlesGuardados, controlEmbarazoGuardados,
+                    inmunizacionesGuardadas, laboratoriosGuardados, ubicacionesGuardadas,
+                    antecedentesGuardados, antecedentesAppsGuardados, antecedentesMacsGuardados,
+                    etmisGuardados, conflictosLastModified.get(), logs, e.getMessage());
+            return response;
+        }
+    }
+
+    @GetMapping("/data/json3")
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getDataall() {
+        try {
+            Map<String, Object> json = readSchemaTemplate();
+            json.put("database", bbdd);
+            json.put("version", EXPORT_VERSION);
+            json.put("encrypted", false);
+            json.put("mode", MODE_FULL);
+
+            List<Map<String, Object>> tables = (List<Map<String, Object>>) json.get("tables");
+            if (tables == null) {
+                json.put("tables", new ArrayList<>());
+                return json;
+            }
+
+            PersonaSrevice personaService = new PersonaSrevice();
+            ControlesService controlesService = new ControlesService();
+            ControlEmbarazoService controlEmbarazoService = new ControlEmbarazoService();
+            InmunizacionesControlService inmunizacionesService = new InmunizacionesControlService();
+            LaboratoriosRealizadosService laboratoriosService = new LaboratoriosRealizadosService();
+            UbicacionesService ubicacionesService = new UbicacionesService();
+            AntecedentesService antecedentesService = new AntecedentesService();
+            AntecedentesApps antecedentesAppsService = new AntecedentesApps();
+            AntededentesMacs antecedentesMacsService = new AntededentesMacs();
+            EtmisPersonasService etmisService = new EtmisPersonasService();
+            UsuarioService usuarioService = new UsuarioService();
+            PaisesService paisesService = new PaisesService();
+            AreasService areasService = new AreasService();
+            ParajeService parajeService = new ParajeService();
+
+            for (Map<String, Object> table : tables) {
+                populateDynamicTableValues(
+                        table,
+                        personaService,
+                        controlesService,
+                        controlEmbarazoService,
+                        inmunizacionesService,
+                        laboratoriosService,
+                        ubicacionesService,
+                        antecedentesService,
+                        antecedentesAppsService,
+                        antecedentesMacsService,
+                        etmisService,
+                        usuarioService,
+                        paisesService,
+                        areasService,
+                        parajeService);
+                filterRowsWithoutUuid(table);
+            }
+
+            return json;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return emptyExportPayload(MODE_FULL);
+        }
+    }
+
+    @GetMapping("/data/json3/partial")
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getDataPartial(@RequestParam(value = "since", required = false) Integer since) {
+        Map<String, Object> json = getDataall();
+        if (json == null) {
+            return emptyExportPayload(MODE_PARTIAL);
+        }
+
+        Integer effectiveSince = since;
+        if (effectiveSince == null) {
+            try {
+                effectiveSince = syncTableRepo.buscarUltimoLast();
+            } catch (Exception ignored) {
+            }
+        }
+
+        Object tablesObject = json.get("tables");
+        if (tablesObject instanceof List<?> && effectiveSince != null) {
+            List<Map<String, Object>> tables = (List<Map<String, Object>>) tablesObject;
+            for (Map<String, Object> table : tables) {
+                filterRowsBySince(table, effectiveSince);
+            }
+        }
+
+        json.put("mode", MODE_PARTIAL);
+        if (effectiveSince != null) {
+            json.put("since", effectiveSince);
+        }
+        return json;
+    }
+
+    @PostMapping("/sync_date")
+    public HashMap<String, Object> saveSyncDate(@RequestBody SyncTableEntity sync) {
+        HashMap<String, Object> response = new HashMap<>();
+        try {
+            SyncTableEntity syncTable = syncTableRepo.findById(0).orElse(new SyncTableEntity());
+            syncTable.setId(0);
+            syncTable.setSyncDate(sync.getSyncDate());
+            syncTableRepo.save(syncTable);
+            response.put("success", true);
+        } catch (Exception e) {
+            response.put("success", false);
             response.put("error", e.toString());
         }
         return response;
     }
 
-    @GetMapping("/controles")
-    public HashMap<String, Object> getAllControles() {
-        HashMap<String, Object> response = new HashMap<>();
+    private void preScanUuids(List<List> personasValues,
+            List<List> controlesValues,
+            List<List> antecedentesValues,
+            Map<String, List<String>> columnsByTable,
+            Map<Integer, String> mapPersonaUuidByMobileId,
+            Map<Integer, String> mapControlUuidByMobileId,
+            Map<Integer, String> mapAntecedenteUuidByMobileId) {
+
+        for (List valor : personasValues) {
+            Map<String, Object> row = rowToMap("personas", valor, columnsByTable);
+            Integer idPersonaMovil = safeInt(row.get("id_persona"));
+            String uuidPersona = safeString(row.get("uuid"));
+            if (idPersonaMovil != null && uuidPersona != null && !uuidPersona.isBlank()) {
+                mapPersonaUuidByMobileId.put(idPersonaMovil, uuidPersona);
+            }
+        }
+
+        for (List valor : controlesValues) {
+            Map<String, Object> row = rowToMap("controles", valor, columnsByTable);
+            Integer idControlMovil = safeInt(row.get("id_control"));
+            String uuidControl = safeString(row.get("uuid"));
+            if (idControlMovil != null && uuidControl != null && !uuidControl.isBlank()) {
+                mapControlUuidByMobileId.put(idControlMovil, uuidControl);
+            }
+        }
+
+        for (List valor : antecedentesValues) {
+            Map<String, Object> row = rowToMap("antecedentes", valor, columnsByTable);
+            Integer idAntecedenteMovil = safeInt(row.get("id_antecedente"));
+            String uuidAntecedente = safeString(row.get("uuid"));
+            if (idAntecedenteMovil != null && uuidAntecedente != null && !uuidAntecedente.isBlank()) {
+                mapAntecedenteUuidByMobileId.put(idAntecedenteMovil, uuidAntecedente);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> readSchemaTemplate() throws IOException {
+        try (InputStream is = new ClassPathResource("schema.json").getInputStream()) {
+            return objectMapper.readValue(is, new TypeReference<Map<String, Object>>() {
+            });
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, List<String>> loadSchemaColumns() throws IOException {
+        Map<String, Object> schemaTemplate = readSchemaTemplate();
+        List<Map<String, Object>> tables = (List<Map<String, Object>>) schemaTemplate.get("tables");
+        Map<String, List<String>> columnsByTable = new HashMap<>();
+
+        if (tables == null) {
+            return columnsByTable;
+        }
+
+        for (Map<String, Object> table : tables) {
+            String tableName = safeString(table.get("name"));
+            Object schemaObject = table.get("schema");
+            if (tableName == null || !(schemaObject instanceof List<?> schemaList)) {
+                continue;
+            }
+
+            List<String> columns = new ArrayList<>();
+            for (Object item : schemaList) {
+                if (item instanceof Map<?, ?> map) {
+                    Object column = map.get("column");
+                    if (column != null) {
+                        columns.add(column.toString().trim());
+                    }
+                }
+            }
+            columnsByTable.put(tableName, columns);
+        }
+
+        return columnsByTable;
+    }
+
+    private Map<String, List<List>> extractTables(JsonSqlite json) {
+        Map<String, List<List>> tablas = new HashMap<>();
+        if (json == null || json.getTables() == null) {
+            return tablas;
+        }
+
+        for (JsonTable table : json.getTables()) {
+            tablas.put(table.getName(), table.getValues());
+        }
+        return tablas;
+    }
+
+    private List<List> getTableValues(Map<String, List<List>> tablas, String tableName) {
+        return tablas.getOrDefault(tableName, new ArrayList<>());
+    }
+
+    private Map<String, Object> rowToMap(String tableName, List row, Map<String, List<String>> columnsByTable) {
+        Map<String, Object> mappedRow = new LinkedHashMap<>();
+        List<String> columns = columnsByTable.get(tableName);
+        if (row == null || columns == null) {
+            return mappedRow;
+        }
+
+        int max = Math.min(row.size(), columns.size());
+        for (int i = 0; i < max; i++) {
+            mappedRow.put(columns.get(i), row.get(i));
+        }
+        return mappedRow;
+    }
+
+    private Map<String, Object> emptyExportPayload(String mode) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("database", bbdd);
+        payload.put("version", EXPORT_VERSION);
+        payload.put("encrypted", false);
+        payload.put("mode", mode);
+        payload.put("tables", new ArrayList<>());
+        return payload;
+    }
+
+    private void fillImportResponse(Map<String, Object> response,
+            boolean success,
+            String message,
+            int personasGuardadas,
+            int controlesGuardados,
+            int controlEmbarazoGuardados,
+            int inmunizacionesGuardadas,
+            int laboratoriosGuardados,
+            int ubicacionesGuardadas,
+            int antecedentesGuardados,
+            int antecedentesAppsGuardados,
+            int antecedentesMacsGuardados,
+            int etmisGuardados,
+            int conflictosLastModified,
+            List<Map<String, Object>> logs,
+            String error) {
+        response.put("success", success);
+        response.put("message", message);
+        response.put("personasGuardadas", personasGuardadas);
+        response.put("controlesGuardados", controlesGuardados);
+        response.put("controlEmbarazoGuardados", controlEmbarazoGuardados);
+        response.put("inmunizacionesGuardadas", inmunizacionesGuardadas);
+        response.put("laboratoriosGuardados", laboratoriosGuardados);
+        response.put("ubicacionesGuardadas", ubicacionesGuardadas);
+        response.put("antecedentesGuardados", antecedentesGuardados);
+        response.put("antecedentesAppsGuardados", antecedentesAppsGuardados);
+        response.put("antecedentesMacsGuardados", antecedentesMacsGuardados);
+        response.put("etmisGuardados", etmisGuardados);
+        response.put("conflictosLastModified", conflictosLastModified);
+        response.put("rechazados", logs.size());
+        response.put("logs", logs);
+        if (error != null) {
+            response.put("error", error);
+        }
+    }
+
+    private void populateDynamicTableValues(Map<String, Object> table,
+            PersonaSrevice personaService,
+            ControlesService controlesService,
+            ControlEmbarazoService controlEmbarazoService,
+            InmunizacionesControlService inmunizacionesService,
+            LaboratoriosRealizadosService laboratoriosService,
+            UbicacionesService ubicacionesService,
+            AntecedentesService antecedentesService,
+            AntecedentesApps antecedentesAppsService,
+            AntededentesMacs antecedentesMacsService,
+            EtmisPersonasService etmisService,
+            UsuarioService usuarioService,
+            PaisesService paisesService,
+            AreasService areasService,
+            ParajeService parajeService) {
+
+        String tableName = safeString(table.get("name"));
+        if (tableName == null) {
+            return;
+        }
+
+        switch (tableName) {
+            case "personas" -> table.put("values", safeValues("personas",
+                    () -> personaService.valuesPersonas(personasRepo.findBySqlDeletedOrSqlDeletedIsNull(0))));
+            case "usuarios" -> table.put("values", safeValues("usuarios",
+                    () -> usuarioService.valuesUsuarios(usuarioRepo.findAll())));
+            case "controles" -> table.put("values", safeValues("controles",
+                    () -> controlesService.valuesControles(controlesRepo.findAll())));
+            case "control_embarazo" -> table.put("values", safeValues("control_embarazo",
+                    () -> controlEmbarazoService.valuesControlEmbarazo(controlEmbarazoRepo.findAll())));
+            case "inmunizaciones_control" -> table.put("values", safeValues("inmunizaciones_control",
+                    () -> inmunizacionesService.InmunizacionesControl(inmunizacionesControlRepo.findAll())));
+            case "laboratorios_realizados" -> table.put("values", safeValues("laboratorios_realizados",
+                    () -> laboratoriosService.LaboratoriosRealizados(laboratoriosRealizadosRepo.findAll())));
+            case "ubicaciones" -> table.put("values", safeValues("ubicaciones",
+                    () -> ubicacionesService.UbicacionesValues(ubicacionesRepo.findAll())));
+            case "antecedentes" -> table.put("values", safeValues("antecedentes",
+                    () -> antecedentesService.AntecedentesValues(antecedentesRepo.findAll())));
+            case "antecedentes_apps" -> table.put("values", safeValues("antecedentes_apps",
+                    () -> antecedentesAppsService.AntecedentesAppsValues(antecedentesAppsRepo.findAll())));
+            case "antecedentes_macs" -> table.put("values", safeValues("antecedentes_macs",
+                    () -> antecedentesMacsService.AntecedentesMacsValues(antecedentesMacsRepo.findAll())));
+            case "etmis_personas" -> table.put("values", safeValues("etmis_personas",
+                    () -> etmisService.EtmisPersonasValues(etmisPersonasRepo.findAll())));
+            case "paises" -> table.put("values", safeValues("paises",
+                    () -> paisesService.valuesPaises(paisesRepo.findAll())));
+            case "areas" -> table.put("values", safeValues("areas",
+                    () -> areasService.valuesAreas(areasRepo.findAll())));
+            case "parajes" -> table.put("values", safeValues("parajes",
+                    () -> parajeService.valuesParajes(parajesRepo.findAll())));
+            default -> {
+                // tablas catálogo que quedan con los valores del schema.json
+            }
+        }
+    }
+
+    private List<List<Object>> safeValues(String tableName, Supplier<List<List<Object>>> supplier) {
         try {
-            Iterable<ControlesEntity> controles = controlesRepo.findAll();
-            response.put("data", controles);
-            response.put("success", true);
-            return response;
+            List<List<Object>> values = supplier.get();
+            return values != null ? values : new ArrayList<>();
         } catch (Exception e) {
-            response.put("error", e.toString());
-        }
-        return response;
-    }
-
-    @GetMapping("/control_embarazo")
-    public HashMap<String, Object> getAl() {
-        HashMap<String, Object> response = new HashMap<>();
-        try {
-            Iterable<ControlesEntity> controles = controlesRepo.findAll();
-            response.put("data", controles);
-            response.put("success", true);
-            return response;
-        } catch (Exception e) {
-            response.put("error", e.toString());
-        }
-        return response;
-    }
-
-    private Object getValue(List valor, int index) {
-        if (valor == null || index < 0 || index >= valor.size()) {
-            return null;
-        }
-        return valor.get(index);
-    }
-
-    private String safeString(List valor, int index) {
-        Object v = getValue(valor, index);
-        if (v == null)
-            return null;
-        String s = v.toString().trim();
-        return s.isEmpty() ? null : s;
-    }
-
-    private Integer safeInt(List valor, int index) {
-        Object v = getValue(valor, index);
-        if (v == null)
-            return null;
-
-        if (v instanceof Integer)
-            return (Integer) v;
-        if (v instanceof Long)
-            return ((Long) v).intValue();
-        if (v instanceof Double)
-            return ((Double) v).intValue();
-        if (v instanceof Float)
-            return ((Float) v).intValue();
-
-        String s = v.toString().trim();
-        if (s.isEmpty() || "null".equalsIgnoreCase(s) || "undefined".equalsIgnoreCase(s)) {
-            return null;
-        }
-
-        try {
-            return Integer.parseInt(s);
-        } catch (Exception e) {
-            return null;
+            System.err.println("Error exportando tabla " + tableName + ": " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();
         }
     }
 
-    private void addLog(List<Map<String, Object>> logs,
+    private void addImportLog(List<Map<String, Object>> logs,
             String tabla,
             Integer idPersona,
             Integer idControl,
             Integer idReferencia,
             String motivo,
             List payload) {
-
         Map<String, Object> log = new HashMap<>();
         log.put("tabla", tabla);
         log.put("idPersona", idPersona);
@@ -177,64 +1175,40 @@ public class ExportControler {
         log.put("motivo", motivo);
         log.put("payload", payload);
         log.put("ts", LocalDateTime.now().toString());
-
         logs.add(log);
-
-        System.err.println("RECHAZADO -> tabla=" + tabla
-                + ", idPersona=" + idPersona
-                + ", idControl=" + idControl
-                + ", idReferencia=" + idReferencia
-                + ", motivo=" + motivo
-                + ", payload=" + payload);
-
-        appendLogToFile(log);
+        appendJsonLine("import_sync.log", log);
     }
 
-    private void appendLogToFile(Map<String, Object> log) {
-        try {
-            Path folder = Path.of("logs");
-            Files.createDirectories(folder);
-            Path file = folder.resolve("import_sync.log");
-            String line = new ObjectMapper().writeValueAsString(log) + System.lineSeparator();
-            Files.writeString(file, line, StandardCharsets.UTF_8,
-                    StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-        } catch (IOException e) {
-            // Si falla el log en disco no interrumpimos el flujo
-            System.err.println("No se pudo escribir import_sync.log: " + e.getMessage());
-        }
-    }
-
-    private void appendExportLogToFile(Map<String, Object> log) {
-        try {
-            Path folder = Path.of("logs");
-            Files.createDirectories(folder);
-            Path file = folder.resolve("export_sync.log");
-            String line = new ObjectMapper().writeValueAsString(log) + System.lineSeparator();
-            Files.writeString(file, line, StandardCharsets.UTF_8,
-                    StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-        } catch (IOException e) {
-            // Si falla el log en disco no interrumpimos el flujo
-            System.err.println("No se pudo escribir export_sync.log: " + e.getMessage());
-        }
-    }
-
-    private void logRejectedExportRow(String tabla, String motivo, List<Object> payload) {
+    private void addExportLog(String tabla, String motivo, List<Object> payload) {
         Map<String, Object> log = new HashMap<>();
         log.put("tabla", tabla);
         log.put("motivo", motivo);
         log.put("payload", payload);
         log.put("ts", LocalDateTime.now().toString());
-        System.err.println("EXPORT RECHAZADO -> tabla=" + tabla + ", motivo=" + motivo + ", payload=" + payload);
-        appendExportLogToFile(log);
+        appendJsonLine("export_sync.log", log);
+    }
+
+    private void appendJsonLine(String fileName, Map<String, Object> log) {
+        try {
+            Path folder = Path.of("logs");
+            Files.createDirectories(folder);
+            Path file = folder.resolve(fileName);
+            String line = objectMapper.writeValueAsString(log) + System.lineSeparator();
+            Files.writeString(file, line, StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            System.err.println("No se pudo escribir " + fileName + ": " + e.getMessage());
+        }
     }
 
     @SuppressWarnings("unchecked")
     private void filterRowsWithoutUuid(Map<String, Object> table) {
-        String tableName = String.valueOf(table.getOrDefault("name", "unknown"));
+        String tableName = safeString(table.getOrDefault("name", "unknown"));
         List<Map<String, Object>> schema = (List<Map<String, Object>>) table.get("schema");
         List<List<Object>> values = (List<List<Object>>) table.get("values");
-        if (schema == null || values == null || values.isEmpty())
+        if (schema == null || values == null || values.isEmpty()) {
             return;
+        }
 
         int uuidIndex = -1;
         for (int i = 0; i < schema.size(); i++) {
@@ -244,19 +1218,19 @@ public class ExportControler {
                 break;
             }
         }
-        if (uuidIndex < 0)
+        if (uuidIndex < 0) {
             return;
+        }
 
         List<List<Object>> filtered = new ArrayList<>();
         for (List<Object> row : values) {
             if (row == null || uuidIndex >= row.size()) {
-                logRejectedExportRow(tableName, "Fila sin columna UUID esperada por schema", row);
+                addExportLog(tableName, "Fila sin columna UUID esperada por schema", row);
                 continue;
             }
-            Object uuidValue = row.get(uuidIndex);
-            String uuid = uuidValue == null ? "" : uuidValue.toString().trim();
-            if (uuid.isEmpty()) {
-                logRejectedExportRow(tableName, "UUID nulo o vacío en export", row);
+            String uuid = safeString(row.get(uuidIndex));
+            if (uuid == null || uuid.isBlank()) {
+                addExportLog(tableName, "UUID nulo o vacío en export", row);
                 continue;
             }
             filtered.add(row);
@@ -264,58 +1238,45 @@ public class ExportControler {
         table.put("values", filtered);
     }
 
-    private boolean personaDisponible(Integer idPersona, Set<Integer> personasValidas) {
-        if (idPersona == null)
-            return false;
-        return personasValidas.contains(idPersona) || personasRepo.existsById(idPersona);
-    }
+    @SuppressWarnings("unchecked")
+    private void filterRowsBySince(Map<String, Object> table, Integer since) {
+        if (since == null) {
+            return;
+        }
 
-    private boolean controlDisponible(Integer idControl, Set<Integer> controlesValidos) {
-        if (idControl == null)
-            return false;
-        return controlesValidos.contains(idControl) || controlesRepo.existsById(idControl);
-    }
+        List<Map<String, Object>> schema = (List<Map<String, Object>>) table.get("schema");
+        List<List<Object>> values = (List<List<Object>>) table.get("values");
+        if (schema == null || values == null || values.isEmpty()) {
+            return;
+        }
 
-    private boolean antecedenteDisponible(Integer idAntecedente, Set<Integer> antecedentesValidos) {
-        if (idAntecedente == null)
-            return false;
-        return antecedentesValidos.contains(idAntecedente) || antecedentesRepo.existsById(idAntecedente);
-    }
-
-    private String safeStringNotNull(List valor, int index) {
-        Object v = getValue(valor, index);
-        if (v == null)
-            return "";
-        return v.toString().trim();
-    }
-
-    private Date parseDate(Object value) {
-        if (value == null)
-            return null;
-        String s = String.valueOf(value).trim();
-        if (s.isEmpty() || "null".equalsIgnoreCase(s))
-            return null;
-        try {
-            return Date.valueOf(LocalDate.parse(s));
-        } catch (Exception e1) {
-            try {
-                // ISO date-time -> take date part
-                LocalDate ld = LocalDateTime.parse(s, DateTimeFormatter.ISO_DATE_TIME).toLocalDate();
-                return Date.valueOf(ld);
-            } catch (Exception e2) {
-                if (s.length() >= 10) {
-                    try {
-                        return Date.valueOf(LocalDate.parse(s.substring(0, 10)));
-                    } catch (Exception ignored) {
-                    }
-                }
-                // prefer null over romper import
-                return null;
+        int lastModifiedIndex = -1;
+        for (int i = 0; i < schema.size(); i++) {
+            Object column = schema.get(i).get("column");
+            if (column != null && "last_modified".equalsIgnoreCase(column.toString().trim())) {
+                lastModifiedIndex = i;
+                break;
             }
         }
+        if (lastModifiedIndex < 0) {
+            return;
+        }
+
+        List<List<Object>> filtered = new ArrayList<>();
+        for (List<Object> row : values) {
+            if (row == null || lastModifiedIndex >= row.size()) {
+                continue;
+            }
+            Integer rowLastModified = safeInt(row.get(lastModifiedIndex));
+            if (rowLastModified != null && rowLastModified > since) {
+                filtered.add(row);
+            }
+        }
+
+        table.put("values", filtered);
     }
 
-    private Integer coalesceServerIdByUuid(Integer mappedId, String uuidRef, java.util.function.Function<String, Integer> finder) {
+    private Integer coalesceServerIdByUuid(Integer mappedId, String uuidRef, Function<String, Integer> finder) {
         if (mappedId != null) {
             return mappedId;
         }
@@ -330,1160 +1291,230 @@ public class ExportControler {
     }
 
     private boolean shouldApplyIncomingLastModified(Integer currentLastModified, Integer incomingLastModified) {
-        if (incomingLastModified == null) {
-            return true;
-        }
-        if (currentLastModified == null) {
+        if (incomingLastModified == null || currentLastModified == null) {
             return true;
         }
         return incomingLastModified > currentLastModified;
     }
 
-    @PostMapping("/sqlite")
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public HashMap<String, Object> postSqlite(@RequestBody JsonSqlite json) {
-
-        HashMap<String, Object> response = new HashMap<>();
-        List<Map<String, Object>> logs = new ArrayList<>();
-
-        int personasGuardadas = 0;
-        int controlesGuardados = 0;
-        int controlEmbarazoGuardados = 0;
-        int inmunizacionesGuardadas = 0;
-        int laboratoriosGuardados = 0;
-        int ubicacionesGuardadas = 0;
-        int antecedentesGuardados = 0;
-        int antecedentesAppsGuardados = 0;
-        int antecedentesMacsGuardados = 0;
-        int etmisGuardados = 0;
-        int conflictosLastModified = 0;
-
-        // Mapas de traducción de IDs (Mobile ID -> Server ID)
-        Map<Integer, Integer> mapPersonas = new HashMap<>();
-        Map<Integer, Integer> mapControles = new HashMap<>();
-        Map<Integer, Integer> mapAntecedentes = new HashMap<>();
-        Map<Integer, String> mapPersonaUuidByMobileId = new HashMap<>();
-        Map<Integer, String> mapControlUuidByMobileId = new HashMap<>();
-        Map<Integer, String> mapAntecedenteUuidByMobileId = new HashMap<>();
-
-        try {
-            Map<String, List<List>> tablas = new HashMap<>();
-
-            for (JsonTable table : json.getTables()) {
-                tablas.put(table.getName(), table.getValues());
-            }
-
-            List<List> personasValues = tablas.getOrDefault("personas", new ArrayList<>());
-            List<List> controlesValues = tablas.getOrDefault("controles", new ArrayList<>());
-            List<List> controlEmbarazoValues = tablas.getOrDefault("control_embarazo", new ArrayList<>());
-            List<List> inmunizacionesValues = tablas.getOrDefault("inmunizaciones_control", new ArrayList<>());
-            List<List> laboratoriosValues = tablas.getOrDefault("laboratorios_realizados", new ArrayList<>());
-            List<List> ubicacionesValues = tablas.getOrDefault("ubicaciones", new ArrayList<>());
-            List<List> antecedentesValues = tablas.getOrDefault("antecedentes", new ArrayList<>());
-            List<List> antecedentesAppsValues = tablas.getOrDefault("antecedentes_apps", new ArrayList<>());
-            List<List> antecedentesMacsValues = tablas.getOrDefault("antecedentes_macs", new ArrayList<>());
-            List<List> etmisValues = tablas.getOrDefault("etmis_personas", new ArrayList<>());
-
-            // Pre-scan de UUIDs para poder resolver relaciones por UUID si no existe mapping
-            // mobile->server generado en esta misma importación.
-            for (List valor : personasValues) {
-                Integer idPersonaMovil = safeInt(valor, 0);
-                String uuidPersona = safeString(valor, 13);
-                if (idPersonaMovil != null && uuidPersona != null && !uuidPersona.isBlank()) {
-                    mapPersonaUuidByMobileId.put(idPersonaMovil, uuidPersona);
-                }
-            }
-            for (List valor : controlesValues) {
-                Integer idControlMovil = safeInt(valor, 0);
-                String uuidControl = safeString(valor, 18);
-                if (idControlMovil != null && uuidControl != null && !uuidControl.isBlank()) {
-                    mapControlUuidByMobileId.put(idControlMovil, uuidControl);
-                }
-            }
-            for (List valor : antecedentesValues) {
-                Integer idAntecedenteMovil = safeInt(valor, 0);
-                String uuidAntecedente = safeString(valor, 14);
-                if (idAntecedenteMovil != null && uuidAntecedente != null && !uuidAntecedente.isBlank()) {
-                    mapAntecedenteUuidByMobileId.put(idAntecedenteMovil, uuidAntecedente);
-                }
-            }
-
-            /*
-             * =========================
-             * 1) PERSONAS
-             * =========================
-             */
-            for (List valor : personasValues) {
-                Integer idPersonaMovil = safeInt(valor, 0);
-                String uuid = safeString(valor, 13);
-
-                try {
-                    if (uuid == null || uuid.isEmpty()) {
-                        addLog(logs, "personas", idPersonaMovil, null, null, "UUID nulo o vacío", valor);
-                        continue;
-                    }
-
-                    // Look-up by UUID (Deterministic Identity)
-                    Optional<PersonasEntity> existingOpt = personasRepo.findByUuid(uuid);
-                    PersonasEntity personas = existingOpt.orElse(new PersonasEntity());
-                    Integer incomingLastModified = safeInt(valor, 12);
-                    if (existingOpt.isPresent()
-                            && !shouldApplyIncomingLastModified(personas.getLastModified(), incomingLastModified)) {
-                        if (idPersonaMovil != null) {
-                            mapPersonas.put(idPersonaMovil, personas.getIdPersona());
-                        }
-                        conflictosLastModified++;
-                        continue;
-                    }
-
-                    // Si es nuevo, dejamos que la DB asigne el ID; si existe, conservamos el ID del
-                    // servidor.
-                    personas.setApellido(safeString(valor, 1));
-                    personas.setNombre(safeString(valor, 2));
-                    personas.setDocumento(safeString(valor, 3));
-                    personas.setFechaNacimiento(parseSqlDate(getValue(valor, 4)));
-                    personas.setIdOrigen(safeInt(valor, 5));
-                    personas.setNacionalidad(safeInt(valor, 6));
-                    personas.setSexo(safeString(valor, 7));
-                    personas.setMadre(safeInt(valor, 8));
-                    personas.setAlta(safeInt(valor, 9));
-                    personas.setNacidoVivo(safeInt(valor, 10));
-                    personas.setSqlDeleted(safeInt(valor, 11));
-                    personas.setLastModified(incomingLastModified);
-                    personas.setUuid(uuid);
-
-                    personasRepo.save(personas);
-
-                    // Guardamos el mapeo para descendientes
-                    if (idPersonaMovil != null) {
-                        mapPersonas.put(idPersonaMovil, personas.getIdPersona());
-                    }
-                    personasGuardadas++;
-
-                } catch (Exception e) {
-                    addLog(logs, "personas", idPersonaMovil, null, null, e.getMessage(), valor);
-                }
-            }
-
-            /*
-             * =========================
-             * 2) CONTROLES
-             * =========================
-             */
-            for (List valor : controlesValues) {
-                Integer idControlMovil = safeInt(valor, 0);
-                Integer idPersonaMovil = safeInt(valor, 2);
-                String uuid = safeString(valor, 18);
-
-                try {
-                    if (uuid == null || uuid.isEmpty()) {
-                        addLog(logs, "controles", idPersonaMovil, idControlMovil, null, "UUID de control nulo", valor);
-                        continue;
-                    }
-
-                    // Traducción de ID de Persona
-                    Integer serverIdPersona = coalesceServerIdByUuid(
-                            mapPersonas.get(idPersonaMovil),
-                            mapPersonaUuidByMobileId.get(idPersonaMovil),
-                            personaUuid -> personasRepo.findByUuid(personaUuid).map(PersonasEntity::getIdPersona).orElse(null));
-
-                    if (serverIdPersona == null) {
-                        addLog(logs, "controles", idPersonaMovil, idControlMovil, null,
-                                "No se pudo resolver id_persona por UUID", valor);
-                        continue;
-                    }
-
-                    Optional<ControlesEntity> existingOpt = controlesRepo.findByUuid(uuid);
-                    ControlesEntity controles = existingOpt.orElse(new ControlesEntity());
-                    Integer incomingLastModified = safeInt(valor, 17);
-                    if (existingOpt.isPresent()
-                            && !shouldApplyIncomingLastModified(controles.getLastModified(), incomingLastModified)) {
-                        if (idControlMovil != null) {
-                            mapControles.put(idControlMovil, controles.getIdControl());
-                        }
-                        conflictosLastModified++;
-                        continue;
-                    }
-
-                    controles.setFecha(parseSqlDate(getValue(valor, 1)));
-                    controles.setIdPersona(serverIdPersona);
-                    controles.setControlNumero(safeInt(valor, 3));
-                    controles.setIdEstado(safeInt(valor, 4));
-                    controles.setIdSeguimientoChagas(safeInt(valor, 5));
-                    controles.setIdTratamientoChagas(safeInt(valor, 6));
-                    controles.setIdSeguimientoHiv(safeInt(valor, 7));
-                    controles.setIdTratamientoHiv(safeInt(valor, 8));
-                    controles.setIdSeguimientoSifilis(safeInt(valor, 9));
-                    controles.setIdTratamientoSifilis(safeInt(valor, 10));
-                    controles.setIdSeguimientoVhb(safeInt(valor, 11));
-                    controles.setIdTratamientoVhb(safeInt(valor, 12));
-                    controles.setFechaFinEmbarazo(parseSqlDate(getValue(valor, 13)));
-                    controles.setIdTiposFinEmbarazos(safeInt(valor, 14));
-                    controles.setGeoreferencia(safeString(valor, 15));
-                    controles.setSqlDeleted(safeInt(valor, 16));
-                    controles.setLastModified(incomingLastModified);
-                    controles.setUuid(uuid);
-
-                    controlesRepo.save(controles);
-
-                    if (idControlMovil != null) {
-                        mapControles.put(idControlMovil, controles.getIdControl());
-                    }
-                    controlesGuardados++;
-
-                } catch (Exception e) {
-                    addLog(logs, "controles", idPersonaMovil, idControlMovil, null, e.getMessage(), valor);
-                }
-            }
-
-            /*
-             * =========================
-             * 3) UBICACIONES (dependen de persona)
-             * =========================
-             */
-            for (List valor : ubicacionesValues) {
-                Integer idUbicacionMovil = safeInt(valor, 0);
-                Integer idPersonaMovil = safeInt(valor, 1);
-                String uuid = safeString(valor, 10);
-
-                try {
-                    if (uuid == null || uuid.isEmpty()) {
-                        addLog(logs, "ubicaciones", idPersonaMovil, null, idUbicacionMovil, "UUID de ubicación nulo",
-                                valor);
-                        continue;
-                    }
-
-                    Integer serverIdPersona = coalesceServerIdByUuid(
-                            mapPersonas.get(idPersonaMovil),
-                            mapPersonaUuidByMobileId.get(idPersonaMovil),
-                            personaUuid -> personasRepo.findByUuid(personaUuid).map(PersonasEntity::getIdPersona).orElse(null));
-
-                    if (serverIdPersona == null) {
-                        addLog(logs, "ubicaciones", idPersonaMovil, null, idUbicacionMovil,
-                                "No se pudo resolver id_persona por UUID", valor);
-                        continue;
-                    }
-
-                    Optional<UbicacionesEntity> existingOpt = ubicacionesRepo.findByUuid(uuid);
-                    UbicacionesEntity ubicaciones = existingOpt.orElse(new UbicacionesEntity());
-                    Integer incomingLastModified = safeInt(valor, 9);
-                    if (existingOpt.isPresent()
-                            && !shouldApplyIncomingLastModified(ubicaciones.getLastModified(), incomingLastModified)) {
-                        conflictosLastModified++;
-                        continue;
-                    }
-
-                    ubicaciones.setIdPersona(serverIdPersona);
-                    ubicaciones.setIdParaje(safeInt(valor, 2));
-                    ubicaciones.setIdArea(safeInt(valor, 3));
-                    ubicaciones.setNumVivienda(safeString(valor, 4));
-                    ubicaciones.setFecha(parseSqlDate(getValue(valor, 5)));
-                    ubicaciones.setGeoreferencia(safeString(valor, 6));
-                    ubicaciones.setIdPais(safeInt(valor, 7));
-                    ubicaciones.setSqlDeleted(safeInt(valor, 8));
-                    ubicaciones.setLastModified(incomingLastModified);
-                    ubicaciones.setUuid(uuid);
-
-                    ubicacionesRepo.save(ubicaciones);
-                    ubicacionesGuardadas++;
-
-                } catch (Exception e) {
-                    addLog(logs, "ubicaciones", idPersonaMovil, null, idUbicacionMovil, e.getMessage(), valor);
-                }
-            }
-
-            /*
-             * =========================
-             * 4) ANTECEDENTES (dependen de persona + control)
-             * =========================
-             */
-            for (List valor : antecedentesValues) {
-                Integer idAntecedenteMovil = safeInt(valor, 0);
-                Integer idPersonaMovil = safeInt(valor, 1);
-                Integer idControlMovil = safeInt(valor, 2);
-                String uuid = safeString(valor, 14);
-
-                try {
-                    if (uuid == null || uuid.isEmpty()) {
-                        addLog(logs, "antecedentes", idPersonaMovil, idControlMovil, idAntecedenteMovil,
-                                "UUID de antecedente nulo", valor);
-                        continue;
-                    }
-
-                    Integer serverIdPersona = coalesceServerIdByUuid(
-                            mapPersonas.get(idPersonaMovil),
-                            mapPersonaUuidByMobileId.get(idPersonaMovil),
-                            personaUuid -> personasRepo.findByUuid(personaUuid).map(PersonasEntity::getIdPersona).orElse(null));
-                    Integer serverIdControl = coalesceServerIdByUuid(
-                            mapControles.get(idControlMovil),
-                            mapControlUuidByMobileId.get(idControlMovil),
-                            controlUuid -> controlesRepo.findByUuid(controlUuid).map(ControlesEntity::getIdControl).orElse(null));
-
-                    if (serverIdPersona == null || serverIdControl == null) {
-                        addLog(logs, "antecedentes", idPersonaMovil, idControlMovil, idAntecedenteMovil,
-                                "No se pudo resolver relación persona/control por UUID", valor);
-                        continue;
-                    }
-
-                    Optional<AntecedentesEntity> existingOpt = antecedentesRepo.findByUuid(uuid);
-                    AntecedentesEntity antecedentes = existingOpt.orElse(new AntecedentesEntity());
-                    Integer incomingLastModified = safeInt(valor, 12);
-                    if (existingOpt.isPresent()
-                            && !shouldApplyIncomingLastModified(antecedentes.getLastModified(), incomingLastModified)) {
-                        if (idAntecedenteMovil != null) {
-                            mapAntecedentes.put(idAntecedenteMovil, antecedentes.getIdAntecedente());
-                        }
-                        conflictosLastModified++;
-                        continue;
-                    }
-
-                    antecedentes.setIdPersona(serverIdPersona);
-                    antecedentes.setIdControl(serverIdControl);
-                    antecedentes.setEdadPrimerEmbarazo(safeInt(valor, 3));
-                    antecedentes.setFechaUltimoEmbarazo(parseSqlDate(getValue(valor, 4)));
-                    antecedentes.setGestas(safeInt(valor, 5));
-                    antecedentes.setPartos(safeInt(valor, 6));
-                    antecedentes.setCesareas(safeInt(valor, 7));
-                    antecedentes.setAbortos(safeInt(valor, 8));
-                    antecedentes.setPlanificado(safeInt(valor, 9));
-                    antecedentes.setFum(parseSqlDate(getValue(valor, 10)));
-                    antecedentes.setFpp(parseSqlDate(getValue(valor, 11)));
-                    antecedentes.setLastModified(incomingLastModified);
-                    antecedentes.setSqlDeleted(safeInt(valor, 13));
-                    antecedentes.setUuid(uuid);
-
-                    antecedentesRepo.save(antecedentes);
-
-                    if (idAntecedenteMovil != null) {
-                        mapAntecedentes.put(idAntecedenteMovil, antecedentes.getIdAntecedente());
-                    }
-
-                    antecedentesGuardados++;
-
-                } catch (Exception e) {
-                    addLog(logs, "antecedentes", idPersonaMovil, idControlMovil, idAntecedenteMovil, e.getMessage(),
-                            valor);
-                }
-            }
-
-            /*
-             * =========================
-             * 5) CONTROL EMBARAZO (depende de control)
-             * =========================
-             */
-            for (List valor : controlEmbarazoValues) {
-                Integer idControlEmbarazoMovil = safeInt(valor, 0);
-                Integer idControlMovil = safeInt(valor, 1);
-                String uuid = safeString(valor, 15);
-
-                try {
-                    if (uuid == null || uuid.isEmpty()) {
-                        addLog(logs, "control_embarazo", null, idControlMovil, idControlEmbarazoMovil,
-                                "UUID de control_embarazo nulo", valor);
-                        continue;
-                    }
-
-                    Integer serverIdControl = coalesceServerIdByUuid(
-                            mapControles.get(idControlMovil),
-                            mapControlUuidByMobileId.get(idControlMovil),
-                            controlUuid -> controlesRepo.findByUuid(controlUuid).map(ControlesEntity::getIdControl).orElse(null));
-                    if (serverIdControl == null) {
-                        addLog(logs, "control_embarazo", null, idControlMovil, idControlEmbarazoMovil,
-                                "No se pudo resolver id_control por UUID", valor);
-                        continue;
-                    }
-
-                    Optional<ControlEmbarazoEntity> existingOpt = controlEmbarazoRepo.findByUuid(uuid);
-                    ControlEmbarazoEntity controlEmbarazo = existingOpt
-                            .orElse(new ControlEmbarazoEntity());
-                    Integer incomingLastModified = safeInt(valor, 14);
-                    if (existingOpt.isPresent()
-                            && !shouldApplyIncomingLastModified(controlEmbarazo.getLastModified(), incomingLastModified)) {
-                        conflictosLastModified++;
-                        continue;
-                    }
-
-                    controlEmbarazo.setIdControl(serverIdControl);
-                    controlEmbarazo.setEdadGestacional(safeInt(valor, 2));
-                    controlEmbarazo.setEco(safeStringNotNull(valor, 3));
-                    controlEmbarazo.setDetalleEco(safeStringNotNull(valor, 4));
-                    controlEmbarazo.setHpv(safeStringNotNull(valor, 5));
-                    controlEmbarazo.setPap(safeStringNotNull(valor, 6));
-                    controlEmbarazo.setSistolica(safeInt(valor, 7));
-                    controlEmbarazo.setDiastolica(safeInt(valor, 8));
-                    controlEmbarazo.setClinico(safeStringNotNull(valor, 9));
-                    controlEmbarazo.setObservaciones(safeStringNotNull(valor, 10));
-                    controlEmbarazo.setMotivo(safeInt(valor, 11));
-                    controlEmbarazo.setDerivada(safeInt(valor, 12));
-                    controlEmbarazo.setSqlDeleted(safeInt(valor, 13));
-                    controlEmbarazo.setLastModified(incomingLastModified);
-                    controlEmbarazo.setUuid(uuid);
-
-                    controlEmbarazoRepo.save(controlEmbarazo);
-                    controlEmbarazoGuardados++;
-
-                } catch (Exception e) {
-                    addLog(logs, "control_embarazo", null, idControlMovil, idControlEmbarazoMovil, e.getMessage(),
-                            valor);
-                }
-            }
-            /*
-             * =========================
-             * 6) INMUNIZACIONES (dependen de persona + control)
-             * =========================
-             */
-            for (List valor : inmunizacionesValues) {
-                Integer idPersonaMovil = safeInt(valor, 0);
-                Integer idControlMovil = safeInt(valor, 1);
-                Integer idInmunizacion = safeInt(valor, 2);
-                String uuid = safeString(valor, 6);
-
-                try {
-                    if (uuid == null || uuid.isEmpty()) {
-                        addLog(logs, "inmunizaciones_control", idPersonaMovil, idControlMovil, idInmunizacion,
-                                "UUID de inmunización nulo", valor);
-                        continue;
-                    }
-
-                    Integer serverIdPersona = coalesceServerIdByUuid(
-                            mapPersonas.get(idPersonaMovil),
-                            mapPersonaUuidByMobileId.get(idPersonaMovil),
-                            personaUuid -> personasRepo.findByUuid(personaUuid).map(PersonasEntity::getIdPersona).orElse(null));
-                    Integer serverIdControl = coalesceServerIdByUuid(
-                            mapControles.get(idControlMovil),
-                            mapControlUuidByMobileId.get(idControlMovil),
-                            controlUuid -> controlesRepo.findByUuid(controlUuid).map(ControlesEntity::getIdControl).orElse(null));
-
-                    if (serverIdPersona == null || serverIdControl == null) {
-                        addLog(logs, "inmunizaciones_control", idPersonaMovil, idControlMovil, idInmunizacion,
-                                "No se pudo resolver relación persona/control por UUID", valor);
-                        continue;
-                    }
-
-                    Optional<InmunizacionesControlEntity> existingOpt = inmunizacionesControlRepo.findByUuid(uuid);
-                    InmunizacionesControlEntity inmunizacionesControl = existingOpt
-                            .orElse(new InmunizacionesControlEntity());
-                    Integer incomingLastModified = safeInt(valor, 5);
-                    if (existingOpt.isPresent()
-                            && !shouldApplyIncomingLastModified(inmunizacionesControl.getLastModified(), incomingLastModified)) {
-                        conflictosLastModified++;
-                        continue;
-                    }
-
-                    inmunizacionesControl.setIdPersona(serverIdPersona);
-                    inmunizacionesControl.setIdControl(serverIdControl);
-                    inmunizacionesControl.setIdInmunizacion(idInmunizacion);
-                    inmunizacionesControl.setEstado(safeStringNotNull(valor, 3));
-                    inmunizacionesControl.setSqlDeleted(safeInt(valor, 4));
-                    inmunizacionesControl.setLastModified(incomingLastModified);
-                    inmunizacionesControl.setUuid(uuid);
-
-                    inmunizacionesControlRepo.save(inmunizacionesControl);
-                    inmunizacionesGuardadas++;
-
-                } catch (Exception e) {
-                    addLog(logs, "inmunizaciones_control", idPersonaMovil, idControlMovil, idInmunizacion,
-                            e.getMessage(), valor);
-                }
-            }
-            /*
-             * =========================
-             * 7) LABORATORIOS (dependen de persona + control)
-             * =========================
-             */
-            for (List valor : laboratoriosValues) {
-                Integer idPersonaMovil = safeInt(valor, 0);
-                Integer idControlMovil = safeInt(valor, 1);
-                Integer idLaboratorio = safeInt(valor, 2);
-                String uuid = safeString(valor, 10);
-
-                try {
-                    if (uuid == null || uuid.isEmpty()) {
-                        addLog(logs, "laboratorios_realizados", idPersonaMovil, idControlMovil, idLaboratorio,
-                                "UUID de laboratorio nulo", valor);
-                        continue;
-                    }
-
-                    Integer serverIdPersona = coalesceServerIdByUuid(
-                            mapPersonas.get(idPersonaMovil),
-                            mapPersonaUuidByMobileId.get(idPersonaMovil),
-                            personaUuid -> personasRepo.findByUuid(personaUuid).map(PersonasEntity::getIdPersona).orElse(null));
-                    Integer serverIdControl = coalesceServerIdByUuid(
-                            mapControles.get(idControlMovil),
-                            mapControlUuidByMobileId.get(idControlMovil),
-                            controlUuid -> controlesRepo.findByUuid(controlUuid).map(ControlesEntity::getIdControl).orElse(null));
-
-                    if (serverIdPersona == null || serverIdControl == null) {
-                        addLog(logs, "laboratorios_realizados", idPersonaMovil, idControlMovil, idLaboratorio,
-                                "No se pudo resolver relación persona/control por UUID", valor);
-                        continue;
-                    }
-
-                    Optional<LaboratoriosRealizadosEntity> existingOpt = laboratoriosRealizadosRepo.findByUuid(uuid);
-                    LaboratoriosRealizadosEntity laboratoriosRealizados = existingOpt
-                            .orElse(new LaboratoriosRealizadosEntity());
-                    Integer incomingLastModified = safeInt(valor, 9);
-                    if (existingOpt.isPresent()
-                            && !shouldApplyIncomingLastModified(laboratoriosRealizados.getLastModified(), incomingLastModified)) {
-                        conflictosLastModified++;
-                        continue;
-                    }
-
-                    laboratoriosRealizados.setIdPersona(serverIdPersona);
-                    laboratoriosRealizados.setIdControl(serverIdControl);
-                    laboratoriosRealizados.setIdLaboratorio(idLaboratorio);
-                    laboratoriosRealizados.setTrimestre(safeInt(valor, 3));
-                    laboratoriosRealizados.setFechaRealizado(parseSqlDate(getValue(valor, 4)));
-                    laboratoriosRealizados.setFechaResultados(parseSqlDate(getValue(valor, 5)));
-                    laboratoriosRealizados.setResultado(safeStringNotNull(valor, 6));
-                    laboratoriosRealizados.setIdEtmi(safeInt(valor, 7));
-                    laboratoriosRealizados.setSqlDeleted(safeInt(valor, 8));
-                    laboratoriosRealizados.setLastModified(incomingLastModified);
-                    laboratoriosRealizados.setUuid(uuid);
-
-                    laboratoriosRealizadosRepo.save(laboratoriosRealizados);
-                    laboratoriosGuardados++;
-
-                } catch (Exception e) {
-                    addLog(logs, "laboratorios_realizados", idPersonaMovil, idControlMovil, idLaboratorio,
-                            e.getMessage(), valor);
-                }
-            }
-
-            /*
-             * =========================
-             * 8) ETMIS (dependen de persona + control)
-             * =========================
-             */
-            for (List valor : etmisValues) {
-                Integer idPersonaMovil = safeInt(valor, 0);
-                Integer idEtmi = safeInt(valor, 1);
-                Integer idControlMovil = safeInt(valor, 2);
-                String uuid = safeString(valor, 6);
-
-                try {
-                    if (uuid == null || uuid.isEmpty()) {
-                        addLog(logs, "etmis_personas", idPersonaMovil, idControlMovil, idEtmi, "UUID de ETMI nulo",
-                                valor);
-                        continue;
-                    }
-
-                    Integer serverIdPersona = coalesceServerIdByUuid(
-                            mapPersonas.get(idPersonaMovil),
-                            mapPersonaUuidByMobileId.get(idPersonaMovil),
-                            personaUuid -> personasRepo.findByUuid(personaUuid).map(PersonasEntity::getIdPersona).orElse(null));
-                    Integer serverIdControl = coalesceServerIdByUuid(
-                            mapControles.get(idControlMovil),
-                            mapControlUuidByMobileId.get(idControlMovil),
-                            controlUuid -> controlesRepo.findByUuid(controlUuid).map(ControlesEntity::getIdControl).orElse(null));
-
-                    if (serverIdPersona == null || serverIdControl == null) {
-                        addLog(logs, "etmis_personas", idPersonaMovil, idControlMovil, idEtmi,
-                                "No se pudo resolver relación persona/control por UUID", valor);
-                        continue;
-                    }
-
-                    Optional<EtmisPersonasEntity> existingOpt = etmisPersonasRepo.findByUuid(uuid);
-                    EtmisPersonasEntity etmisPersonasEntity = existingOpt.orElse(new EtmisPersonasEntity());
-                    Integer incomingLastModified = safeInt(valor, 5);
-                    if (existingOpt.isPresent()
-                            && !shouldApplyIncomingLastModified(etmisPersonasEntity.getLastModified(), incomingLastModified)) {
-                        conflictosLastModified++;
-                        continue;
-                    }
-
-                    etmisPersonasEntity.setIdPersona(serverIdPersona);
-                    etmisPersonasEntity.setIdEtmi(idEtmi);
-                    etmisPersonasEntity.setIdControl(serverIdControl);
-                    etmisPersonasEntity.setConfirmada(safeInt(valor, 3));
-                    etmisPersonasEntity.setSqlDeleted(safeInt(valor, 4));
-                    etmisPersonasEntity.setLastModified(incomingLastModified);
-                    etmisPersonasEntity.setUuid(uuid);
-
-                    etmisPersonasRepo.save(etmisPersonasEntity);
-                    etmisGuardados++;
-
-                } catch (Exception e) {
-                    addLog(logs, "etmis_personas", idPersonaMovil, idControlMovil, idEtmi, e.getMessage(), valor);
-                }
-            }
-            /*
-             * =========================
-             * 9) ANTECEDENTES_APPS (dependen de antecedente)
-             * =========================
-             */
-            for (List valor : antecedentesAppsValues) {
-                Integer idAntecedenteMovil = safeInt(valor, 0);
-                Integer idApp = safeInt(valor, 1);
-                String uuid = safeString(valor, 4);
-
-                try {
-                    if (uuid == null || uuid.isEmpty()) {
-                        addLog(logs, "antecedentes_apps", null, null, idAntecedenteMovil,
-                                "UUID de antecedente_app nulo", valor);
-                        continue;
-                    }
-
-                    Integer serverIdAntecedente = coalesceServerIdByUuid(
-                            mapAntecedentes.get(idAntecedenteMovil),
-                            mapAntecedenteUuidByMobileId.get(idAntecedenteMovil),
-                            antecedenteUuid -> antecedentesRepo.findByUuid(antecedenteUuid).map(AntecedentesEntity::getIdAntecedente).orElse(null));
-                    if (serverIdAntecedente == null) {
-                        addLog(logs, "antecedentes_apps", null, null, idAntecedenteMovil,
-                                "No se pudo resolver id_antecedente por UUID", valor);
-                        continue;
-                    }
-
-                    Optional<AntecedentesAppsEntity> existingOpt = antecedentesAppsRepo.findByUuid(uuid);
-                    AntecedentesAppsEntity antecedentesApps = existingOpt
-                            .orElse(new AntecedentesAppsEntity());
-                    Integer incomingLastModified = safeInt(valor, 2);
-                    if (existingOpt.isPresent()
-                            && !shouldApplyIncomingLastModified(antecedentesApps.getLastModified(), incomingLastModified)) {
-                        conflictosLastModified++;
-                        continue;
-                    }
-
-                    antecedentesApps.setIdAntecedente(serverIdAntecedente);
-                    antecedentesApps.setIdApp(idApp);
-                    antecedentesApps.setLastModified(incomingLastModified);
-                    antecedentesApps.setSqlDeleted(safeInt(valor, 3));
-                    antecedentesApps.setUuid(uuid);
-
-                    antecedentesAppsRepo.save(antecedentesApps);
-                    antecedentesAppsGuardados++;
-
-                } catch (Exception e) {
-                    addLog(logs, "antecedentes_apps", null, null, idAntecedenteMovil, e.getMessage(), valor);
-                }
-            }
-
-            /*
-             * =========================
-             * 10) ANTECEDENTES_MACS (dependen de antecedente)
-             * =========================
-             */
-            for (List valor : antecedentesMacsValues) {
-                Integer idAntecedenteMovil = safeInt(valor, 0);
-                Integer idMac = safeInt(valor, 1);
-                String uuid = safeString(valor, 4);
-
-                try {
-                    if (uuid == null || uuid.isEmpty()) {
-                        addLog(logs, "antecedentes_macs", null, null, idAntecedenteMovil,
-                                "UUID de antecedente_mac nulo", valor);
-                        continue;
-                    }
-
-                    Integer serverIdAntecedente = coalesceServerIdByUuid(
-                            mapAntecedentes.get(idAntecedenteMovil),
-                            mapAntecedenteUuidByMobileId.get(idAntecedenteMovil),
-                            antecedenteUuid -> antecedentesRepo.findByUuid(antecedenteUuid).map(AntecedentesEntity::getIdAntecedente).orElse(null));
-                    if (serverIdAntecedente == null) {
-                        addLog(logs, "antecedentes_macs", null, null, idAntecedenteMovil,
-                                "No se pudo resolver id_antecedente por UUID", valor);
-                        continue;
-                    }
-
-                    Optional<AntecedentesMacsEntity> existingOpt = antecedentesMacsRepo.findByUuid(uuid);
-                    AntecedentesMacsEntity antecedentesMacs = existingOpt
-                            .orElse(new AntecedentesMacsEntity());
-                    Integer incomingLastModified = safeInt(valor, 3);
-                    if (existingOpt.isPresent()
-                            && !shouldApplyIncomingLastModified(antecedentesMacs.getLastModified(), incomingLastModified)) {
-                        conflictosLastModified++;
-                        continue;
-                    }
-
-                    antecedentesMacs.setIdAntecedente(serverIdAntecedente);
-                    antecedentesMacs.setIdMac(idMac);
-                    antecedentesMacs.setSqlDeleted(safeInt(valor, 2));
-                    antecedentesMacs.setLastModified(incomingLastModified);
-                    antecedentesMacs.setUuid(uuid);
-
-                    antecedentesMacsRepo.save(antecedentesMacs);
-                    antecedentesMacsGuardados++;
-
-                } catch (Exception e) {
-                    addLog(logs, "antecedentes_macs", null, null, idAntecedenteMovil, e.getMessage(), valor);
-                }
-            }
-
-            response.put("success", true);
-            response.put("message", "Importación procesada con arquitectura UUID");
-            response.put("personasGuardadas", personasGuardadas);
-            response.put("controlesGuardados", controlesGuardados);
-            response.put("controlEmbarazoGuardados", controlEmbarazoGuardados);
-            response.put("inmunizacionesGuardadas", inmunizacionesGuardadas);
-            response.put("laboratoriosGuardados", laboratoriosGuardados);
-            response.put("ubicacionesGuardadas", ubicacionesGuardadas);
-            response.put("antecedentesGuardados", antecedentesGuardados);
-            response.put("antecedentesAppsGuardados", antecedentesAppsGuardados);
-            response.put("antecedentesMacsGuardados", antecedentesMacsGuardados);
-            response.put("etmisGuardados", etmisGuardados);
-            response.put("conflictosLastModified", conflictosLastModified);
-            response.put("rechazados", logs.size());
-            response.put("logs", logs);
-
-            return response;
-
-        } catch (Exception e) {
-            // No bloquear la sync: devolvemos parciales y el detalle del problema
-            e.printStackTrace();
-            response.put("success", true);
-            response.put("message", "Importación completada con errores parciales (no se bloqueó la sync)");
-            response.put("error", e.getMessage());
-            response.put("logs", logs);
-            response.put("personasGuardadas", personasGuardadas);
-            response.put("controlesGuardados", controlesGuardados);
-            response.put("controlEmbarazoGuardados", controlEmbarazoGuardados);
-            response.put("inmunizacionesGuardadas", inmunizacionesGuardadas);
-            response.put("laboratoriosGuardados", laboratoriosGuardados);
-            response.put("ubicacionesGuardadas", ubicacionesGuardadas);
-            response.put("antecedentesGuardados", antecedentesGuardados);
-            response.put("antecedentesAppsGuardados", antecedentesAppsGuardados);
-            response.put("antecedentesMacsGuardados", antecedentesMacsGuardados);
-            response.put("etmisGuardados", etmisGuardados);
-            response.put("conflictosLastModified", conflictosLastModified);
-            response.put("rechazados", logs.size());
-            return response;
+    private Object getValue(List<?> valor, int index) {
+        if (valor == null || index < 0 || index >= valor.size()) {
+            return null;
         }
+        return valor.get(index);
+    }
+
+    private String safeString(Object value) {
+        if (value == null) {
+            return null;
+        }
+        String text = value.toString().trim();
+        if (text.isEmpty() || "null".equalsIgnoreCase(text) || "undefined".equalsIgnoreCase(text)) {
+            return null;
+        }
+        return text;
+    }
+
+    private String safeString(List<?> valor, int index) {
+        return safeString(getValue(valor, index));
+    }
+
+    private String safeStringNotNull(Object value) {
+        String text = safeString(value);
+        return text != null ? text : "";
+    }
+
+    private Integer safeInt(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Integer i) {
+            return i;
+        }
+        if (value instanceof Long l) {
+            return l.intValue();
+        }
+        if (value instanceof Double d) {
+            return d.intValue();
+        }
+        if (value instanceof Float f) {
+            return f.intValue();
+        }
+        String text = safeString(value);
+        if (text == null) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(text);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private Integer safeInt(List<?> valor, int index) {
+        return safeInt(getValue(valor, index));
     }
 
     private Date parseSqlDate(Object value) {
         try {
-            if (value == null)
-                return null;
-
-            String s = value.toString().trim();
-
-            if (s.isEmpty() || "null".equalsIgnoreCase(s) || "undefined".equalsIgnoreCase(s)) {
+            String text = safeString(value);
+            if (text == null) {
                 return null;
             }
-
-            if (s.length() >= 10) {
-                s = s.substring(0, 10);
+            if (text.length() >= 10) {
+                text = text.substring(0, 10);
             }
-
-            return Date.valueOf(s);
+            return Date.valueOf(LocalDate.parse(text));
         } catch (Exception e) {
             System.err.println("Fecha inválida recibida: " + value);
             return null;
         }
     }
 
-    private Map<String, Object> buildTable(String name, List<List<Object>> values) {
-        Map<String, Object> table = new HashMap<>();
-        table.put("name", name);
-        table.put("values", values != null ? values : new ArrayList<>());
-        return table;
+    private PersonasEntity copyPersona(PersonasEntity target, PersonasEntity source) {
+        target.setApellido(source.getApellido());
+        target.setNombre(source.getNombre());
+        target.setDocumento(source.getDocumento());
+        target.setFechaNacimiento(source.getFechaNacimiento());
+        target.setIdOrigen(source.getIdOrigen());
+        target.setNacionalidad(source.getNacionalidad());
+        target.setSexo(source.getSexo());
+        target.setMadre(source.getMadre());
+        target.setAlta(source.getAlta());
+        target.setNacidoVivo(source.getNacidoVivo());
+        target.setSqlDeleted(source.getSqlDeleted());
+        target.setLastModified(source.getLastModified());
+        target.setUuid(source.getUuid());
+        return target;
     }
 
-    private List<List<Object>> safeValues(String tableName, java.util.function.Supplier<List<List<Object>>> supplier) {
-        try {
-            List<List<Object>> values = supplier.get();
-            return values != null ? values : new ArrayList<>();
-        } catch (Exception e) {
-            System.err.println("Error exportando tabla " + tableName + ": " + e.getMessage());
-            e.printStackTrace();
-            return new ArrayList<>();
-        }
+    private ControlesEntity copyControl(ControlesEntity target, ControlesEntity source) {
+        target.setFecha(source.getFecha());
+        target.setIdPersona(source.getIdPersona());
+        target.setControlNumero(source.getControlNumero());
+        target.setIdEstado(source.getIdEstado());
+        target.setIdSeguimientoChagas(source.getIdSeguimientoChagas());
+        target.setIdTratamientoChagas(source.getIdTratamientoChagas());
+        target.setIdSeguimientoHiv(source.getIdSeguimientoHiv());
+        target.setIdTratamientoHiv(source.getIdTratamientoHiv());
+        target.setIdSeguimientoSifilis(source.getIdSeguimientoSifilis());
+        target.setIdTratamientoSifilis(source.getIdTratamientoSifilis());
+        target.setIdSeguimientoVhb(source.getIdSeguimientoVhb());
+        target.setIdTratamientoVhb(source.getIdTratamientoVhb());
+        target.setFechaFinEmbarazo(source.getFechaFinEmbarazo());
+        target.setIdTiposFinEmbarazos(source.getIdTiposFinEmbarazos());
+        target.setGeoreferencia(source.getGeoreferencia());
+        target.setSqlDeleted(source.getSqlDeleted());
+        target.setLastModified(source.getLastModified());
+        target.setUuid(source.getUuid());
+        return target;
     }
 
-    @GetMapping("/data/json2")
-    public Map<String, Object> getData() {
-        Iterable<PersonasEntity> data = personasRepo.findBySqlDeletedOrSqlDeletedIsNull(0);
-        Iterable<ControlesEntity> dataControles = controlesRepo.findAll();
-        Iterable<ControlEmbarazoEntity> dataControlEmbarazo = controlEmbarazoRepo.findAll();
-
-        Iterable<InmunizacionesControlEntity> dataInmunizacionesControl = inmunizacionesControlRepo
-                .findBYLast(syncTableRepo.buscarUltimoLast());
-
-        Iterable<LaboratoriosRealizadosEntity> dataLaboratorioRealizado = laboratoriosRealizadosRepo
-                .findBYLast(syncTableRepo.buscarUltimoLast());
-        Iterable<UbicacionesEntity> dataUbicaciones = ubicacionesRepo.findAll();
-        Iterable<AntecedentesEntity> dataAntecedentes = antecedentesRepo.findAll();
-        Iterable<AntecedentesAppsEntity> dataAntecedentesApss = antecedentesAppsRepo.findAll();
-        Iterable<AntecedentesMacsEntity> dataAtecedentesMacs = antecedentesMacsRepo.findAll();
-        Iterable<UsuariosEntity> dataUsuarios = usuarioRepo.findAll();
-
-        List<Object> row = new ArrayList<>();
-        Map<String, Object> json = new HashMap<>();
-
-        Map<String, Object> table = new HashMap<>();
-        Map<String, Object> tableControles = new HashMap<>();
-        Map<String, Object> tableControlEmbarazo = new HashMap<>();
-        Map<String, Object> tableInmunizacionesControl = new HashMap<>();
-        Map<String, Object> tableLaboratorioRealizados = new HashMap<>();
-        Map<String, Object> tableUbicaciones = new HashMap<>();
-        Map<String, Object> tableAntecedentes = new HashMap<>();
-        Map<String, Object> tableAntecedentesApps = new HashMap<>();
-        Map<String, Object> tableAntecedentesMacs = new HashMap<>();
-        Map<String, Object> tableUsuarios = new HashMap<>();
-
-        PersonaSrevice ps = new PersonaSrevice();
-        ControlesService cs = new ControlesService();
-        ControlEmbarazoService ce = new ControlEmbarazoService();
-        InmunizacionesControlService ic = new InmunizacionesControlService();
-        LaboratoriosRealizadosService lr = new LaboratoriosRealizadosService();
-        UbicacionesService ub = new UbicacionesService();
-        AntecedentesService an = new AntecedentesService();
-        AntecedentesApps aapps = new AntecedentesApps();
-        AntededentesMacs amacs = new AntededentesMacs();
-        UsuarioService us = new UsuarioService();
-
-        List<List<Object>> valuesPersonas = ps.valuesPersonas(data);
-        List<List<Object>> valuesControles = cs.valuesControles(dataControles);
-        List<List<Object>> valuesControlEmbarazo = ce.valuesControlEmbarazo(dataControlEmbarazo);
-        List<List<Object>> valuesInmunizacionesControl = ic.InmunizacionesControl(dataInmunizacionesControl);
-        List<List<Object>> valuesLaboratotiosRealizados = lr.LaboratoriosRealizados(dataLaboratorioRealizado);
-        List<List<Object>> valuesUbicaciones = ub.UbicacionesValues(dataUbicaciones);
-        List<List<Object>> valuesAntecedentes = an.AntecedentesValues(dataAntecedentes);
-        List<List<Object>> valuesAntedentesApps = aapps.AntecedentesAppsValues(dataAntecedentesApss);
-        List<List<Object>> valuesAntecedentesMacs = amacs.AntecedentesMacsValues(dataAtecedentesMacs);
-        List<List<Object>> valuesUsuarios = us.valuesUsuarios(dataUsuarios);
-        /*
-         *
-         * Arma el primer nivel del json
-         *
-         */
-        json.put("database", bbdd);
-        json.put("version", 2);
-        // json.put("overwrite",true);
-        json.put("encrypted", false);
-        json.put("mode", "partial");
-        /*
-         * Tabla personas
-         */
-        table.put("name", "personas");
-        table.put("values", valuesPersonas);
-        row.add(table);
-        /*
-         * Tabla usuarios
-         */
-        tableUsuarios.put("name", "usuarios");
-        tableUsuarios.put("values", valuesUsuarios);
-        row.add(tableUsuarios);
-
-        /*
-         * Tabla controles
-         */
-        tableControles.put("name", "controles");
-        tableControles.put("values", valuesControles);
-        row.add(tableControles);
-
-        /*
-         * Tabla contol embarazo
-         */
-        tableControlEmbarazo.put("name", "control_embarazo");
-        tableControlEmbarazo.put("values", valuesControlEmbarazo);
-        row.add(tableControlEmbarazo);
-
-        /*
-         * Tabla inmunizaciones_control
-         */
-        tableInmunizacionesControl.put("name", "inmunizaciones_control");
-        tableInmunizacionesControl.put("values", valuesInmunizacionesControl);
-        row.add(tableInmunizacionesControl);
-
-        /*
-         * Tabla laboratorios_realizados
-         */
-        tableLaboratorioRealizados.put("name", "laboratorios_realizados");
-        tableLaboratorioRealizados.put("values", valuesLaboratotiosRealizados);
-        row.add(tableLaboratorioRealizados);
-
-        /*
-         * Tabla ubicaciones
-         */
-        tableUbicaciones.put("name", "ubicaciones");
-        tableUbicaciones.put("values", valuesUbicaciones);
-        row.add(tableUbicaciones);
-
-        /*
-         * Tabla antecedentes
-         */
-        tableAntecedentes.put("name", "antecedentes");
-        tableAntecedentes.put("values", valuesAntecedentes);
-        row.add(tableAntecedentes);
-        /*
-         * Tabla antecedentes_apss
-         */
-        tableAntecedentesApps.put("name", "antecedentes_apps");
-        tableAntecedentesApps.put("values", valuesAntedentesApps);
-        row.add(tableAntecedentesApps);
-
-        /*
-         * Table antecedentes_macs
-         */
-        tableAntecedentesMacs.put("name", "antecedentes_macs");
-        tableAntecedentesMacs.put("values", valuesAntecedentesMacs);
-        row.add(tableAntecedentesMacs);
-
-        json.put("tables", row);
-
-        return json;
+    private UbicacionesEntity copyUbicacion(UbicacionesEntity target, UbicacionesEntity source) {
+        target.setIdPersona(source.getIdPersona());
+        target.setIdParaje(source.getIdParaje());
+        target.setIdArea(source.getIdArea());
+        target.setNumVivienda(source.getNumVivienda());
+        target.setFecha(source.getFecha());
+        target.setGeoreferencia(source.getGeoreferencia());
+        target.setIdPais(source.getIdPais());
+        target.setSqlDeleted(source.getSqlDeleted());
+        target.setLastModified(source.getLastModified());
+        target.setUuid(source.getUuid());
+        return target;
     }
 
-    @GetMapping("/data/json3")
-    public Map<String, Object> getDataall() {
-        Map<String, Object> errorJson = new HashMap<>();
-
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            java.io.InputStream is = new org.springframework.core.io.ClassPathResource("schema.json").getInputStream();
-            Map<String, Object> json = mapper.readValue(is,
-                    new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
-                    });
-
-            json.put("database", bbdd);
-            json.put("version", 2);
-            json.put("encrypted", false);
-            json.put("mode", "partial");
-
-            List<Map<String, Object>> tables = (List<Map<String, Object>>) json.get("tables");
-
-            PersonaSrevice ps = new PersonaSrevice();
-            ControlesService cs = new ControlesService();
-            ControlEmbarazoService ce = new ControlEmbarazoService();
-            InmunizacionesControlService ic = new InmunizacionesControlService();
-            LaboratoriosRealizadosService lr = new LaboratoriosRealizadosService();
-            UbicacionesService ub = new UbicacionesService();
-            AntecedentesService an = new AntecedentesService();
-            AntecedentesApps aapps = new AntecedentesApps();
-            AntededentesMacs amacs = new AntededentesMacs();
-            EtmisPersonasService ep = new EtmisPersonasService();
-            UsuarioService us = new UsuarioService();
-            PaisesService paisesServices = new PaisesService();
-            AreasService areaServices = new AreasService();
-            ParajeService parajeService = new ParajeService();
-
-            for (Map<String, Object> t : tables) {
-                String tName = (String) t.get("name");
-                if (tName == null)
-                    continue;
-
-                // Trim schema column names dynamically just in case
-                List<Map<String, Object>> schema = (List<Map<String, Object>>) t.get("schema");
-                if (schema != null) {
-                    for (Map<String, Object> s : schema) {
-                        if (s.containsKey("column")) {
-                            s.put("column", ((String) s.get("column")).trim());
-                        }
-                    }
-                }
-
-                switch (tName) {
-                    case "personas":
-                        t.put("values", safeValues("personas",
-                                () -> ps.valuesPersonas(personasRepo.findBySqlDeletedOrSqlDeletedIsNull(0))));
-                        break;
-                    case "usuarios":
-                        t.put("values", safeValues("usuarios", () -> us.valuesUsuarios(usuarioRepo.findAll())));
-                        break;
-                    case "controles":
-                        t.put("values", safeValues("controles", () -> cs.valuesControles(controlesRepo.findAll())));
-                        break;
-                    case "control_embarazo":
-                        t.put("values", safeValues("control_embarazo",
-                                () -> ce.valuesControlEmbarazo(controlEmbarazoRepo.findAll())));
-                        break;
-                    case "inmunizaciones_control":
-                        t.put("values", safeValues("inmunizaciones_control",
-                                () -> ic.InmunizacionesControl(inmunizacionesControlRepo.findAll())));
-                        break;
-                    case "laboratorios_realizados":
-                        t.put("values", safeValues("laboratorios_realizados",
-                                () -> lr.LaboratoriosRealizados(laboratoriosRealizadosRepo.findAll())));
-                        break;
-                    case "ubicaciones":
-                        t.put("values",
-                                safeValues("ubicaciones", () -> ub.UbicacionesValues(ubicacionesRepo.findAll())));
-                        break;
-                    case "antecedentes":
-                        t.put("values",
-                                safeValues("antecedentes", () -> an.AntecedentesValues(antecedentesRepo.findAll())));
-                        break;
-                    case "antecedentes_apps":
-                        t.put("values", safeValues("antecedentes_apps",
-                                () -> aapps.AntecedentesAppsValues(antecedentesAppsRepo.findAll())));
-                        break;
-                    case "antecedentes_macs":
-                        t.put("values", safeValues("antecedentes_macs",
-                                () -> amacs.AntecedentesMacsValues(antecedentesMacsRepo.findAll())));
-                        break;
-                    case "etmis_personas":
-                        t.put("values", safeValues("etmis_personas",
-                                () -> ep.EtmisPersonasValues(etmisPersonasRepo.findAll())));
-                        break;
-                    case "paises":
-                        t.put("values", safeValues("paises", () -> paisesServices.valuesPaises(paisesRepo.findAll())));
-                        break;
-                    case "areas":
-                        t.put("values", safeValues("areas", () -> areaServices.valuesAreas(areasRepo.findAll())));
-                        break;
-                    case "parajes":
-                        t.put("values",
-                                safeValues("parajes", () -> parajeService.valuesParajes(parajesRepo.findAll())));
-                        break;
-                }
-                filterRowsWithoutUuid(t);
-            }
-
-            return json;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            errorJson.put("database", bbdd);
-            errorJson.put("version", 2);
-            errorJson.put("encrypted", false);
-            errorJson.put("mode", "partial");
-            errorJson.put("tables", new ArrayList<>());
-            return errorJson;
-        }
+    private AntecedentesEntity copyAntecedente(AntecedentesEntity target, AntecedentesEntity source) {
+        target.setIdPersona(source.getIdPersona());
+        target.setIdControl(source.getIdControl());
+        target.setEdadPrimerEmbarazo(source.getEdadPrimerEmbarazo());
+        target.setFechaUltimoEmbarazo(source.getFechaUltimoEmbarazo());
+        target.setGestas(source.getGestas());
+        target.setPartos(source.getPartos());
+        target.setCesareas(source.getCesareas());
+        target.setAbortos(source.getAbortos());
+        target.setPlanificado(source.getPlanificado());
+        target.setFum(source.getFum());
+        target.setFpp(source.getFpp());
+        target.setLastModified(source.getLastModified());
+        target.setSqlDeleted(source.getSqlDeleted());
+        target.setUuid(source.getUuid());
+        return target;
     }
 
-    @GetMapping("/data/json3/partial")
-    @SuppressWarnings("unchecked")
-    public Map<String, Object> getDataPartial(@RequestParam(value = "since", required = false) Integer since) {
-        Map<String, Object> json = getDataall();
-        if (json == null)
-            return new HashMap<>();
-
-        Integer effectiveSince = since;
-        if (effectiveSince == null) {
-            try {
-                effectiveSince = syncTableRepo.buscarUltimoLast();
-            } catch (Exception ignored) {
-            }
-        }
-
-        Object tablesObject = json.get("tables");
-        if (tablesObject instanceof List && effectiveSince != null) {
-            List<Map<String, Object>> tables = (List<Map<String, Object>>) tablesObject;
-            for (Map<String, Object> table : tables) {
-                filterRowsBySince(table, effectiveSince);
-                // si querés mantener compatibilidad con nombre viejo:
-                // filterRowsByLastModified(table, effectiveSince);
-            }
-        }
-
-        json.put("mode", "partial");
-        if (effectiveSince != null) {
-            json.put("since", effectiveSince);
-        }
-        return json;
+    private ControlEmbarazoEntity copyControlEmbarazo(ControlEmbarazoEntity target, ControlEmbarazoEntity source) {
+        target.setIdControl(source.getIdControl());
+        target.setEdadGestacional(source.getEdadGestacional());
+        target.setEco(source.getEco());
+        target.setDetalleEco(source.getDetalleEco());
+        target.setHpv(source.getHpv());
+        target.setPap(source.getPap());
+        target.setSistolica(source.getSistolica());
+        target.setDiastolica(source.getDiastolica());
+        target.setClinico(source.getClinico());
+        target.setObservaciones(source.getObservaciones());
+        target.setMotivo(source.getMotivo());
+        target.setDerivada(source.getDerivada());
+        target.setSqlDeleted(source.getSqlDeleted());
+        target.setLastModified(source.getLastModified());
+        target.setUuid(source.getUuid());
+        return target;
     }
 
-    @SuppressWarnings("unchecked")
-    private void filterRowsBySince(Map<String, Object> table, Integer since) {
-        if (since == null)
-            return;
-
-        List<Map<String, Object>> schema = (List<Map<String, Object>>) table.get("schema");
-        List<List<Object>> values = (List<List<Object>>) table.get("values");
-        if (schema == null || values == null || values.isEmpty())
-            return;
-
-        int lastModifiedIndex = -1;
-        for (int i = 0; i < schema.size(); i++) {
-            Object column = schema.get(i).get("column");
-            if (column != null && "last_modified".equalsIgnoreCase(column.toString().trim())) {
-                lastModifiedIndex = i;
-                break;
-            }
-        }
-        if (lastModifiedIndex < 0)
-            return;
-
-        List<List<Object>> filtered = new ArrayList<>();
-        for (List<Object> row : values) {
-            if (row == null || lastModifiedIndex >= row.size())
-                continue;
-
-            Integer rowLastModified = safeInt(row, lastModifiedIndex);
-            if (rowLastModified != null && rowLastModified > since) {
-                filtered.add(row);
-            }
-        }
-
-        table.put("values", filtered);
+    private InmunizacionesControlEntity copyInmunizacion(InmunizacionesControlEntity target,
+            InmunizacionesControlEntity source) {
+        target.setIdPersona(source.getIdPersona());
+        target.setIdControl(source.getIdControl());
+        target.setIdInmunizacion(source.getIdInmunizacion());
+        target.setEstado(source.getEstado());
+        target.setSqlDeleted(source.getSqlDeleted());
+        target.setLastModified(source.getLastModified());
+        target.setUuid(source.getUuid());
+        return target;
     }
 
-    @GetMapping("/data/json")
-    public ResponseEntity<String> getDataAsJson() throws JsonProcessingException {
-        Iterable<PersonasEntity> data = personasRepo.findBySqlDeletedOrSqlDeletedIsNull(0);
-        ObjectMapper objectMapper = new ObjectMapper();
-        String dataJson = objectMapper.writeValueAsString(data);
-        return ResponseEntity.ok(dataJson);
+    private LaboratoriosRealizadosEntity copyLaboratorio(LaboratoriosRealizadosEntity target,
+            LaboratoriosRealizadosEntity source) {
+        target.setIdPersona(source.getIdPersona());
+        target.setIdControl(source.getIdControl());
+        target.setIdLaboratorio(source.getIdLaboratorio());
+        target.setTrimestre(source.getTrimestre());
+        target.setFechaRealizado(source.getFechaRealizado());
+        target.setFechaResultados(source.getFechaResultados());
+        target.setResultado(source.getResultado());
+        target.setIdEtmi(source.getIdEtmi());
+        target.setSqlDeleted(source.getSqlDeleted());
+        target.setLastModified(source.getLastModified());
+        target.setUuid(source.getUuid());
+        return target;
     }
 
-    @PostMapping("/sync_date")
-    public HashMap<String, Object> last(@RequestBody SyncTableEntity sync) {
-        HashMap<String, Object> response = new HashMap<>();
-        SyncTableEntity sync_table = new SyncTableEntity();
-        System.out.println(sync.toString());
-
-        try {
-            sync_table.setSyncDate(sync.getSyncDate());
-            syncTableRepo.save(sync_table);
-            response.put("success", true);
-
-        } catch (Exception e) {
-            response.put("error", e.toString());
-
-        }
-        return response;
+    private EtmisPersonasEntity copyEtmi(EtmisPersonasEntity target, EtmisPersonasEntity source) {
+        target.setIdPersona(source.getIdPersona());
+        target.setIdEtmi(source.getIdEtmi());
+        target.setIdControl(source.getIdControl());
+        target.setConfirmada(source.getConfirmada());
+        target.setSqlDeleted(source.getSqlDeleted());
+        target.setLastModified(source.getLastModified());
+        target.setUuid(source.getUuid());
+        return target;
     }
 
-    @GetMapping("/ultimarowdevice")
-    public Map<String, Object> getLastRow() {
-        HashMap<String, Object> response = new HashMap<>();
-        try {
-            Iterable<IdsegundeviceEntity> lastrow = idSegunDeviceRepo.getLastRoe();
-            response.put("data", lastrow);
-            response.put("success", true);
-            return response;
-        } catch (Exception e) {
-            response.put("error", e.toString());
-        }
-        return response;
+    private AntecedentesAppsEntity copyAntecedenteApp(AntecedentesAppsEntity target, AntecedentesAppsEntity source) {
+        target.setIdAntecedente(source.getIdAntecedente());
+        target.setIdApp(source.getIdApp());
+        target.setLastModified(source.getLastModified());
+        target.setSqlDeleted(source.getSqlDeleted());
+        target.setUuid(source.getUuid());
+        return target;
     }
 
-    @PostMapping("/crearultimoid")
-    public HashMap<String, Object> crearUltimoidDevicw(@RequestBody IdsegundeviceEntity device) {
-        HashMap<String, Object> response = new HashMap<>();
-        IdsegundeviceEntity _device = new IdsegundeviceEntity();
-
-        try {
-            _device.setIdDevice(device.getIdDevice());
-            _device.setNroDevice(device.getNroDevice());
-            _device.setMinId(device.getMinId());
-            _device.setMaxId(device.getMaxId());
-            _device.setSqlDeleted(device.getSqlDeleted());
-            _device.setLastModified(device.getLastModified());
-            Integer id = idSegunDeviceRepo.save(_device).getIdDevice();
-            response.put("data", id);
-            response.put("success", true);
-            return response;
-        } catch (Exception e) {
-            response.put("error", e.toString());
-        }
-        return response;
-    }
-
-    @GetMapping("/findbynrodevice/{parametro}")
-    public HashMap<String, Object> numero_device(@PathVariable String parametro) {
-        HashMap<String, Object> response = new HashMap<>();
-
-        try {
-            Optional device = idSegunDeviceRepo.findByNroDevice(parametro);
-            response.put("data", device);
-            response.put("success", true);
-            return response;
-        } catch (Exception e) {
-            response.put("error", e.toString());
-        }
-        return response;
+    private AntecedentesMacsEntity copyAntecedenteMac(AntecedentesMacsEntity target, AntecedentesMacsEntity source) {
+        target.setIdAntecedente(source.getIdAntecedente());
+        target.setIdMac(source.getIdMac());
+        target.setSqlDeleted(source.getSqlDeleted());
+        target.setLastModified(source.getLastModified());
+        target.setUuid(source.getUuid());
+        return target;
     }
 }
