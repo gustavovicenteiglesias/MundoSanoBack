@@ -75,8 +75,16 @@ public class ExportControler {
     @Value("${mundosano.app.bbdd}")
     private String bbdd;
 
+    /*
+     * IMPORTANTE:
+     * - Este método debe quedar SIN @Transactional en el controller.
+     * - Requiere UniversalUpsertService con:
+     * - upsertSimplePkByUuid(...)
+     * - upsertCompositePkByUuid(...)
+     * - Las transacciones quedan encapsuladas en el service con REQUIRES_NEW.
+     */
+
     @PostMapping("/sqlite")
-    @Transactional
     public HashMap<String, Object> postSqlite(@RequestBody JsonSqlite json) {
         HashMap<String, Object> response = new HashMap<>();
         List<Map<String, Object>> logs = new ArrayList<>();
@@ -115,7 +123,10 @@ public class ExportControler {
             List<List> antecedentesMacsValues = getTableValues(tablas, "antecedentes_macs");
             List<List> etmisValues = getTableValues(tablas, "etmis_personas");
 
-            preScanUuids(personasValues, controlesValues, antecedentesValues,
+            preScanUuids(
+                    personasValues,
+                    controlesValues,
+                    antecedentesValues,
                     columnsByTable,
                     mapPersonaUuidByMobileId,
                     mapControlUuidByMobileId,
@@ -123,7 +134,7 @@ public class ExportControler {
 
             /*
              * =========================
-             * 1) PERSONAS
+             * 1) PERSONAS (PK simple)
              * =========================
              */
             for (List valor : personasValues) {
@@ -154,7 +165,7 @@ public class ExportControler {
                     nuevaPersona.setLastModified(incomingLastModified);
                     nuevaPersona.setUuid(uuid);
 
-                    PersonasEntity personaPersistida = universalUpsertService.upsertByUuid(
+                    PersonasEntity personaPersistida = universalUpsertService.upsertSimplePkByUuid(
                             uuid,
                             personasRepo::findByUuid,
                             existente -> {
@@ -170,7 +181,8 @@ public class ExportControler {
                             },
                             nuevaPersona,
                             PersonasEntity.class,
-                            "idPersona");
+                            "idPersona",
+                            idPersonaMovil);
 
                     if (idPersonaMovil != null) {
                         mapPersonas.put(idPersonaMovil, personaPersistida.getIdPersona());
@@ -185,7 +197,7 @@ public class ExportControler {
 
             /*
              * =========================
-             * 2) CONTROLES
+             * 2) CONTROLES (PK simple)
              * =========================
              */
             for (List valor : controlesValues) {
@@ -236,7 +248,7 @@ public class ExportControler {
                     nuevoControl.setLastModified(incomingLastModified);
                     nuevoControl.setUuid(uuid);
 
-                    ControlesEntity controlPersistido = universalUpsertService.upsertByUuid(
+                    ControlesEntity controlPersistido = universalUpsertService.upsertSimplePkByUuid(
                             uuid,
                             controlesRepo::findByUuid,
                             existente -> {
@@ -252,7 +264,8 @@ public class ExportControler {
                             },
                             nuevoControl,
                             ControlesEntity.class,
-                            "idControl");
+                            "idControl",
+                            idControlMovil);
 
                     if (idControlMovil != null) {
                         mapControles.put(idControlMovil, controlPersistido.getIdControl());
@@ -267,7 +280,7 @@ public class ExportControler {
 
             /*
              * =========================
-             * 3) UBICACIONES (dependen de persona)
+             * 3) UBICACIONES (PK simple)
              * =========================
              */
             for (List valor : ubicacionesValues) {
@@ -310,7 +323,7 @@ public class ExportControler {
                     nuevaUbicacion.setLastModified(incomingLastModified);
                     nuevaUbicacion.setUuid(uuid);
 
-                    UbicacionesEntity ubicacionPersistida = universalUpsertService.upsertByUuid(
+                    universalUpsertService.upsertSimplePkByUuid(
                             uuid,
                             ubicacionesRepo::findByUuid,
                             existente -> {
@@ -323,7 +336,8 @@ public class ExportControler {
                             },
                             nuevaUbicacion,
                             UbicacionesEntity.class,
-                            "idUbicacion");
+                            "idUbicacion",
+                            idUbicacionMovil);
 
                     ubicacionesGuardadas++;
                 } catch (Exception e) {
@@ -336,7 +350,7 @@ public class ExportControler {
 
             /*
              * =========================
-             * 4) ANTECEDENTES (dependen de persona + control)
+             * 4) ANTECEDENTES (PK simple)
              * =========================
              */
             for (List valor : antecedentesValues) {
@@ -391,7 +405,7 @@ public class ExportControler {
                     nuevoAntecedente.setSqlDeleted(safeInt(row.get("sql_deleted")));
                     nuevoAntecedente.setUuid(uuid);
 
-                    AntecedentesEntity antecedentePersistido = universalUpsertService.upsertByUuid(
+                    AntecedentesEntity antecedentePersistido = universalUpsertService.upsertSimplePkByUuid(
                             uuid,
                             antecedentesRepo::findByUuid,
                             existente -> {
@@ -407,7 +421,8 @@ public class ExportControler {
                             },
                             nuevoAntecedente,
                             AntecedentesEntity.class,
-                            "idAntecedente");
+                            "idAntecedente",
+                            idAntecedenteMovil);
 
                     if (idAntecedenteMovil != null) {
                         mapAntecedentes.put(idAntecedenteMovil, antecedentePersistido.getIdAntecedente());
@@ -423,7 +438,7 @@ public class ExportControler {
 
             /*
              * =========================
-             * 5) CONTROL EMBARAZO (depende de control)
+             * 5) CONTROL EMBARAZO (PK simple)
              * =========================
              */
             for (List valor : controlEmbarazoValues) {
@@ -471,7 +486,7 @@ public class ExportControler {
                     nuevoControlEmbarazo.setLastModified(incomingLastModified);
                     nuevoControlEmbarazo.setUuid(uuid);
 
-                    universalUpsertService.upsertByUuid(
+                    universalUpsertService.upsertSimplePkByUuid(
                             uuid,
                             controlEmbarazoRepo::findByUuid,
                             existente -> {
@@ -484,7 +499,8 @@ public class ExportControler {
                             },
                             nuevoControlEmbarazo,
                             ControlEmbarazoEntity.class,
-                            "idControlEmbarazo");
+                            "idControlEmbarazo",
+                            idControlEmbarazoMovil);
 
                     controlEmbarazoGuardados++;
                 } catch (Exception e) {
@@ -497,7 +513,7 @@ public class ExportControler {
 
             /*
              * =========================
-             * 6) INMUNIZACIONES (dependen de persona + control)
+             * 6) INMUNIZACIONES (PK compuesta)
              * =========================
              */
             for (List valor : inmunizacionesValues) {
@@ -545,7 +561,7 @@ public class ExportControler {
                     nuevaInmunizacion.setLastModified(incomingLastModified);
                     nuevaInmunizacion.setUuid(uuid);
 
-                    universalUpsertService.upsertByUuid(
+                    universalUpsertService.upsertCompositePkByUuid(
                             uuid,
                             inmunizacionesControlRepo::findByUuid,
                             existente -> {
@@ -557,8 +573,7 @@ public class ExportControler {
                                 return copyInmunizacion(existente, nuevaInmunizacion);
                             },
                             nuevaInmunizacion,
-                            InmunizacionesControlEntity.class,
-                            "idInmunizacionesControl");
+                            InmunizacionesControlEntity.class);
 
                     inmunizacionesGuardadas++;
                 } catch (Exception e) {
@@ -571,7 +586,7 @@ public class ExportControler {
 
             /*
              * =========================
-             * 7) LABORATORIOS (dependen de persona + control)
+             * 7) LABORATORIOS (PK compuesta)
              * =========================
              */
             for (List valor : laboratoriosValues) {
@@ -623,26 +638,32 @@ public class ExportControler {
                     nuevoLaboratorio.setLastModified(incomingLastModified);
                     nuevoLaboratorio.setUuid(uuid);
 
-                    Optional<LaboratoriosRealizadosEntity> existingOpt = laboratoriosRealizadosRepo.findByUuid(uuid);
-                    if (existingOpt.isPresent()
-                            && !shouldApplyIncomingLastModified(existingOpt.get().getLastModified(),
-                                    incomingLastModified)) {
-                        conflictosLastModified.incrementAndGet();
-                        continue;
-                    }
+                    universalUpsertService.upsertCompositePkByUuid(
+                            uuid,
+                            laboratoriosRealizadosRepo::findByUuid,
+                            existente -> {
+                                if (!shouldApplyIncomingLastModified(existente.getLastModified(),
+                                        incomingLastModified)) {
+                                    conflictosLastModified.incrementAndGet();
+                                    throw new RuntimeException("Conflicto lastModified");
+                                }
+                                return copyLaboratorio(existente, nuevoLaboratorio);
+                            },
+                            nuevoLaboratorio,
+                            LaboratoriosRealizadosEntity.class);
 
-                    LaboratoriosRealizadosEntity persistir = existingOpt.orElse(new LaboratoriosRealizadosEntity());
-                    laboratoriosRealizadosRepo.save(copyLaboratorio(persistir, nuevoLaboratorio));
                     laboratoriosGuardados++;
                 } catch (Exception e) {
-                    addImportLog(logs, "laboratorios_realizados", idPersonaMovil, idControlMovil, idLaboratorio,
-                            e.getMessage(), valor);
+                    if (!"Conflicto lastModified".equals(e.getMessage())) {
+                        addImportLog(logs, "laboratorios_realizados", idPersonaMovil, idControlMovil, idLaboratorio,
+                                e.getMessage(), valor);
+                    }
                 }
             }
 
             /*
              * =========================
-             * 8) ETMIS (dependen de persona + control)
+             * 8) ETMIS (PK compuesta)
              * =========================
              */
             for (List valor : etmisValues) {
@@ -690,25 +711,32 @@ public class ExportControler {
                     nuevaEtmi.setLastModified(incomingLastModified);
                     nuevaEtmi.setUuid(uuid);
 
-                    Optional<EtmisPersonasEntity> existingOpt = etmisPersonasRepo.findByUuid(uuid);
-                    if (existingOpt.isPresent()
-                            && !shouldApplyIncomingLastModified(existingOpt.get().getLastModified(),
-                                    incomingLastModified)) {
-                        conflictosLastModified.incrementAndGet();
-                        continue;
-                    }
+                    universalUpsertService.upsertCompositePkByUuid(
+                            uuid,
+                            etmisPersonasRepo::findByUuid,
+                            existente -> {
+                                if (!shouldApplyIncomingLastModified(existente.getLastModified(),
+                                        incomingLastModified)) {
+                                    conflictosLastModified.incrementAndGet();
+                                    throw new RuntimeException("Conflicto lastModified");
+                                }
+                                return copyEtmi(existente, nuevaEtmi);
+                            },
+                            nuevaEtmi,
+                            EtmisPersonasEntity.class);
 
-                    EtmisPersonasEntity persistir = existingOpt.orElse(new EtmisPersonasEntity());
-                    etmisPersonasRepo.save(copyEtmi(persistir, nuevaEtmi));
                     etmisGuardados++;
                 } catch (Exception e) {
-                    addImportLog(logs, "etmis_personas", idPersonaMovil, idControlMovil, idEtmi, e.getMessage(), valor);
+                    if (!"Conflicto lastModified".equals(e.getMessage())) {
+                        addImportLog(logs, "etmis_personas", idPersonaMovil, idControlMovil, idEtmi, e.getMessage(),
+                                valor);
+                    }
                 }
             }
 
             /*
              * =========================
-             * 9) ANTECEDENTES_APPS (dependen de antecedente)
+             * 9) ANTECEDENTES_APPS (PK compuesta)
              * =========================
              */
             for (List valor : antecedentesAppsValues) {
@@ -746,25 +774,31 @@ public class ExportControler {
                     nuevoAntecedenteApp.setSqlDeleted(safeInt(row.get("sql_deleted")));
                     nuevoAntecedenteApp.setUuid(uuid);
 
-                    Optional<AntecedentesAppsEntity> existingOpt = antecedentesAppsRepo.findByUuid(uuid);
-                    if (existingOpt.isPresent()
-                            && !shouldApplyIncomingLastModified(existingOpt.get().getLastModified(),
-                                    incomingLastModified)) {
-                        conflictosLastModified.incrementAndGet();
-                        continue;
-                    }
+                    universalUpsertService.upsertCompositePkByUuid(
+                            uuid,
+                            antecedentesAppsRepo::findByUuid,
+                            existente -> {
+                                if (!shouldApplyIncomingLastModified(existente.getLastModified(),
+                                        incomingLastModified)) {
+                                    conflictosLastModified.incrementAndGet();
+                                    throw new RuntimeException("Conflicto lastModified");
+                                }
+                                return copyAntecedenteApp(existente, nuevoAntecedenteApp);
+                            },
+                            nuevoAntecedenteApp,
+                            AntecedentesAppsEntity.class);
 
-                    AntecedentesAppsEntity persistir = existingOpt.orElse(new AntecedentesAppsEntity());
-                    antecedentesAppsRepo.save(copyAntecedenteApp(persistir, nuevoAntecedenteApp));
                     antecedentesAppsGuardados++;
                 } catch (Exception e) {
-                    addImportLog(logs, "antecedentes_apps", null, null, idAntecedenteMovil, e.getMessage(), valor);
+                    if (!"Conflicto lastModified".equals(e.getMessage())) {
+                        addImportLog(logs, "antecedentes_apps", null, null, idAntecedenteMovil, e.getMessage(), valor);
+                    }
                 }
             }
 
             /*
              * =========================
-             * 10) ANTECEDENTES_MACS (dependen de antecedente)
+             * 10) ANTECEDENTES_MACS (PK compuesta)
              * =========================
              */
             for (List valor : antecedentesMacsValues) {
@@ -802,36 +836,66 @@ public class ExportControler {
                     nuevoAntecedenteMac.setLastModified(incomingLastModified);
                     nuevoAntecedenteMac.setUuid(uuid);
 
-                    Optional<AntecedentesMacsEntity> existingOpt = antecedentesMacsRepo.findByUuid(uuid);
-                    if (existingOpt.isPresent()
-                            && !shouldApplyIncomingLastModified(existingOpt.get().getLastModified(),
-                                    incomingLastModified)) {
-                        conflictosLastModified.incrementAndGet();
-                        continue;
-                    }
+                    universalUpsertService.upsertCompositePkByUuid(
+                            uuid,
+                            antecedentesMacsRepo::findByUuid,
+                            existente -> {
+                                if (!shouldApplyIncomingLastModified(existente.getLastModified(),
+                                        incomingLastModified)) {
+                                    conflictosLastModified.incrementAndGet();
+                                    throw new RuntimeException("Conflicto lastModified");
+                                }
+                                return copyAntecedenteMac(existente, nuevoAntecedenteMac);
+                            },
+                            nuevoAntecedenteMac,
+                            AntecedentesMacsEntity.class);
 
-                    AntecedentesMacsEntity persistir = existingOpt.orElse(new AntecedentesMacsEntity());
-                    antecedentesMacsRepo.save(copyAntecedenteMac(persistir, nuevoAntecedenteMac));
                     antecedentesMacsGuardados++;
                 } catch (Exception e) {
-                    addImportLog(logs, "antecedentes_macs", null, null, idAntecedenteMovil, e.getMessage(), valor);
+                    if (!"Conflicto lastModified".equals(e.getMessage())) {
+                        addImportLog(logs, "antecedentes_macs", null, null, idAntecedenteMovil, e.getMessage(), valor);
+                    }
                 }
             }
 
-            fillImportResponse(response, true, "Importación procesada con arquitectura UUID",
-                    personasGuardadas, controlesGuardados, controlEmbarazoGuardados,
-                    inmunizacionesGuardadas, laboratoriosGuardados, ubicacionesGuardadas,
-                    antecedentesGuardados, antecedentesAppsGuardados, antecedentesMacsGuardados,
-                    etmisGuardados, conflictosLastModified.get(), logs, null);
+            fillImportResponse(
+                    response,
+                    true,
+                    "Importación procesada con arquitectura UUID",
+                    personasGuardadas,
+                    controlesGuardados,
+                    controlEmbarazoGuardados,
+                    inmunizacionesGuardadas,
+                    laboratoriosGuardados,
+                    ubicacionesGuardadas,
+                    antecedentesGuardados,
+                    antecedentesAppsGuardados,
+                    antecedentesMacsGuardados,
+                    etmisGuardados,
+                    conflictosLastModified.get(),
+                    logs,
+                    null);
 
             return response;
         } catch (Exception e) {
             e.printStackTrace();
-            fillImportResponse(response, true, "Importación completada con errores parciales (no se bloqueó la sync)",
-                    personasGuardadas, controlesGuardados, controlEmbarazoGuardados,
-                    inmunizacionesGuardadas, laboratoriosGuardados, ubicacionesGuardadas,
-                    antecedentesGuardados, antecedentesAppsGuardados, antecedentesMacsGuardados,
-                    etmisGuardados, conflictosLastModified.get(), logs, e.getMessage());
+            fillImportResponse(
+                    response,
+                    true,
+                    "Importación completada con errores parciales (no se bloqueó la sync)",
+                    personasGuardadas,
+                    controlesGuardados,
+                    controlEmbarazoGuardados,
+                    inmunizacionesGuardadas,
+                    laboratoriosGuardados,
+                    ubicacionesGuardadas,
+                    antecedentesGuardados,
+                    antecedentesAppsGuardados,
+                    antecedentesMacsGuardados,
+                    etmisGuardados,
+                    conflictosLastModified.get(),
+                    logs,
+                    e.getMessage());
             return response;
         }
     }
