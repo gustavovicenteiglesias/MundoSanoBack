@@ -6,6 +6,7 @@ import edu.unsada.apimundosano.models.*;
 import edu.unsada.apimundosano.repositorio.*;
 import edu.unsada.apimundosano.service.*;
 import edu.unsada.apimundosano.utilidades.JsonSqlite;
+import edu.unsada.apimundosano.utilidades.JsonSyncMeta;
 import edu.unsada.apimundosano.utilidades.JsonTable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -71,6 +72,8 @@ public class ExportControler {
     private AreasRepo areasRepo;
     @Autowired
     private ParajesRepo parajesRepo;
+    @Autowired
+    private SyncAuditService syncAuditService;
 
     @Value("${mundosano.app.bbdd}")
     private String bbdd;
@@ -88,6 +91,13 @@ public class ExportControler {
     public HashMap<String, Object> postSqlite(@RequestBody JsonSqlite json) {
         HashMap<String, Object> response = new HashMap<>();
         List<Map<String, Object>> logs = new ArrayList<>();
+        String syncBatchId = resolveSyncBatchId(json);
+
+        try {
+            JsonSyncMeta syncMeta = json != null ? json.getSyncMeta() : null;
+            syncBatchId = syncAuditService.registerBatchStart(syncBatchId, syncMeta);
+        } catch (Exception ignored) {
+        }
 
         int personasGuardadas = 0;
         int controlesGuardados = 0;
@@ -860,6 +870,7 @@ public class ExportControler {
 
             fillImportResponse(
                     response,
+                    syncBatchId,
                     true,
                     "Importación procesada con arquitectura UUID",
                     personasGuardadas,
@@ -876,11 +887,22 @@ public class ExportControler {
                     logs,
                     null);
 
+            try {
+                syncAuditService.registerBatchResult(
+                        syncBatchId,
+                        true,
+                        conflictosLastModified.get(),
+                        logs,
+                        null);
+            } catch (Exception ignored) {
+            }
+
             return response;
         } catch (Exception e) {
             e.printStackTrace();
             fillImportResponse(
                     response,
+                    syncBatchId,
                     true,
                     "Importación completada con errores parciales (no se bloqueó la sync)",
                     personasGuardadas,
@@ -896,6 +918,53 @@ public class ExportControler {
                     conflictosLastModified.get(),
                     logs,
                     e.getMessage());
+            try {
+                syncAuditService.registerBatchResult(
+                        syncBatchId,
+                        false,
+                        conflictosLastModified.get(),
+                        logs,
+                        e.getMessage());
+            } catch (Exception ignored) {
+            }
+            return response;
+        }
+    }
+
+    @GetMapping("/sync/logs/batches")
+    public Map<String, Object> getSyncBatches() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            response.put("success", true);
+            response.put("batches", syncAuditService.getLatestBatches());
+            return response;
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "No se pudieron recuperar lotes de sincronización");
+            response.put("error", e.getMessage());
+            response.put("batches", new ArrayList<>());
+            return response;
+        }
+    }
+
+    @GetMapping("/sync/logs/batches/{syncBatchId}")
+    public Map<String, Object> getSyncBatchDetail(@PathVariable String syncBatchId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Optional<SyncBatchLogServerEntity> batch = syncAuditService.findBatch(syncBatchId);
+            if (batch.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "No existe lote para sync_batch_id indicado");
+                return response;
+            }
+            response.put("success", true);
+            response.put("batch", batch.get());
+            response.put("items", syncAuditService.findItemsByBatch(syncBatchId));
+            return response;
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "No se pudo recuperar detalle de sincronización");
+            response.put("error", e.getMessage());
             return response;
         }
     }
@@ -1122,6 +1191,7 @@ public class ExportControler {
     }
 
     private void fillImportResponse(Map<String, Object> response,
+            String syncBatchId,
             boolean success,
             String message,
             int personasGuardadas,
@@ -1137,6 +1207,7 @@ public class ExportControler {
             int conflictosLastModified,
             List<Map<String, Object>> logs,
             String error) {
+        response.put("sync_batch_id", syncBatchId);
         response.put("success", success);
         response.put("message", message);
         response.put("personasGuardadas", personasGuardadas);
@@ -1352,6 +1423,14 @@ public class ExportControler {
         } catch (Exception ignored) {
             return null;
         }
+    }
+
+    private String resolveSyncBatchId(JsonSqlite json) {
+        if (json == null || json.getSyncMeta() == null) {
+            return "sync-" + UUID.randomUUID();
+        }
+        String fromPayload = safeString(json.getSyncMeta().getSyncBatchId());
+        return fromPayload != null ? fromPayload : "sync-" + UUID.randomUUID();
     }
 
     private boolean shouldApplyIncomingLastModified(Integer currentLastModified, Integer incomingLastModified) {

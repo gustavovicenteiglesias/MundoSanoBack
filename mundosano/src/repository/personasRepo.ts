@@ -30,6 +30,7 @@ export class PersonasRepository {
     await db.open()
     const res: any = await db.query(`
       SELECT p.id_persona,p.nombre,p.apellido,p.documento,p.fecha_nacimiento,
+             p.last_modified,
              e.id_etmi,w.nombre AS etmi,
              s.id_app,f.nombre AS apps,
              u.id_pais,u.id_area,u.id_paraje,u.num_vivienda,u.georeferencia,
@@ -56,7 +57,7 @@ export class PersonasRepository {
   async getPendientes(): Promise<any[]> {
     const db = await getDb()
     await db.open()
-    const res: any = await db.query("SELECT c.id_control,em.eco,l.resultado,p.id_persona,p.id_persona,p.nombre,p.apellido,p.documento,p.fecha_nacimiento, e.id_etmi,w.nombre AS etmi , s.id_app, s.id_app,f.nombre AS apps,u.id_pais,pa.nombre AS nombre_pais,areas.nombre AS nombre_area,je.nombre AS nombre_paraje FROM control_embarazo em LEFT JOIN controles c ON c.id_control=em.id_control "
+    const res: any = await db.query("SELECT c.id_control,em.eco,l.resultado,p.id_persona,p.id_persona,p.nombre,p.apellido,p.documento,p.fecha_nacimiento,p.last_modified, e.id_etmi,w.nombre AS etmi , s.id_app, s.id_app,f.nombre AS apps,u.id_pais,pa.nombre AS nombre_pais,areas.nombre AS nombre_area,je.nombre AS nombre_paraje FROM control_embarazo em LEFT JOIN controles c ON c.id_control=em.id_control "
       + " INNER JOIN laboratorios_realizados l ON c.id_control=l.id_control"
       + " INNER JOIN personas p ON c.id_persona=p.id_persona"
       + " LEFT JOIN etmis_personas e ON p.id_persona=e.id_persona"
@@ -111,6 +112,24 @@ export class PersonasRepository {
     console.log("update " + JSON.stringify(res.changes))
     await db.close()
     return true
+  }
+
+  async getLastSyncUnix(): Promise<number | null> {
+    const db = await getDb()
+    await db.open()
+    try {
+      const res: any = await db.query("SELECT sync_date FROM sync_table ORDER BY id DESC LIMIT 1")
+      const value = res?.values?.[0]?.sync_date
+      if (value === null || value === undefined) {
+        return null
+      }
+      const parsed = Number(value)
+      return Number.isFinite(parsed) ? parsed : null
+    } catch (_error) {
+      return null
+    } finally {
+      await db.close()
+    }
   }
 
 }

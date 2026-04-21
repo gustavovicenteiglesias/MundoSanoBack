@@ -11,6 +11,7 @@ public class JsonSqlite {
     private String mode;
     private List<JsonTable> tables;
     private List<JsonView> view;
+    private JsonSyncMeta syncMeta;
 
     public String getDatabase() {
         return database;
@@ -68,6 +69,14 @@ public class JsonSqlite {
         this.view = view;
     }
 
+    public JsonSyncMeta getSyncMeta() {
+        return syncMeta;
+    }
+
+    public void setSyncMeta(JsonSyncMeta syncMeta) {
+        this.syncMeta = syncMeta;
+    }
+
     @Override
     public String toString() {
         return "JsonSqlite{" +
@@ -78,6 +87,7 @@ public class JsonSqlite {
                 ", mode='" + mode + '\'' +
                 ", tables=" + tables +
                 ", view=" + view +
+                ", syncMeta=" + syncMeta +
                 '}';
     }
 }

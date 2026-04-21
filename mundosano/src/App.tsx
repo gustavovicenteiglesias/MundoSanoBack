@@ -41,6 +41,8 @@ import { NOMBRE_BB_DD } from './utils/constantes';
 import NuevoAntecedentes from './pages/NuevoAntecedentes';
 import NuevoEmbarazadaControl from './pages/NuevoEmbarazoControl';
 import EditarPersona from './pages/EditarPersona';
+import SyncHistory from './pages/SyncHistory';
+import SyncHistoryDetail from './pages/SyncHistoryDetail';
 
 
 interface JsonListenerInterface {
@@ -214,6 +216,12 @@ const App: React.FC = () => {
           </Route>
           <Route exact path="/nuevoembarazocontrol">
             {showEdituser || showReaduser ? <NuevoEmbarazadaControl/> : <Home />}
+          </Route>
+          <Route exact path="/sync-history">
+            {showEdituser || showReaduser ? <SyncHistory/> : <Home />}
+          </Route>
+          <Route exact path="/sync-history/:syncBatchId">
+            {showEdituser || showReaduser ? <SyncHistoryDetail/> : <Home />}
           </Route>
           <Route exact path="/">
             <Redirect to="/home" />

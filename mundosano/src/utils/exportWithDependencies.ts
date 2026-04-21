@@ -3,12 +3,21 @@ type JsonTable = {
   values: any[][];
 };
 
+export type SyncMeta = {
+  syncBatchId: string;
+  usuario?: string | null;
+  dispositivo?: string | null;
+  versionApp?: string | null;
+  fechaInicio: string;
+};
+
 export type JsonExportPayload = {
   database: string;
   version: number;
   encrypted: boolean;
   mode: "partial" | "full";
   tables: JsonTable[];
+  syncMeta?: SyncMeta;
 };
 
 type TableInfoRow = {

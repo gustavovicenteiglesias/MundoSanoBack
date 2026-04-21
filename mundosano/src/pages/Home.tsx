@@ -26,6 +26,7 @@ import { SQLiteDBConnection } from "react-sqlite-hook";
 import { sqlite } from "../App";
 import { NOMBRE_BB_DD } from "../utils/constantes";
 import { CargarBase } from "../data/CargarBase";
+import SyncProgressModal, { SyncProgressView } from "../components/SyncProgressModal";
 
 const Home: React.FC = () => {
   var idDevice: string;
@@ -34,6 +35,13 @@ const Home: React.FC = () => {
   const [incorretPass, setincorretPass] = useState<boolean>(false);
   const [usuario, setUsuario] = useState<Usuarios>();
   const [loadindImport, setLoadingImport] = useState<boolean>(false);
+  const [syncProgress, setSyncProgress] = useState<SyncProgressView>({
+    isOpen: false,
+    title: "Sincronizando datos",
+    subtitle: "No cierres la aplicación",
+    status: "idle",
+    canClose: true,
+  });
 
   const usuariosRepo = new UsuariosRepo();
   const devicerepository = new Repository<IdSegunDevice>("idsegundevice");
@@ -79,7 +87,31 @@ const Home: React.FC = () => {
     const existeActual: any = await sqlite.isDatabase(NOMBRE_BB_DD);
     if (existeActual.result) {
       setLoadingImport(true);
-      await CargarBase({ mode: "partial" }).finally(() => setLoadingImport(false));
+      setSyncProgress({
+        isOpen: true,
+        title: "Importación completa",
+        subtitle: "Recargando datos base del servidor",
+        status: "running",
+        canClose: false,
+      });
+      await CargarBase({
+        mode: "full",
+        timeoutMs: 0,
+        onProgress: (p) => {
+          setSyncProgress((prev) => ({
+            ...prev,
+            phase: phaseLabel(p.phase),
+            detail: p.currentTable
+              ? `${p.message}: ${p.currentTable} (${p.rowsInTable ?? 0} filas)`
+              : p.message,
+            progress: p.progress,
+            loadedBytes: p.loadedBytes,
+            totalBytes: p.totalBytes,
+            status: p.phase === "done" ? "success" : p.phase === "error" ? "error" : "running",
+            canClose: p.phase === "done" || p.phase === "error",
+          }));
+        },
+      }).finally(() => setLoadingImport(false));
       return;
     }
 
@@ -110,12 +142,45 @@ const Home: React.FC = () => {
 
     if (!existe.result) {
       setLoadingImport(true);
-      console.log("CARGAR BASE NUEVA RRRRRRRRRR");
-      const rescargar = await CargarBase({ mode: "full" }).then((resp) => {
-        setLoadingImport(false);
+      setSyncProgress({
+        isOpen: true,
+        title: "Importación completa",
+        subtitle: "Primera carga: puede demorar varios minutos",
+        status: "running",
+        canClose: false,
       });
+      await CargarBase({
+        mode: "full",
+        timeoutMs: 0,
+        onProgress: (p) => {
+          setSyncProgress((prev) => ({
+            ...prev,
+            phase: phaseLabel(p.phase),
+            detail: p.error
+              ? `${p.message} ${p.error}`
+              : p.currentTable
+                ? `${p.message}: ${p.currentTable} (${p.rowsInTable ?? 0} filas)`
+                : p.message,
+            progress: p.progress,
+            loadedBytes: p.loadedBytes,
+            totalBytes: p.totalBytes,
+            status: p.phase === "done" ? "success" : p.phase === "error" ? "error" : "running",
+            canClose: p.phase === "done" || p.phase === "error",
+          }));
+        },
+      }).finally(() => setLoadingImport(false));
     }
     await db.close();
+  };
+
+  const phaseLabel = (phase?: string): string => {
+    if (phase === "starting") return "Preparando";
+    if (phase === "downloading") return "Descargando";
+    if (phase === "importing") return "Importando";
+    if (phase === "finalizing") return "Finalizando";
+    if (phase === "done") return "Completado";
+    if (phase === "error") return "Error";
+    return "Sincronizando";
   };
 
   return (
@@ -174,6 +239,10 @@ const Home: React.FC = () => {
             subHeader="Mensaje importante"
             message="tu contraseña es incorrecta!"
             buttons={["OK"]}
+          />
+          <SyncProgressModal
+            state={syncProgress}
+            onClose={() => setSyncProgress((prev) => ({ ...prev, isOpen: false }))}
           />
         </div>
       </IonContent>

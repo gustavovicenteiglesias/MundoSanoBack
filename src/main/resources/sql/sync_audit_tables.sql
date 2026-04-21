@@ -1,0 +1,47 @@
+CREATE TABLE IF NOT EXISTS sync_batch_log_server (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    sync_batch_id VARCHAR(80) NOT NULL,
+    usuario VARCHAR(120) NULL,
+    dispositivo VARCHAR(160) NULL,
+    version_app VARCHAR(60) NULL,
+    fecha_inicio_cliente VARCHAR(40) NULL,
+    fecha_inicio DATETIME NOT NULL,
+    fecha_fin DATETIME NULL,
+    estado VARCHAR(30) NOT NULL,
+    total_items INT NOT NULL DEFAULT 0,
+    ok_count INT NOT NULL DEFAULT 0,
+    rejected_count INT NOT NULL DEFAULT 0,
+    conflict_count INT NOT NULL DEFAULT 0,
+    mensaje VARCHAR(600) NULL,
+    uuid VARCHAR(36) NOT NULL,
+    last_modified INT NULL,
+    sql_deleted INT NULL DEFAULT 0,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_sync_batch_log_server_batch_id (sync_batch_id),
+    UNIQUE KEY uq_sync_batch_log_server_uuid (uuid),
+    KEY idx_sync_batch_log_server_fecha_inicio (fecha_inicio),
+    KEY idx_sync_batch_log_server_estado (estado)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS sync_item_log_server (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    sync_batch_id VARCHAR(80) NOT NULL,
+    tabla VARCHAR(80) NOT NULL,
+    source_uuid VARCHAR(80) NULL,
+    id_persona INT NULL,
+    id_control INT NULL,
+    id_referencia INT NULL,
+    estado VARCHAR(30) NOT NULL,
+    motivo VARCHAR(600) NULL,
+    payload_json TEXT NULL,
+    created_at DATETIME NOT NULL,
+    uuid VARCHAR(36) NOT NULL,
+    last_modified INT NULL,
+    sql_deleted INT NULL DEFAULT 0,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_sync_item_log_server_uuid (uuid),
+    KEY idx_sync_item_log_server_batch (sync_batch_id),
+    KEY idx_sync_item_log_server_estado (estado),
+    KEY idx_sync_item_log_server_persona (id_persona)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+

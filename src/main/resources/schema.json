@@ -7191,6 +7191,148 @@
           "value": "id_mac DESC"
         }
       ]
+    },
+    {
+      "name": "sync_batch_log_local",
+      "schema": [
+        {
+          "column": "sync_batch_id",
+          "value": "VARCHAR(80) PRIMARY KEY NOT NULL"
+        },
+        {
+          "column": "usuario",
+          "value": "VARCHAR(120) NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "dispositivo",
+          "value": "VARCHAR(160) NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "version_app",
+          "value": "VARCHAR(60) NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "fecha_inicio",
+          "value": "VARCHAR(40) NOT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "fecha_fin",
+          "value": "VARCHAR(40) NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "estado",
+          "value": "VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE' COLLATE NOCASE"
+        },
+        {
+          "column": "total_items",
+          "value": "INT NOT NULL DEFAULT 0"
+        },
+        {
+          "column": "ok_count",
+          "value": "INT NOT NULL DEFAULT 0"
+        },
+        {
+          "column": "rejected_count",
+          "value": "INT NOT NULL DEFAULT 0"
+        },
+        {
+          "column": "conflict_count",
+          "value": "INT NOT NULL DEFAULT 0"
+        },
+        {
+          "column": "mensaje",
+          "value": "TEXT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK(sql_deleted IN (0, 1))"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_sync_batch_log_local_fecha_inicio",
+          "value": "fecha_inicio DESC"
+        },
+        {
+          "name": "idx_sync_batch_log_local_estado",
+          "value": "estado DESC"
+        }
+      ]
+    },
+    {
+      "name": "sync_item_log_local",
+      "schema": [
+        {
+          "column": "id_item",
+          "value": "INTEGER PRIMARY KEY AUTOINCREMENT"
+        },
+        {
+          "column": "sync_batch_id",
+          "value": "VARCHAR(80) NOT NULL"
+        },
+        {
+          "column": "tabla",
+          "value": "VARCHAR(80) NOT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "uuid",
+          "value": "VARCHAR(80) NULL DEFAULT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "id_persona",
+          "value": "INT NULL DEFAULT NULL"
+        },
+        {
+          "column": "id_control",
+          "value": "INT NULL DEFAULT NULL"
+        },
+        {
+          "column": "id_referencia",
+          "value": "INT NULL DEFAULT NULL"
+        },
+        {
+          "column": "estado",
+          "value": "VARCHAR(30) NOT NULL DEFAULT 'OK' COLLATE NOCASE"
+        },
+        {
+          "column": "motivo",
+          "value": "TEXT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "payload_json",
+          "value": "TEXT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "created_at",
+          "value": "VARCHAR(40) NOT NULL COLLATE NOCASE"
+        },
+        {
+          "column": "last_modified",
+          "value": "INTEGER DEFAULT (strftime('%s', 'now'))"
+        },
+        {
+          "column": "sql_deleted",
+          "value": "BOOLEAN DEFAULT 0 CHECK(sql_deleted IN (0, 1))"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_sync_item_log_local_batch",
+          "value": "sync_batch_id DESC"
+        },
+        {
+          "name": "idx_sync_item_log_local_persona",
+          "value": "id_persona DESC"
+        },
+        {
+          "name": "idx_sync_item_log_local_estado",
+          "value": "estado DESC"
+        }
+      ]
     }
   ]
 }
