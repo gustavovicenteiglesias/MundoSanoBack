@@ -14,199 +14,235 @@ const dbdb = async (): Promise<SQLiteDBConnection> => {
 
 type SyncMode = "full" | "partial";
 
+export type CargarBaseProgress = {
+  phase:
+    | "preparing"
+    | "downloading"
+    | "received"
+    | "importing"
+    | "finalizing"
+    | "done"
+    | "error";
+  mode: SyncMode;
+  message: string;
+  tableCount?: number;
+  tableNames?: string[];
+  downloadedBytes?: number;
+  totalBytes?: number;
+  error?: string;
+};
+
 type CargarBaseOptions = {
   mode?: SyncMode;
   since?: number | null;
   timeoutMs?: number;
-  onProgress?: (progress: {
-    mode: SyncMode;
-    phase: "starting" | "downloading" | "importing" | "finalizing" | "done" | "error";
-    message: string;
-    progress?: number;
-    loadedBytes?: number;
-    totalBytes?: number;
-    currentTable?: string;
-    tableIndex?: number;
-    tableTotal?: number;
-    rowsInTable?: number;
-    error?: string;
-  }) => void;
+  onProgress?: (progress: CargarBaseProgress) => void;
 };
 
 type CargarBaseArg = CargarBaseOptions | number | null | undefined;
 
-function sanitizeImportPayload(data: any): any {
-  const cleanData = {
-    database: data?.database,
-    version: data?.version,
-    encrypted: data?.encrypted,
-    mode: data?.mode,
-    tables: Array.isArray(data?.tables) ? data.tables : [],
-  };
+const emitProgress = (
+  options: CargarBaseOptions | undefined,
+  progress: CargarBaseProgress
+) => {
+  options?.onProgress?.(progress);
+};
 
-  const ubicacionesTable: any = cleanData.tables.find((t: any) => t?.name === "ubicaciones");
-  if (ubicacionesTable?.schema && Array.isArray(ubicacionesTable.values)) {
-    const columns = ubicacionesTable.schema.map((c: any) => c?.column);
-    const idxNumVivienda = columns.indexOf("num_vivienda");
-    const idxGeo = columns.indexOf("georeferencia");
-    const idxFecha = columns.indexOf("fecha");
-    const today = new Date().toISOString().slice(0, 10);
+const todayIso = () => new Date().toISOString().slice(0, 10);
 
-    ubicacionesTable.values = ubicacionesTable.values.map((row: any[]) => {
-      if (!Array.isArray(row)) return row;
-      const clone = [...row];
+const sanitizeImportTables = (tables: any[] = []) =>
+  tables.map((table) => {
+    if (table?.name !== "ubicaciones" || !Array.isArray(table?.values)) {
+      return table;
+    }
 
-      if (idxNumVivienda >= 0 && (clone[idxNumVivienda] === null || clone[idxNumVivienda] === undefined)) {
-        clone[idxNumVivienda] = "";
-      }
-      if (idxGeo >= 0 && (clone[idxGeo] === null || clone[idxGeo] === undefined)) {
-        clone[idxGeo] = "";
-      }
-      if (idxFecha >= 0 && (clone[idxFecha] === null || clone[idxFecha] === undefined || String(clone[idxFecha]).trim() === "")) {
-        clone[idxFecha] = today;
-      }
+    return {
+      ...table,
+      values: table.values.map((row: any[]) => {
+        if (!Array.isArray(row)) return row;
 
-      return clone;
-    });
-  }
+        const safeRow = [...row];
 
-  return cleanData;
-}
+        // ubicaciones:
+        // 0 uuid
+        // 1 id_ubicacion
+        // 2 id_persona
+        // 3 id_paraje
+        // 4 id_area
+        // 5 num_vivienda
+        // 6 fecha
+        // 7 georeferencia
+        // 8 id_pais
+        // 9 sql_deleted
+        // 10 last_modified
+        safeRow[5] = safeRow[5] ?? "";
+        safeRow[6] = safeRow[6] ?? todayIso();
+        safeRow[7] = safeRow[7] ?? "";
+
+        return safeRow;
+      }),
+    };
+  });
 
 export async function CargarBase(arg?: CargarBaseArg) {
   let db: SQLiteDBConnection | null = null;
-  let options: CargarBaseOptions = {};
-  let mode: SyncMode = "full";
-  let progressCb: CargarBaseOptions["onProgress"] = undefined;
+
+  const options: CargarBaseOptions =
+    typeof arg === "number" || arg === null || arg === undefined
+      ? { since: arg }
+      : arg;
+
+  const mode: SyncMode =
+    options?.mode ??
+    (options?.since !== undefined && options?.since !== null
+      ? "partial"
+      : "full");
+
+  const endpoint =
+    mode === "partial"
+      ? `${BASE_URL}/data/json3/partial${
+          options?.since !== undefined && options?.since !== null
+            ? `?since=${options.since}`
+            : ""
+        }`
+      : `${BASE_URL}/data/json3`;
+
+  const timeoutMs = options?.timeoutMs ?? (mode === "full" ? 0 : 60000);
+
+  emitProgress(options, {
+    phase: "preparing",
+    mode,
+    message:
+      mode === "full"
+        ? "Preparando importación completa..."
+        : "Preparando importación parcial...",
+  });
 
   try {
-    options =
-      typeof arg === "number" || arg === null || arg === undefined
-        ? { since: arg }
-        : arg;
-
-    mode = options?.mode ?? (options?.since !== undefined && options?.since !== null ? "partial" : "full");
-    progressCb = options?.onProgress;
-
-    const endpoint =
-      mode === "partial"
-        ? `${BASE_URL}/data/json3/partial${options?.since !== undefined && options?.since !== null ? `?since=${options.since}` : ""}`
-        : `${BASE_URL}/data/json3`;
-
-    progressCb?.({
+    emitProgress(options, {
+      phase: "downloading",
       mode,
-      phase: "starting",
-      message: mode === "full" ? "Iniciando importacion completa..." : "Iniciando importacion parcial...",
-      progress: 0.02,
+      message:
+        mode === "full"
+          ? "Descargando base completa..."
+          : "Descargando cambios...",
     });
 
-    const timeout = options?.timeoutMs ?? (mode === "full" ? 0 : 120000);
     const resp = await axios.get(endpoint, {
-      timeout,
-      onDownloadProgress: (evt: any) => {
-        const total = evt?.total || 0;
-        const loaded = evt?.loaded || 0;
-        const ratio = total > 0 ? loaded / total : undefined;
-        progressCb?.({
-          mode,
+      timeout: timeoutMs,
+      onDownloadProgress: (event) => {
+        emitProgress(options, {
           phase: "downloading",
-          message: "Descargando datos desde servidor...",
-          progress: typeof ratio === "number" ? Math.min(0.6, ratio * 0.6) : undefined,
-          loadedBytes: loaded,
-          totalBytes: total || undefined,
+          mode,
+          message:
+            mode === "full"
+              ? "Descargando base completa..."
+              : "Descargando cambios...",
+          downloadedBytes: event.loaded,
+          totalBytes: event.total ?? undefined,
         });
       },
     });
 
-    const cleanData = sanitizeImportPayload(resp.data);
-    const tables: any[] = Array.isArray(cleanData?.tables) ? cleanData.tables : [];
-    const tableTotal = tables.length;
-    for (let i = 0; i < tableTotal; i++) {
-      const table = tables[i];
-      const rowsInTable = Array.isArray(table?.values) ? table.values.length : 0;
-      progressCb?.({
-        mode,
-        phase: "importing",
-        message: `Preparando tabla ${i + 1} de ${tableTotal}`,
-        currentTable: String(table?.name || "unknown"),
-        tableIndex: i + 1,
-        tableTotal,
-        rowsInTable,
-        progress: 0.62 + ((i + 1) / Math.max(1, tableTotal)) * 0.08,
-      });
-    }
+    const tableNames: string[] = Array.isArray(resp?.data?.tables)
+      ? resp.data.tables
+          .map((table: any) => String(table?.name ?? "").trim())
+          .filter(Boolean)
+      : [];
 
-    progressCb?.({
+    emitProgress(options, {
+      phase: "received",
       mode,
+      message: "Paquete recibido desde el servidor.",
+      tableCount: tableNames.length,
+      tableNames,
+    });
+
+    const cleanData = {
+      database: resp.data.database,
+      version: resp.data.version,
+      encrypted: resp.data.encrypted,
+      mode: resp.data.mode,
+      tables: sanitizeImportTables(resp.data.tables),
+    };
+
+    emitProgress(options, {
       phase: "importing",
-      message: "Importando estructura y datos en SQLite local...",
-      progress: 0.7,
+      mode,
+      message: `Importando ${tableNames.length} tablas en SQLite...`,
+      tableCount: tableNames.length,
+      tableNames,
     });
 
     await sqlite.importFromJson(JSON.stringify(cleanData));
 
-    // En web, importFromJson puede dejar la conexión en estado no abierto.
-    // Recuperamos una conexión fresca y la abrimos explícitamente.
-    db = await dbdb();
-    await db.open();
+    emitProgress(options, {
+      phase: "finalizing",
+      mode,
+      message: "Finalizando metadata local...",
+      tableCount: tableNames.length,
+      tableNames,
+    });
 
-    // createSyncTable puede fallar por estado transitorio de conexión en web.
-    // Reintentamos una vez reabriendo la conexión.
     try {
-      await db.createSyncTable();
-    } catch (_syncTableError) {
-      try {
-        await db.close();
-      } catch (_closeError) {
-        // noop
-      }
       db = await dbdb();
       await db.open();
       await db.createSyncTable();
-    }
-
-    progressCb?.({
-      mode,
-      phase: "finalizing",
-      message: "Finalizando sincronizacion...",
-      progress: 0.9,
-    });
-
-    const d = new Date();
-    try {
-      await db.setSyncDate(d.toISOString());
-    } catch (_syncDateError) {
-      // Si falla sync metadata en web, no invalidamos la importación de datos.
+      await db.setSyncDate(new Date().toISOString());
+    } catch (metaError) {
+      console.warn(
+        "La importación terminó, pero falló metadata local:",
+        metaError
+      );
+    } finally {
+      try {
+        if (db) await db.close();
+      } catch {}
     }
 
     const de = Math.floor(Date.now() / 1000);
-    await axios.post(BASE_URL + "/sync_date", {
-      id: 0,
-      syncDate: de,
+
+    try {
+      await axios.post(
+        BASE_URL + "/sync_date",
+        { id: 0, syncDate: de },
+        { timeout: 10000 }
+      );
+    } catch (syncDateError) {
+      console.warn(
+        "La importación terminó, pero no se pudo informar sync_date al backend:",
+        syncDateError
+      );
+    }
+
+    emitProgress(options, {
+      phase: "done",
+      mode,
+      message: "Importación finalizada correctamente.",
+      tableCount: tableNames.length,
+      tableNames,
     });
 
-    progressCb?.({
-      mode,
-      phase: "done",
-      message: "Importacion completada.",
-      progress: 1,
-    });
+    return {
+      ok: true,
+      tableCount: tableNames.length,
+      tableNames,
+    };
   } catch (error: any) {
-    console.error("Error sincronizando base de datos:", error);
-    progressCb?.({
-      mode,
-      phase: "error",
-      message: "No se pudo completar la importacion.",
-      error: String(error?.message || "Error desconocido"),
-    });
-    alert("No se pudo cargar la base de datos.");
-  } finally {
     try {
-      if (db) {
-        await db.close();
-      }
-    } catch (_closeError) {
-      // noop
-    }
+      if (db) await db.close();
+    } catch {}
+
+    const message = error?.message || "No se pudo cargar la base de datos.";
+
+    emitProgress(options, {
+      phase: "error",
+      mode,
+      message,
+      error: message,
+    });
+
+    throw error;
   }
 }
+

@@ -1433,12 +1433,18 @@ public class ExportControler {
         return fromPayload != null ? fromPayload : "sync-" + UUID.randomUUID();
     }
 
-    private boolean shouldApplyIncomingLastModified(Integer currentLastModified, Integer incomingLastModified) {
-        if (incomingLastModified == null || currentLastModified == null) {
-            return true;
-        }
-        return incomingLastModified > currentLastModified;
+   private boolean shouldApplyIncomingLastModified(Integer currentLastModified, Integer incomingLastModified) {
+    // Si falta alguno de los dos, no bloqueamos la sync
+    if (incomingLastModified == null || currentLastModified == null) {
+        return true;
     }
+
+    // Clave del arreglo:
+    // - mayor  => actualiza
+    // - igual  => reintento idempotente, NO debe contarse como conflicto
+    // - menor  => conflicto real
+    return incomingLastModified >= currentLastModified;
+}
 
     private Object getValue(List<?> valor, int index) {
         if (valor == null || index < 0 || index >= valor.size()) {
@@ -1493,6 +1499,7 @@ public class ExportControler {
             return null;
         }
     }
+    
 
     private Integer safeInt(List<?> valor, int index) {
         return safeInt(getValue(valor, index));

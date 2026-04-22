@@ -9,7 +9,11 @@ import {
   IonPage,
   IonTitle,
   IonToolbar,
+  IonModal,
+  IonNote,
+  IonSpinner,
 } from "@ionic/react";
+import type { CargarBaseProgress } from "../data/CargarBase";
 
 //import "./Home.css";
 
@@ -26,7 +30,9 @@ import { SQLiteDBConnection } from "react-sqlite-hook";
 import { sqlite } from "../App";
 import { NOMBRE_BB_DD } from "../utils/constantes";
 import { CargarBase } from "../data/CargarBase";
-import SyncProgressModal, { SyncProgressView } from "../components/SyncProgressModal";
+import SyncProgressModal, {
+  SyncProgressView,
+} from "../components/SyncProgressModal";
 
 const Home: React.FC = () => {
   var idDevice: string;
@@ -71,6 +77,18 @@ const Home: React.FC = () => {
   useEffect(() => {
     logCurrentNetworkStatus();
   }, []);
+
+  const [showImportConfirm, setShowImportConfirm] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importProgress, setImportProgress] =
+    useState<CargarBaseProgress | null>(null);
+
+  const formatBytes = (value?: number) => {
+    if (value === undefined || value === null) return "";
+    if (value < 1024) return `${value} B`;
+    if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+    return `${(value / (1024 * 1024)).toFixed(2)} MB`;
+  };
   const dbdb = async (): Promise<SQLiteDBConnection> => {
     const ret = await sqlite.checkConnectionsConsistency();
     const isConn = (await sqlite.isConnection(NOMBRE_BB_DD)).result;
@@ -84,93 +102,49 @@ const Home: React.FC = () => {
     }
   };
   const nuevaBBDD = async () => {
-    const existeActual: any = await sqlite.isDatabase(NOMBRE_BB_DD);
-    if (existeActual.result) {
-      setLoadingImport(true);
-      setSyncProgress({
-        isOpen: true,
-        title: "Importación completa",
-        subtitle: "Recargando datos base del servidor",
-        status: "running",
-        canClose: false,
-      });
-      await CargarBase({
-        mode: "full",
-        timeoutMs: 0,
-        onProgress: (p) => {
-          setSyncProgress((prev) => ({
-            ...prev,
-            phase: phaseLabel(p.phase),
-            detail: p.currentTable
-              ? `${p.message}: ${p.currentTable} (${p.rowsInTable ?? 0} filas)`
-              : p.message,
-            progress: p.progress,
-            loadedBytes: p.loadedBytes,
-            totalBytes: p.totalBytes,
-            status: p.phase === "done" ? "success" : p.phase === "error" ? "error" : "running",
-            canClose: p.phase === "done" || p.phase === "error",
-          }));
-        },
-      }).finally(() => setLoadingImport(false));
-      return;
-    }
+    setShowImportConfirm(false);
+    setImportError(null);
+    setLoadingImport(true);
+    setImportProgress({
+      phase: "preparing",
+      mode: "full",
+      message: "Preparando importación de rescate...",
+    });
 
-    const db = await dbdb();
-    await db.open();
-    let hasData = false;
     try {
-      const pending = await db.exportToJson("partial");
-      hasData = !!pending?.export?.tables?.some((t: any) => Array.isArray(t.values) && t.values.length > 0);
-    } catch (err:any) {
-      const msg = (err?.message || "").toLowerCase();
-      if (!msg.includes("object is empty") && !msg.includes("table's names failed")) {
-        await db.close();
-        alert("No se pudo verificar datos locales: " + err);
-        return;
-      }
-      hasData = false;
-    }
-    if (hasData) {
-      await db.close();
-      alert("No se puede importar: hay datos locales sin exportar.");
-      return;
-    }
-    let borrar: any = await db.delete();
-    console.log("se borro");
-    let existe: any = await sqlite.isDatabase(NOMBRE_BB_DD);
-    console.log(`Existe ${JSON.stringify(existe)}`);
+      const existeActual: any = await sqlite.isDatabase(NOMBRE_BB_DD);
 
-    if (!existe.result) {
-      setLoadingImport(true);
-      setSyncProgress({
-        isOpen: true,
-        title: "Importación completa",
-        subtitle: "Primera carga: puede demorar varios minutos",
-        status: "running",
-        canClose: false,
-      });
+      if (existeActual.result) {
+        try {
+          const existing = await dbdb();
+          try {
+            await existing.open();
+          } catch {}
+          try {
+            await existing.close();
+          } catch {}
+          await existing.delete();
+        } catch (deleteError) {
+          console.warn(
+            "No se pudo borrar la base local anterior, se continúa con el rescate:",
+            deleteError,
+          );
+        }
+      }
+
       await CargarBase({
         mode: "full",
         timeoutMs: 0,
-        onProgress: (p) => {
-          setSyncProgress((prev) => ({
-            ...prev,
-            phase: phaseLabel(p.phase),
-            detail: p.error
-              ? `${p.message} ${p.error}`
-              : p.currentTable
-                ? `${p.message}: ${p.currentTable} (${p.rowsInTable ?? 0} filas)`
-                : p.message,
-            progress: p.progress,
-            loadedBytes: p.loadedBytes,
-            totalBytes: p.totalBytes,
-            status: p.phase === "done" ? "success" : p.phase === "error" ? "error" : "running",
-            canClose: p.phase === "done" || p.phase === "error",
-          }));
-        },
-      }).finally(() => setLoadingImport(false));
+        onProgress: setImportProgress,
+      });
+    } catch (error: any) {
+      console.error("Error importando base de rescate:", error);
+      setImportError(
+        error?.message || "No se pudo completar la importación de rescate.",
+      );
+    } finally {
+      setLoadingImport(false);
     }
-    await db.close();
   };
 
   const phaseLabel = (phase?: string): string => {
@@ -231,6 +205,100 @@ const Home: React.FC = () => {
             >
               {loadindImport ? "Importando" : "Importar"}
             </IonButton>
+            <IonModal isOpen={loadindImport} backdropDismiss={false}>
+              <IonHeader>
+                <IonToolbar>
+                  <IonTitle>Importación de rescate</IonTitle>
+                </IonToolbar>
+              </IonHeader>
+
+              <IonContent className="ion-padding">
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    marginBottom: "16px",
+                  }}
+                >
+                  <IonSpinner name="crescent" />
+                  <div>
+                    <strong>{importProgress?.message || "Iniciando..."}</strong>
+
+                    <div style={{ fontSize: "0.9rem", marginTop: "6px" }}>
+                      Estado: {importProgress?.phase || "preparing"} | Modo:{" "}
+                      {importProgress?.mode || "full"}
+                    </div>
+
+                    {importProgress?.downloadedBytes !== undefined && (
+                      <div style={{ fontSize: "0.9rem", marginTop: "6px" }}>
+                        Descargado:{" "}
+                        {formatBytes(importProgress.downloadedBytes)}
+                        {importProgress.totalBytes
+                          ? ` / ${formatBytes(importProgress.totalBytes)}`
+                          : ""}
+                      </div>
+                    )}
+
+                    {typeof importProgress?.tableCount === "number" && (
+                      <div style={{ fontSize: "0.9rem", marginTop: "6px" }}>
+                        Tablas recibidas: {importProgress.tableCount}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    maxHeight: "50vh",
+                    overflowY: "auto",
+                    border: "1px solid #ddd",
+                    borderRadius: "8px",
+                    padding: "12px",
+                  }}
+                >
+                  <strong>Tablas detectadas en el paquete:</strong>
+
+                  {importProgress?.tableNames?.length ? (
+                    <ul style={{ marginTop: "10px", paddingLeft: "20px" }}>
+                      {importProgress.tableNames.map((name) => (
+                        <li key={name}>{name}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div style={{ marginTop: "10px" }}>
+                      <IonNote color="medium">
+                        Todavía no llegaron las tablas desde el servidor.
+                      </IonNote>
+                    </div>
+                  )}
+                </div>
+              </IonContent>
+            </IonModal>
+
+            <IonAlert
+              isOpen={showImportConfirm}
+              onDidDismiss={() => setShowImportConfirm(false)}
+              header="Importación de rescate"
+              message="Esta acción reemplaza la base local para recuperar usuarios y volver a ingresar al sistema. ¿Continuar?"
+              buttons={[
+                { text: "Cancelar", role: "cancel" },
+                {
+                  text: "Importar",
+                  handler: () => {
+                    void nuevaBBDD();
+                  },
+                },
+              ]}
+            />
+
+            <IonAlert
+              isOpen={!!importError}
+              onDidDismiss={() => setImportError(null)}
+              header="Error de importación"
+              message={importError || ""}
+              buttons={["OK"]}
+            />
           </form>
           <IonAlert
             isOpen={incorretPass}
@@ -242,7 +310,9 @@ const Home: React.FC = () => {
           />
           <SyncProgressModal
             state={syncProgress}
-            onClose={() => setSyncProgress((prev) => ({ ...prev, isOpen: false }))}
+            onClose={() =>
+              setSyncProgress((prev) => ({ ...prev, isOpen: false }))
+            }
           />
         </div>
       </IonContent>
