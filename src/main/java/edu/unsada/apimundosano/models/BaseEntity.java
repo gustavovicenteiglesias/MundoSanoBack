@@ -4,7 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
-import java.util.UUID;
+import jakarta.persistence.Transient;
 
 @MappedSuperclass
 public abstract class BaseEntity {
@@ -18,17 +18,33 @@ public abstract class BaseEntity {
     @Column(name = "sql_deleted")
     protected Integer sqlDeleted = 0;
 
+    @Transient
+    protected boolean preserveIncomingLastModified = false;
+
     @PrePersist
     public void ensureUuidAndTimestamp() {
         if (uuid == null || uuid.isEmpty()) {
             uuid = java.util.UUID.randomUUID().toString();
         }
-        updateTimestamp();
+
+        if (sqlDeleted == null) {
+            sqlDeleted = 0;
+        }
+
+        if (!preserveIncomingLastModified || lastModified == null) {
+            lastModified = nowEpochSeconds();
+        }
     }
 
     @PreUpdate
     public void updateTimestamp() {
-        lastModified = (int) (System.currentTimeMillis() / 1000);
+        if (!preserveIncomingLastModified) {
+            lastModified = nowEpochSeconds();
+        }
+    }
+
+    protected Integer nowEpochSeconds() {
+        return (int) (System.currentTimeMillis() / 1000);
     }
 
     public String getUuid() {
@@ -54,5 +70,12 @@ public abstract class BaseEntity {
     public void setSqlDeleted(Integer sqlDeleted) {
         this.sqlDeleted = sqlDeleted;
     }
-}
 
+    public boolean isPreserveIncomingLastModified() {
+        return preserveIncomingLastModified;
+    }
+
+    public void setPreserveIncomingLastModified(boolean preserveIncomingLastModified) {
+        this.preserveIncomingLastModified = preserveIncomingLastModified;
+    }
+}
