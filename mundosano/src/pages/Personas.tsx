@@ -43,51 +43,59 @@ const Personas: React.FC = () => {
 
   const isRiesgo = (row: any): boolean => row.id_etmi !== null || (row.id_app !== 10 && row.id_app !== null);
 
-  const getSyncStatusMap = async (rows: any[]): Promise<Record<number, SyncStatus>> => {
-    const statusMap: Record<number, SyncStatus> = {};
-    const lastSyncUnix = await repository.getLastSyncUnix();
+ const getSyncStatusMap = async (rows: any[]): Promise<Record<number, SyncStatus>> => {
+  const statusMap: Record<number, SyncStatus> = {};
+  const lastSyncUnix = await repository.getLastSyncUnix();
 
-    const raw = localStorage.getItem(LAST_SYNC_RESULT_KEY);
-    let errorPersonIds = new Set<number>();
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw);
-        const ids = Array.isArray(parsed?.errorPersonIds) ? parsed.errorPersonIds : [];
-        errorPersonIds = new Set(
-          ids.map((value: any) => Number(value)).filter((value: number) => Number.isFinite(value))
-        );
-      } catch (_error) {
-        errorPersonIds = new Set<number>();
-      }
+  const raw = localStorage.getItem(LAST_SYNC_RESULT_KEY);
+  let errorPersonIds = new Set<number>();
+
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      const ids = Array.isArray(parsed?.errorPersonIds) ? parsed.errorPersonIds : [];
+      errorPersonIds = new Set(
+        ids.map((value: any) => Number(value)).filter((value: number) => Number.isFinite(value))
+      );
+    } catch (_error) {
+      errorPersonIds = new Set<number>();
+    }
+  }
+
+  const personIds = rows
+    .map((row: any) => Number(row?.id_persona))
+    .filter((value: number) => Number.isFinite(value));
+
+  const maxLastModifiedByPersona =
+    await repository.getSyncStatusByPersonIds(personIds);
+
+  for (const row of rows) {
+    const idPersona = Number(row?.id_persona);
+
+    if (!Number.isFinite(idPersona)) continue;
+
+    if (errorPersonIds.has(idPersona)) {
+      statusMap[idPersona] = "error";
+      continue;
     }
 
-    for (const row of rows) {
-      const idPersona = Number(row?.id_persona);
-      if (!Number.isFinite(idPersona)) {
-        continue;
-      }
-
-      if (errorPersonIds.has(idPersona)) {
-        statusMap[idPersona] = 'error';
-        continue;
-      }
-
-      if (!lastSyncUnix) {
-        statusMap[idPersona] = 'unknown';
-        continue;
-      }
-
-      const lastModified = Number(row?.last_modified);
-      if (!Number.isFinite(lastModified)) {
-        statusMap[idPersona] = 'unknown';
-        continue;
-      }
-
-      statusMap[idPersona] = lastModified > lastSyncUnix ? 'pending' : 'ok';
+    if (!lastSyncUnix) {
+      statusMap[idPersona] = "unknown";
+      continue;
     }
 
-    return statusMap;
-  };
+    const maxLastModified = Number(maxLastModifiedByPersona[idPersona]);
+
+    if (!Number.isFinite(maxLastModified)) {
+      statusMap[idPersona] = "unknown";
+      continue;
+    }
+
+    statusMap[idPersona] = maxLastModified > lastSyncUnix ? "pending" : "ok";
+  }
+
+  return statusMap;
+};
 
   useEffect(() => {
     sessionStorage.setItem("personas_filter", filterText);

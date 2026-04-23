@@ -269,12 +269,20 @@ const Main: React.FC<any> = () => {
     }
   };
 
- const exportJsontoApi = async () => {
-  const db = await dbdb();
+const exportJsontoApi = async () => {
+  let db: SQLiteDBConnection | null = null;
   let syncMeta: SyncMeta | null = null;
-  let exportServerOk = false;
+  let exportConfirmed = false;
+  let syncBatchId = "";
+  let totalItems = 0;
+  let payloadWithMeta: JsonExportPayload | null = null;
+  let rechazados = 0;
+  let conflictos = 0;
+  let syncLogs: any[] = [];
+  let de = 0;
 
   try {
+    db = await dbdb();
     await db.open();
     await ensureSyncTableReady(db);
 
@@ -284,7 +292,15 @@ const Main: React.FC<any> = () => {
       setHayExport(true);
       sethiddenFecha(false);
       setPendingSummaries([]);
-      alert("No hay datos pendientes para exportar.");
+      setSyncProgress((prev) => ({
+        ...prev,
+        isOpen: true,
+        phase: "Completado",
+        detail: "No hay datos pendientes para exportar.",
+        status: "success",
+        canClose: true,
+        progress: 1,
+      }));
       return;
     }
 
@@ -293,7 +309,7 @@ const Main: React.FC<any> = () => {
       info.payload
     );
     const exportSummaries = summarizePayloadTables(enrichedPayload);
-    const totalItems = getTotalRows(exportSummaries);
+    totalItems = getTotalRows(exportSummaries);
 
     const currentUserRaw = sessionStorage.getItem("currenUser");
     const currentUser = currentUserRaw ? JSON.parse(currentUserRaw) : null;
@@ -315,6 +331,8 @@ const Main: React.FC<any> = () => {
       fechaInicio: new Date().toISOString(),
     };
 
+    syncBatchId = syncMeta.syncBatchId;
+
     setSyncProgress({
       isOpen: true,
       title: "Exportando datos",
@@ -329,9 +347,10 @@ const Main: React.FC<any> = () => {
       totalItems,
     });
 
+    // Crear batch ANTES de exportar
     await syncBatchLocalRepo.createBatch(syncMeta, totalItems);
 
-    const payloadWithMeta: JsonExportPayload = {
+    payloadWithMeta = {
       ...enrichedPayload,
       syncMeta,
     };
@@ -346,34 +365,25 @@ const Main: React.FC<any> = () => {
     const resp = await axios.post(BASE_URL + "/sqlite", payloadWithMeta);
 
     if (!resp.data.success) {
-      setColorLogo(false);
-
-      await syncBatchLocalRepo.finishBatch({
-        syncBatchId: syncMeta.syncBatchId,
-        estado: "ERROR",
-        fechaFin: new Date().toISOString(),
-        totalItems: 0,
-        okCount: 0,
-        rejectedCount: 0,
-        conflictCount: 0,
-        mensaje: "La API devolvió success=false.",
-      });
-
-      setSyncProgress((prev) => ({
-        ...prev,
-        phase: "Error",
-        detail: "La API devolvió success=false.",
-        status: "error",
-        canClose: true,
-      }));
-
-      alert("La API devolvió success=false.");
-      return;
+      throw new Error("La API devolvió success=false.");
     }
 
-    exportServerOk = true;
+    // Desde acá ya cuenta como exportación correcta
+    exportConfirmed = true;
 
-    const de = nowUnix();
+    rechazados = Number(resp?.data?.rechazados ?? 0);
+    conflictos = Number(resp?.data?.conflictosLastModified ?? 0);
+    syncLogs = Array.isArray(resp?.data?.logs) ? resp.data.logs : [];
+    syncBatchId = String(resp?.data?.sync_batch_id || syncBatchId || "");
+
+    // Estado visual inmediato de éxito
+    setData(payloadWithMeta);
+    setColorLogo(true);
+    setHayExport(true);
+    sethiddenFecha(false);
+    setPendingSummaries([]);
+
+    de = nowUnix();
 
     setSyncProgress((prev) => ({
       ...prev,
@@ -382,21 +392,9 @@ const Main: React.FC<any> = () => {
       processedItems: totalItems,
     }));
 
-    // Si sqlite respondió OK, esto ya cuenta como exportación exitosa
-    setData(payloadWithMeta);
-    setColorLogo(true);
-    setHayExport(true);
-    sethiddenFecha(false);
-    setPendingSummaries([]);
+    // Cierre sync principal
+    await db.setSyncDate(String(de));
 
-    // Local en unix
-    try {
-      await db.setSyncDate(String(de));
-    } catch (localSyncErr) {
-      console.error("No se pudo actualizar sync_date local:", localSyncErr);
-    }
-
-    // Intento remoto, sin romper la exportación exitosa
     try {
       await axios.post(BASE_URL + "/sync_date", {
         id: 0,
@@ -405,16 +403,83 @@ const Main: React.FC<any> = () => {
     } catch (remoteSyncErr) {
       console.error("No se pudo informar sync_date al backend:", remoteSyncErr);
     }
+  } catch (error: any) {
+    if (!exportConfirmed) {
+      // Cerrar batch como ERROR si ni siquiera se confirmó la exportación
+      if (syncBatchId) {
+        try {
+          await syncBatchLocalRepo.finishBatch({
+            syncBatchId,
+            estado: "ERROR",
+            fechaFin: new Date().toISOString(),
+            totalItems,
+            okCount: 0,
+            rejectedCount: 0,
+            conflictCount: 0,
+            mensaje: String(error?.message || "No se pudo exportar a servidor."),
+          });
+        } catch (batchErr) {
+          console.error("No se pudo cerrar batch en ERROR:", batchErr);
+        }
+      }
 
-    const rechazados = Number(resp?.data?.rechazados ?? 0);
-    const conflictos = Number(resp?.data?.conflictosLastModified ?? 0);
-    const syncLogs: any[] = Array.isArray(resp?.data?.logs)
-      ? resp.data.logs
-      : [];
-    const syncBatchId = String(
-      resp?.data?.sync_batch_id || syncMeta?.syncBatchId || ""
-    );
+      setColorLogo(false);
+      setSyncProgress((prev) => ({
+        ...prev,
+        isOpen: true,
+        phase: "Error",
+        detail: String(error?.message || "No se pudo exportar a servidor."),
+        status: "error",
+        canClose: true,
+      }));
+      return;
+    } else {
+      // Ya exportó al servidor, no lo tratamos como fallo total
+      console.error(
+        "La exportación llegó al servidor, pero falló una etapa posterior:",
+        error
+      );
 
+      setColorLogo(true);
+      setHayExport(true);
+      sethiddenFecha(false);
+      setPendingSummaries([]);
+
+      setSyncProgress((prev) => ({
+        ...prev,
+        isOpen: true,
+        phase: "Completado",
+        detail:
+          "La exportación llegó al servidor. Hubo un problema en el cierre local.",
+        status: "success",
+        canClose: true,
+        progress: 1,
+      }));
+    }
+  } finally {
+    // MUY IMPORTANTE: cerrar la DB principal antes de tocar logs/batch final
+    await safeCloseDb(db);
+  }
+
+  // ============================================
+  // A partir de acá: postproceso con DB principal cerrada
+  // ============================================
+  try {
+    // 1) cerrar batch YA con OK/PARCIAL
+    await syncBatchLocalRepo.finishBatch({
+      syncBatchId,
+      estado: rechazosOConflictos(rechazados, conflictos) ? "PARCIAL" : "OK",
+      fechaFin: new Date().toISOString(),
+      totalItems,
+      okCount: Math.max(0, totalItems - rechazados - conflictos),
+      rejectedCount: rechazados,
+      conflictCount: conflictos,
+      mensaje: rechazosOConflictos(rechazados, conflictos)
+        ? "Exportación completada con observaciones"
+        : "Exportación completada correctamente",
+    });
+
+    // 2) guardar item logs si los hubiera
     const itemLogs: SyncItemLogLocal[] = syncLogs.map((log: any) => ({
       sync_batch_id: syncBatchId,
       tabla: String(log?.tabla || "unknown"),
@@ -449,49 +514,29 @@ const Main: React.FC<any> = () => {
       });
     }
 
-    // Postproceso local: si falla, NO debe anular una exportación ya exitosa
-    try {
-      await syncItemLocalRepo.insertMany(itemLogs);
+    await syncItemLocalRepo.insertMany(itemLogs);
 
-      await syncBatchLocalRepo.finishBatch({
-        syncBatchId,
-        estado: rechazosOConflictos(rechazados, conflictos) ? "PARCIAL" : "OK",
-        fechaFin: new Date().toISOString(),
-        totalItems,
-        okCount: Math.max(0, totalItems - rechazados - conflictos),
-        rejectedCount: rechazados,
-        conflictCount: conflictos,
-        mensaje: rechazosOConflictos(rechazados, conflictos)
-          ? "Exportación completada con observaciones"
-          : "Exportación completada correctamente",
-      });
+    const errorPersonIds = Array.from(
+      new Set(
+        syncLogs
+          .map((item: any) => Number(item?.idPersona))
+          .filter((value: number) => Number.isFinite(value))
+      )
+    );
 
-      const errorPersonIds = Array.from(
-        new Set(
-          syncLogs
-            .map((item: any) => Number(item?.idPersona))
-            .filter((value: number) => Number.isFinite(value))
-        )
-      );
+    localStorage.setItem(
+      LAST_SYNC_RESULT_KEY,
+      JSON.stringify({
+        ts: new Date().toISOString(),
+        syncDateUnix: de,
+        rechazados,
+        conflictos,
+        errorPersonIds,
+      })
+    );
 
-      localStorage.setItem(
-        LAST_SYNC_RESULT_KEY,
-        JSON.stringify({
-          ts: new Date().toISOString(),
-          syncDateUnix: de,
-          rechazados,
-          conflictos,
-          errorPersonIds,
-        })
-      );
-
-      await refreshPendingState();
-    } catch (postProcessErr) {
-      console.error(
-        "Falló el postproceso local de exportación:",
-        postProcessErr
-      );
-    }
+    // 3) refrescar estado visual
+    await refreshPendingState();
 
     setSyncProgress((prev) => ({
       ...prev,
@@ -503,64 +548,25 @@ const Main: React.FC<any> = () => {
       canClose: true,
       progress: 1,
     }));
+  } catch (postErr) {
+    // Acá NO anulamos la exportación, pero sí mostramos el error real en consola
+    console.error("Falló el cierre local post-export:", postErr);
 
-    if (rechazosOConflictos(rechazados, conflictos)) {
-      alert(
-        `Exportación completada con observaciones. Rechazados: ${rechazados}. Conflictos last_modified: ${conflictos}`
-      );
-    } else {
-      alert("Exportación completada correctamente.");
-    }
-  } catch (error: any) {
-    if (!exportServerOk) {
-      setColorLogo(false);
+    setColorLogo(true);
+    setHayExport(true);
+    sethiddenFecha(false);
+    setPendingSummaries([]);
 
-      if (syncMeta) {
-        try {
-          await syncBatchLocalRepo.finishBatch({
-            syncBatchId: syncMeta.syncBatchId,
-            estado: "ERROR",
-            fechaFin: new Date().toISOString(),
-            totalItems: 0,
-            okCount: 0,
-            rejectedCount: 0,
-            conflictCount: 0,
-            mensaje: String(error?.message || "No se pudo exportar a servidor."),
-          });
-        } catch {}
-      }
-
-      setSyncProgress((prev) => ({
-        ...prev,
-        isOpen: true,
-        phase: "Error",
-        detail: String(error?.message || "No se pudo exportar a servidor."),
-        status: "error",
-        canClose: true,
-      }));
-
-      alert("No se pudo exportar a servidor.");
-    } else {
-      console.error("La exportación llegó al servidor, pero falló el cierre local:", error);
-
-      setSyncProgress((prev) => ({
-        ...prev,
-        isOpen: true,
-        phase: "Completado",
-        detail:
-          "La exportación llegó al servidor. Hubo un problema en el cierre local.",
-        status: "success",
-        canClose: true,
-        progress: 1,
-      }));
-
-      setColorLogo(true);
-      setHayExport(true);
-      sethiddenFecha(false);
-      setPendingSummaries([]);
-    }
-  } finally {
-    await safeCloseDb(db);
+    setSyncProgress((prev) => ({
+      ...prev,
+      isOpen: true,
+      phase: "Completado",
+      detail:
+        "La exportación llegó al servidor. Falló parte del cierre local.",
+      status: "success",
+      canClose: true,
+      progress: 1,
+    }));
   }
 };
 
