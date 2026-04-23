@@ -6,9 +6,11 @@ import { BASE_URL, NOMBRE_BB_DD } from "../utils/constantes";
 const dbdb = async (): Promise<SQLiteDBConnection> => {
   const ret = await sqlite.checkConnectionsConsistency();
   const isConn = (await sqlite.isConnection(NOMBRE_BB_DD)).result;
+
   if (ret.result && isConn) {
     return await sqlite.retrieveConnection(NOMBRE_BB_DD);
   }
+
   return await sqlite.createConnection(NOMBRE_BB_DD);
 };
 
@@ -84,6 +86,11 @@ const sanitizeImportTables = (tables: any[] = []) =>
     };
   });
 
+const ensureLocalSyncTable = async (db: SQLiteDBConnection) => {
+  await db.createSyncTable();
+  await db.setSyncDate(String(Math.floor(Date.now() / 1000)));
+};
+
 export async function CargarBase(arg?: CargarBaseArg) {
   let db: SQLiteDBConnection | null = null;
 
@@ -94,9 +101,7 @@ export async function CargarBase(arg?: CargarBaseArg) {
 
   const mode: SyncMode =
     options?.mode ??
-    (options?.since !== undefined && options?.since !== null
-      ? "partial"
-      : "full");
+    (options?.since !== undefined && options?.since !== null ? "partial" : "full");
 
   const endpoint =
     mode === "partial"
@@ -187,8 +192,7 @@ export async function CargarBase(arg?: CargarBaseArg) {
     try {
       db = await dbdb();
       await db.open();
-      await db.createSyncTable();
-      await db.setSyncDate(new Date().toISOString());
+      await ensureLocalSyncTable(db);
     } catch (metaError) {
       console.warn(
         "La importación terminó, pero falló metadata local:",
@@ -200,12 +204,10 @@ export async function CargarBase(arg?: CargarBaseArg) {
       } catch {}
     }
 
-    const de = Math.floor(Date.now() / 1000);
-
     try {
       await axios.post(
         BASE_URL + "/sync_date",
-        { id: 0, syncDate: de },
+        { id: 0, syncDate: Math.floor(Date.now() / 1000) },
         { timeout: 10000 }
       );
     } catch (syncDateError) {
@@ -245,4 +247,3 @@ export async function CargarBase(arg?: CargarBaseArg) {
     throw error;
   }
 }
-

@@ -24,7 +24,7 @@ import { chevronForwardOutline, cloudDoneOutline, cloudOfflineOutline, cloudOutl
 import { animationBuilder } from "../components/AnimationBuilder";
 import FilterComponent from '../components/FilterComponent';
 import { PersonasRepository } from '../repository/personasRepo';
-import './Personas.css';
+import "./Personas.css";
 
 type SyncStatus = 'ok' | 'pending' | 'error' | 'unknown';
 
@@ -188,7 +188,7 @@ const Personas: React.FC = () => {
       <IonHeader className="ion-no-border">
         <IonToolbar>
           <IonTitle slot="end">Paciente</IonTitle>
-          <IonButtons slot="start" onClick={() => history.push("/")}>
+          <IonButtons slot="start" >
             <IonBackButton defaultHref="/" routerAnimation={animationBuilder} />
           </IonButtons>
         </IonToolbar>

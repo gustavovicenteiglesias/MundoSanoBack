@@ -5,13 +5,9 @@ import {
   IonGrid,
   IonIcon,
   IonItem,
-  IonItemDivider,
   IonLabel,
-  IonModal,
-  IonNote,
   IonPage,
   IonRow,
-  IonSpinner,
   useIonViewWillEnter,
 } from "@ionic/react";
 import { useState } from "react";
@@ -37,54 +33,38 @@ import {
 import { SyncBatchLogLocalRepo } from "../repository/syncBatchLogLocalRepo";
 import { SyncItemLogLocalRepo } from "../repository/syncItemLogLocalRepo";
 import { SyncItemLogLocal } from "../models/SyncItemLogLocal";
+import SyncProgressModal, {
+  SyncProgressView,
+  SyncTableSummary,
+} from "../components/SyncProgressModal";
 
 const LAST_SYNC_RESULT_KEY = "sync_last_result_v1";
 const syncBatchLocalRepo = new SyncBatchLogLocalRepo();
 const syncItemLocalRepo = new SyncItemLogLocalRepo();
-
-type ExportTableSummary = {
-  name: string;
-  count: number;
-};
-
-type ExportModalState = {
-  isOpen: boolean;
-  phase: "idle" | "preparing" | "sending" | "finalizing" | "done" | "error";
-  message: string;
-  tableSummaries: ExportTableSummary[];
-  totalRows: number;
-  processedRows: number;
-  error?: string | null;
-};
-
-const emptyExportModal = (): ExportModalState => ({
-  isOpen: false,
-  phase: "idle",
-  message: "",
-  tableSummaries: [],
-  totalRows: 0,
-  processedRows: 0,
-  error: null,
-});
 
 const Main: React.FC<any> = () => {
   const [fechaActualizacion, setFechadeActualizacion] = useState<any>();
   const [hiddenFecha, sethiddenFecha] = useState<boolean>(false);
   const [data, setData] = useState<any>();
   const [colorLogo, setColorLogo] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(false);
   const [loadindImport, setLoadingImport] = useState<boolean>(false);
   const [hayInternet, setHayInternet] = useState<boolean>(true);
 
-  // OJO:
-  // este estado historicamente controla si se puede IMPORTAR.
-  // true  => no hay pendientes locales para exportar, se puede importar
-  // false => hay pendientes para exportar, NO se debe importar
+  // true => se puede importar
+  // false => hay pendientes locales y primero hay que exportar
   const [hayExport, setHayExport] = useState<boolean>(false);
 
-  const [hasPendingLocalExport, setHasPendingLocalExport] = useState<boolean>(false);
-  const [pendingTables, setPendingTables] = useState<ExportTableSummary[]>([]);
-  const [exportModal, setExportModal] = useState<ExportModalState>(emptyExportModal());
+  const [pendingSummaries, setPendingSummaries] = useState<SyncTableSummary[]>(
+    []
+  );
+
+  const [syncProgress, setSyncProgress] = useState<SyncProgressView>({
+    isOpen: false,
+    title: "Sincronizando datos",
+    subtitle: "No cierres la aplicación",
+    status: "idle",
+    canClose: true,
+  });
 
   const history = useHistory();
 
@@ -106,10 +86,6 @@ const Main: React.FC<any> = () => {
     }
   };
 
-  useIonViewWillEnter(() => {
-    logCurrentNetworkStatus();
-  }, []);
-
   const dbdb = async (): Promise<SQLiteDBConnection> => {
     const ret = await sqlite.checkConnectionsConsistency();
     const isConn = (await sqlite.isConnection(NOMBRE_BB_DD)).result;
@@ -129,7 +105,34 @@ const Main: React.FC<any> = () => {
     } catch {}
   };
 
-  const summarizePayloadTables = (payload?: JsonExportPayload | null): ExportTableSummary[] => {
+  const nowUnix = () => Math.floor(Date.now() / 1000);
+
+  const ensureSyncTableReady = async (db: SQLiteDBConnection) => {
+    try {
+      await db.createSyncTable();
+
+      const resp: any = await db.query(
+        "SELECT * FROM sync_table LIMIT 1"
+      );
+
+      const hasSyncDate =
+        Array.isArray(resp?.values) &&
+        resp.values.length > 0 &&
+        resp.values[0]?.sync_date !== undefined &&
+        resp.values[0]?.sync_date !== null &&
+        String(resp.values[0].sync_date).trim() !== "";
+
+      if (!hasSyncDate) {
+        await db.setSyncDate(String(nowUnix()));
+      }
+    } catch (error) {
+      console.error("No se pudo preparar sync_table local:", error);
+    }
+  };
+
+  const summarizePayloadTables = (
+    payload?: JsonExportPayload | null
+  ): SyncTableSummary[] => {
     const tables = Array.isArray(payload?.tables) ? payload!.tables : [];
     return tables
       .map((table: any) => ({
@@ -139,8 +142,8 @@ const Main: React.FC<any> = () => {
       .filter((item) => item.count > 0);
   };
 
-  const getTotalRows = (summaries: ExportTableSummary[]) =>
-    summaries.reduce((acc, item) => acc + item.count, 0);
+  const getTotalRows = (tables: SyncTableSummary[]) =>
+    tables.reduce((acc, item) => acc + item.count, 0);
 
   const getPendingExportInfo = async (db: SQLiteDBConnection) => {
     try {
@@ -157,8 +160,10 @@ const Main: React.FC<any> = () => {
     } catch (err: any) {
       const msg = String(err?.message || "").toLowerCase();
 
-      // cuando no hay nada para exportar, este plugin suele tirar este caso
-      if (msg.includes("object is empty")) {
+      if (
+        msg.includes("object is empty") ||
+        msg.includes("no sync_table available")
+      ) {
         return {
           payload: null,
           tableSummaries: [],
@@ -173,7 +178,7 @@ const Main: React.FC<any> = () => {
   const readLocalSyncDateLabel = async (db: SQLiteDBConnection) => {
     try {
       const resp: any = await db.query(
-        "SELECT * FROM sync_table ORDER BY id DESC LIMIT 1"
+        "SELECT * FROM sync_table LIMIT 1"
       );
 
       const rawSyncDate = resp?.values?.[0]?.sync_date;
@@ -205,30 +210,25 @@ const Main: React.FC<any> = () => {
     try {
       db = await dbdb();
       await db.open();
+      await ensureSyncTableReady(db);
 
       const info = await getPendingExportInfo(db);
 
-      setHasPendingLocalExport(info.hasPending);
       setHayExport(!info.hasPending);
+      setPendingSummaries(info.tableSummaries);
 
       if (!info.hasPending) {
-        setPendingTables([]);
+        sethiddenFecha(false);
       }
-
-      return info;
     } catch (error) {
       console.error("No se pudo refrescar estado de exportación:", error);
-      return {
-        payload: null,
-        tableSummaries: [],
-        hasPending: false,
-      };
     } finally {
       await safeCloseDb(db);
     }
   };
 
   useIonViewWillEnter(() => {
+    void logCurrentNetworkStatus();
     void refreshPendingState();
   }, []);
 
@@ -238,15 +238,14 @@ const Main: React.FC<any> = () => {
     try {
       db = await dbdb();
       await db.open();
+      await ensureSyncTableReady(db);
 
       const info = await getPendingExportInfo(db);
 
-      setHasPendingLocalExport(info.hasPending);
-      setHayExport(!info.hasPending);
-
       if (!info.hasPending) {
+        setHayExport(true);
         sethiddenFecha(false);
-        setPendingTables([]);
+        setPendingSummaries([]);
         alert("No hay datos pendientes para exportar.");
         return false;
       }
@@ -254,11 +253,11 @@ const Main: React.FC<any> = () => {
       const formattedDate = await readLocalSyncDateLabel(db);
 
       setData(info.payload);
-      setPendingTables(info.tableSummaries);
+      setPendingSummaries(info.tableSummaries);
       setFechadeActualizacion(formattedDate);
       sethiddenFecha(true);
 
-      // mientras haya pendientes, NO debe poder importar
+      // si hay pendientes locales, no se debe poder importar
       setHayExport(false);
 
       return true;
@@ -270,182 +269,202 @@ const Main: React.FC<any> = () => {
     }
   };
 
-  const exportJsontoApi = async () => {
-    const db = await dbdb();
-    setLoading(true);
-    let syncMeta: SyncMeta | null = null;
-    let exportServerOk = false;
+ const exportJsontoApi = async () => {
+  const db = await dbdb();
+  let syncMeta: SyncMeta | null = null;
+  let exportServerOk = false;
 
-    try {
-      await db.open();
+  try {
+    await db.open();
+    await ensureSyncTableReady(db);
 
-      const info = await getPendingExportInfo(db);
+    const info = await getPendingExportInfo(db);
 
-      if (!info.hasPending || !info.payload) {
-        sethiddenFecha(false);
-        setHayExport(true);
-        setPendingTables([]);
-        alert("No hay datos pendientes para exportar.");
-        return;
-      }
+    if (!info.hasPending || !info.payload) {
+      setHayExport(true);
+      sethiddenFecha(false);
+      setPendingSummaries([]);
+      alert("No hay datos pendientes para exportar.");
+      return;
+    }
 
-      const currentUserRaw = sessionStorage.getItem("currenUser");
-      const currentUser = currentUserRaw ? JSON.parse(currentUserRaw) : null;
-      const deviceInfo = await Device.getInfo();
-      const appVersion =
-        (deviceInfo as any).appVersion || (deviceInfo as any).osVersion || "unknown";
+    const enrichedPayload = await enrichPartialExportWithAncestors(
+      db,
+      info.payload
+    );
+    const exportSummaries = summarizePayloadTables(enrichedPayload);
+    const totalItems = getTotalRows(exportSummaries);
 
-      syncMeta = {
-        syncBatchId: `sync-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        usuario: currentUser?.usuario ?? null,
-        dispositivo: `${deviceInfo.platform || "unknown"}-${deviceInfo.model || "unknown"}`,
-        versionApp: appVersion,
-        fechaInicio: new Date().toISOString(),
-      };
+    const currentUserRaw = sessionStorage.getItem("currenUser");
+    const currentUser = currentUserRaw ? JSON.parse(currentUserRaw) : null;
+    const deviceInfo = await Device.getInfo();
+    const appVersion =
+      (deviceInfo as any).appVersion ||
+      (deviceInfo as any).osVersion ||
+      "unknown";
 
-      setExportModal({
-        isOpen: true,
-        phase: "preparing",
-        message: "Preparando datos para exportar...",
-        tableSummaries: info.tableSummaries,
-        totalRows: getTotalRows(info.tableSummaries),
-        processedRows: 0,
-        error: null,
+    syncMeta = {
+      syncBatchId: `sync-${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 8)}`,
+      usuario: currentUser?.usuario ?? null,
+      dispositivo: `${deviceInfo.platform || "unknown"}-${
+        deviceInfo.model || "unknown"
+      }`,
+      versionApp: appVersion,
+      fechaInicio: new Date().toISOString(),
+    };
+
+    setSyncProgress({
+      isOpen: true,
+      title: "Exportando datos",
+      subtitle: "No cierres la aplicación",
+      phase: "Preparando",
+      detail: "Armando lote de exportación...",
+      status: "running",
+      canClose: false,
+      progress: null,
+      tableSummaries: exportSummaries,
+      processedItems: 0,
+      totalItems,
+    });
+
+    await syncBatchLocalRepo.createBatch(syncMeta, totalItems);
+
+    const payloadWithMeta: JsonExportPayload = {
+      ...enrichedPayload,
+      syncMeta,
+    };
+
+    setSyncProgress((prev) => ({
+      ...prev,
+      phase: "Exportando",
+      detail: "Enviando lote al servidor...",
+      progress: null,
+    }));
+
+    const resp = await axios.post(BASE_URL + "/sqlite", payloadWithMeta);
+
+    if (!resp.data.success) {
+      setColorLogo(false);
+
+      await syncBatchLocalRepo.finishBatch({
+        syncBatchId: syncMeta.syncBatchId,
+        estado: "ERROR",
+        fechaFin: new Date().toISOString(),
+        totalItems: 0,
+        okCount: 0,
+        rejectedCount: 0,
+        conflictCount: 0,
+        mensaje: "La API devolvió success=false.",
       });
 
-      const enrichedPayload = await enrichPartialExportWithAncestors(db, info.payload);
-      const enrichedSummaries = summarizePayloadTables(enrichedPayload);
-      const totalItems = getTotalRows(enrichedSummaries);
-
-      setExportModal({
-        isOpen: true,
-        phase: "sending",
-        message: "Enviando lote al servidor...",
-        tableSummaries: enrichedSummaries,
-        totalRows: totalItems,
-        processedRows: 0,
-        error: null,
-      });
-
-      await syncBatchLocalRepo.createBatch(syncMeta, totalItems);
-
-      const payloadWithMeta: JsonExportPayload = { ...enrichedPayload, syncMeta };
-      const resp = await axios.post(BASE_URL + "/sqlite", payloadWithMeta);
-
-      if (!resp.data.success) {
-        setColorLogo(false);
-
-        await syncBatchLocalRepo.finishBatch({
-          syncBatchId: syncMeta.syncBatchId,
-          estado: "ERROR",
-          fechaFin: new Date().toISOString(),
-          totalItems: 0,
-          okCount: 0,
-          rejectedCount: 0,
-          conflictCount: 0,
-          mensaje: "La API devolvió success=false.",
-        });
-
-        setExportModal({
-          isOpen: true,
-          phase: "error",
-          message: "La API devolvió success=false.",
-          tableSummaries: enrichedSummaries,
-          totalRows: totalItems,
-          processedRows: 0,
-          error: "La API devolvió success=false.",
-        });
-
-        alert("La API devolvió success=false.");
-        return;
-      }
-
-      exportServerOk = true;
-      setData(payloadWithMeta);
-
-      const de = Math.floor(Date.now() / 1000);
-
-      setExportModal((prev) => ({
+      setSyncProgress((prev) => ({
         ...prev,
-        phase: "finalizing",
-        message: "Cerrando sincronización local y remota...",
-        processedRows: prev.totalRows,
+        phase: "Error",
+        detail: "La API devolvió success=false.",
+        status: "error",
+        canClose: true,
       }));
 
-      // Local SIEMPRE en unix
-      try {
-        await db.setSyncDate(String(de));
-      } catch (localSyncErr) {
-        console.error("No se pudo actualizar sync_date local:", localSyncErr);
-      }
+      alert("La API devolvió success=false.");
+      return;
+    }
 
-      // Intento remoto, pero no debe romper la exportación exitosa
-      try {
-        await axios.post(BASE_URL + "/sync_date", {
-          id: 0,
-          syncDate: de,
-        });
-      } catch (remoteSyncErr) {
-        console.error("No se pudo informar sync_date al backend:", remoteSyncErr);
-      }
+    exportServerOk = true;
 
-      setColorLogo(true);
+    const de = nowUnix();
 
-      const rechazados = Number(resp?.data?.rechazados ?? 0);
-      const conflictos = Number(resp?.data?.conflictosLastModified ?? 0);
-      const syncLogs: any[] = Array.isArray(resp?.data?.logs) ? resp.data.logs : [];
-      const syncBatchId = String(resp?.data?.sync_batch_id || syncMeta?.syncBatchId || "");
+    setSyncProgress((prev) => ({
+      ...prev,
+      phase: "Finalizando",
+      detail: "Actualizando sync_date local y remoto...",
+      processedItems: totalItems,
+    }));
 
-      const itemLogs: SyncItemLogLocal[] = syncLogs.map((log: any) => ({
+    // Si sqlite respondió OK, esto ya cuenta como exportación exitosa
+    setData(payloadWithMeta);
+    setColorLogo(true);
+    setHayExport(true);
+    sethiddenFecha(false);
+    setPendingSummaries([]);
+
+    // Local en unix
+    try {
+      await db.setSyncDate(String(de));
+    } catch (localSyncErr) {
+      console.error("No se pudo actualizar sync_date local:", localSyncErr);
+    }
+
+    // Intento remoto, sin romper la exportación exitosa
+    try {
+      await axios.post(BASE_URL + "/sync_date", {
+        id: 0,
+        syncDate: de,
+      });
+    } catch (remoteSyncErr) {
+      console.error("No se pudo informar sync_date al backend:", remoteSyncErr);
+    }
+
+    const rechazados = Number(resp?.data?.rechazados ?? 0);
+    const conflictos = Number(resp?.data?.conflictosLastModified ?? 0);
+    const syncLogs: any[] = Array.isArray(resp?.data?.logs)
+      ? resp.data.logs
+      : [];
+    const syncBatchId = String(
+      resp?.data?.sync_batch_id || syncMeta?.syncBatchId || ""
+    );
+
+    const itemLogs: SyncItemLogLocal[] = syncLogs.map((log: any) => ({
+      sync_batch_id: syncBatchId,
+      tabla: String(log?.tabla || "unknown"),
+      uuid: null,
+      id_persona: Number.isFinite(Number(log?.idPersona))
+        ? Number(log?.idPersona)
+        : null,
+      id_control: Number.isFinite(Number(log?.idControl))
+        ? Number(log?.idControl)
+        : null,
+      id_referencia: Number.isFinite(Number(log?.idReferencia))
+        ? Number(log?.idReferencia)
+        : null,
+      estado: "RECHAZADO",
+      motivo: log?.motivo ? String(log.motivo) : null,
+      payload_json: log?.payload ? JSON.stringify(log.payload) : null,
+      created_at: new Date().toISOString(),
+    }));
+
+    if (conflictos > 0) {
+      itemLogs.push({
         sync_batch_id: syncBatchId,
-        tabla: String(log?.tabla || "unknown"),
+        tabla: "sync_summary",
         uuid: null,
-        id_persona: Number.isFinite(Number(log?.idPersona)) ? Number(log?.idPersona) : null,
-        id_control: Number.isFinite(Number(log?.idControl)) ? Number(log?.idControl) : null,
-        id_referencia: Number.isFinite(Number(log?.idReferencia)) ? Number(log?.idReferencia) : null,
-        estado: "RECHAZADO",
-        motivo: log?.motivo ? String(log.motivo) : null,
-        payload_json: log?.payload ? JSON.stringify(log.payload) : null,
+        id_persona: null,
+        id_control: null,
+        id_referencia: null,
+        estado: "CONFLICTO",
+        motivo: `Conflictos last_modified: ${conflictos}`,
+        payload_json: null,
         created_at: new Date().toISOString(),
-      }));
+      });
+    }
 
-      if (conflictos > 0) {
-        itemLogs.push({
-          sync_batch_id: syncBatchId,
-          tabla: "sync_summary",
-          uuid: null,
-          id_persona: null,
-          id_control: null,
-          id_referencia: null,
-          estado: "CONFLICTO",
-          motivo: `Conflictos last_modified: ${conflictos}`,
-          payload_json: null,
-          created_at: new Date().toISOString(),
-        });
-      }
+    // Postproceso local: si falla, NO debe anular una exportación ya exitosa
+    try {
+      await syncItemLocalRepo.insertMany(itemLogs);
 
-      try {
-        await syncItemLocalRepo.insertMany(itemLogs);
-      } catch (itemLogErr) {
-        console.error("No se pudieron guardar item logs locales:", itemLogErr);
-      }
-
-      try {
-        await syncBatchLocalRepo.finishBatch({
-          syncBatchId,
-          estado: rechazosOConflictos(rechazados, conflictos) ? "PARCIAL" : "OK",
-          fechaFin: new Date().toISOString(),
-          totalItems,
-          okCount: Math.max(0, totalItems - rechazados - conflictos),
-          rejectedCount: rechazados,
-          conflictCount: conflictos,
-          mensaje: rechazosOConflictos(rechazados, conflictos)
-            ? "Exportación completada con observaciones"
-            : "Exportación completada correctamente",
-        });
-      } catch (batchErr) {
-        console.error("No se pudo cerrar batch local:", batchErr);
-      }
+      await syncBatchLocalRepo.finishBatch({
+        syncBatchId,
+        estado: rechazosOConflictos(rechazados, conflictos) ? "PARCIAL" : "OK",
+        fechaFin: new Date().toISOString(),
+        totalItems,
+        okCount: Math.max(0, totalItems - rechazados - conflictos),
+        rejectedCount: rechazados,
+        conflictCount: conflictos,
+        mensaje: rechazosOConflictos(rechazados, conflictos)
+          ? "Exportación completada con observaciones"
+          : "Exportación completada correctamente",
+      });
 
       const errorPersonIds = Array.from(
         new Set(
@@ -466,39 +485,34 @@ const Main: React.FC<any> = () => {
         })
       );
 
-      // Luego de exportar bien, recalcular pendientes reales
-      const remaining = await getPendingExportInfo(db);
-      setHasPendingLocalExport(remaining.hasPending);
-      setHayExport(!remaining.hasPending);
-      setPendingTables(remaining.tableSummaries);
+      await refreshPendingState();
+    } catch (postProcessErr) {
+      console.error(
+        "Falló el postproceso local de exportación:",
+        postProcessErr
+      );
+    }
 
-      // Si no quedan pendientes, ocultar la fecha preview
-      if (!remaining.hasPending) {
-        sethiddenFecha(false);
-      }
+    setSyncProgress((prev) => ({
+      ...prev,
+      phase: "Completado",
+      detail: rechazosOConflictos(rechazados, conflictos)
+        ? "Exportación completada con observaciones."
+        : "Exportación completada correctamente.",
+      status: "success",
+      canClose: true,
+      progress: 1,
+    }));
 
-      setExportModal({
-        isOpen: true,
-        phase: "done",
-        message: rechazosOConflictos(rechazados, conflictos)
-          ? "Exportación completada con observaciones."
-          : "Exportación completada correctamente.",
-        tableSummaries: enrichedSummaries,
-        totalRows: totalItems,
-        processedRows: totalItems,
-        error: null,
-      });
-
-      if (rechazosOConflictos(rechazados, conflictos)) {
-        alert(
-          `Exportación completada con observaciones. Rechazados: ${rechazados}. Conflictos last_modified: ${conflictos}`
-        );
-      } else {
-        alert("Exportación completada correctamente.");
-      }
-
-      setExportModal((prev) => ({ ...prev, isOpen: false }));
-    } catch (error: any) {
+    if (rechazosOConflictos(rechazados, conflictos)) {
+      alert(
+        `Exportación completada con observaciones. Rechazados: ${rechazados}. Conflictos last_modified: ${conflictos}`
+      );
+    } else {
+      alert("Exportación completada correctamente.");
+    }
+  } catch (error: any) {
+    if (!exportServerOk) {
       setColorLogo(false);
 
       if (syncMeta) {
@@ -516,35 +530,50 @@ const Main: React.FC<any> = () => {
         } catch {}
       }
 
-      setExportModal((prev) => ({
+      setSyncProgress((prev) => ({
         ...prev,
         isOpen: true,
-        phase: "error",
-        message: exportServerOk
-          ? "La exportación llegó al servidor, pero falló el cierre local."
-          : "No se pudo exportar a servidor.",
-        error: String(error?.message || "Error desconocido"),
+        phase: "Error",
+        detail: String(error?.message || "No se pudo exportar a servidor."),
+        status: "error",
+        canClose: true,
       }));
 
-      if (exportServerOk) {
-        alert("La exportación llegó al servidor, pero falló el cierre local de sincronización.");
-      } else {
-        alert("No se pudo exportar a servidor.");
-      }
-    } finally {
-      setLoading(false);
-      await safeCloseDb(db);
+      alert("No se pudo exportar a servidor.");
+    } else {
+      console.error("La exportación llegó al servidor, pero falló el cierre local:", error);
+
+      setSyncProgress((prev) => ({
+        ...prev,
+        isOpen: true,
+        phase: "Completado",
+        detail:
+          "La exportación llegó al servidor. Hubo un problema en el cierre local.",
+        status: "success",
+        canClose: true,
+        progress: 1,
+      }));
+
+      setColorLogo(true);
+      setHayExport(true);
+      sethiddenFecha(false);
+      setPendingSummaries([]);
     }
-  };
+  } finally {
+    await safeCloseDb(db);
+  }
+};
 
   const rechazosOConflictos = (rechazados: number, conflictos: number) =>
     rechazados > 0 || conflictos > 0;
 
   const nuevaBBDD = async () => {
     const db = await dbdb();
-    await db.open();
 
     try {
+      await db.open();
+      await ensureSyncTableReady(db);
+
       const info = await getPendingExportInfo(db);
 
       if (info.hasPending) {
@@ -552,17 +581,91 @@ const Main: React.FC<any> = () => {
         return;
       }
 
-      await db.delete();
-      let existe: any = await sqlite.isDatabase(NOMBRE_BB_DD);
+      setLoadingImport(true);
 
-      if (!existe.result) {
-        setLoadingImport(true);
-        await CargarBase().then(() => {
-          setLoadingImport(false);
-        });
-      }
+      const existeActual: any = await sqlite.isDatabase(NOMBRE_BB_DD);
+      const mode = existeActual.result ? "partial" : "full";
+
+      setSyncProgress({
+        isOpen: true,
+        title: "Importando datos",
+        subtitle: "No cierres la aplicación",
+        phase: "Preparando",
+        detail:
+          mode === "full"
+            ? "Preparando importación completa..."
+            : "Preparando importación parcial...",
+        status: "running",
+        canClose: false,
+        progress: null,
+      });
+
+      await CargarBase({
+        mode,
+        timeoutMs: mode === "full" ? 0 : 60000,
+        onProgress: (progress) => {
+          const phaseMap: Record<string, string> = {
+            preparing: "Preparando",
+            downloading: "Descargando",
+            received: "Paquete recibido",
+            importing: "Importando",
+            finalizing: "Finalizando",
+            done: "Completado",
+            error: "Error",
+          };
+
+          setSyncProgress({
+            isOpen: true,
+            title: "Importando datos",
+            subtitle: "No cierres la aplicación",
+            phase: phaseMap[progress.phase] || "Sincronizando",
+            detail: progress.message,
+            loadedBytes: progress.downloadedBytes,
+            totalBytes: progress.totalBytes,
+            tableSummaries:
+              progress.tableNames?.map((name) => ({
+                name,
+                count: 0,
+              })) ?? [],
+            totalItems: progress.tableCount,
+            processedItems:
+              progress.phase === "done" ? progress.tableCount ?? 0 : 0,
+            status:
+              progress.phase === "done"
+                ? "success"
+                : progress.phase === "error"
+                ? "error"
+                : "running",
+            canClose:
+              progress.phase === "done" || progress.phase === "error",
+            progress:
+              progress.downloadedBytes && progress.totalBytes
+                ? progress.downloadedBytes / progress.totalBytes
+                : null,
+          });
+        },
+      });
+
+      await refreshPendingState();
+
+      setSyncProgress((prev) => ({
+        ...prev,
+        phase: "Completado",
+        detail: "Importación finalizada correctamente.",
+        status: "success",
+        canClose: true,
+        progress: 1,
+      }));
     } catch (err: any) {
-      alert("No se pudo verificar/importar la base: " + String(err?.message || err));
+      setSyncProgress((prev) => ({
+        ...prev,
+        isOpen: true,
+        phase: "Error",
+        detail: String(err?.message || "No se pudo importar."),
+        status: "error",
+        canClose: true,
+      }));
+      alert("No se pudo importar.");
     } finally {
       setLoadingImport(false);
       await safeCloseDb(db);
@@ -578,13 +681,31 @@ const Main: React.FC<any> = () => {
       <IonContent className="content-border">
         <IonGrid className="ion-align-items-center">
           <IonRow>
-            <IonCol className="col_logos" sizeSm="12" sizeXs="12" sizeLg="4" sizeXl="4">
+            <IonCol
+              className="col_logos"
+              sizeSm="12"
+              sizeXs="12"
+              sizeLg="4"
+              sizeXl="4"
+            >
               <img src={logoAdesar}></img>
             </IonCol>
-            <IonCol className="col_logos" sizeSm="12" sizeXs="12" sizeLg="4" sizeXl="4">
+            <IonCol
+              className="col_logos"
+              sizeSm="12"
+              sizeXs="12"
+              sizeLg="4"
+              sizeXl="4"
+            >
               <img src={logoUnsada}></img>
             </IonCol>
-            <IonCol className="col_logos" sizeSm="12" sizeXs="12" sizeLg="4" sizeXl="4">
+            <IonCol
+              className="col_logos"
+              sizeSm="12"
+              sizeXs="12"
+              sizeLg="4"
+              sizeXl="4"
+            >
               <img src={logoMundoSano}></img>
             </IonCol>
           </IonRow>
@@ -593,7 +714,12 @@ const Main: React.FC<any> = () => {
             <IonCol>
               <div className="content-div"></div>
 
-              <IonButton expand="block" onClick={continuar} color="secondary" className="button_css">
+              <IonButton
+                expand="block"
+                onClick={continuar}
+                color="secondary"
+                className="button_css"
+              >
                 Continuar
               </IonButton>
 
@@ -620,14 +746,16 @@ const Main: React.FC<any> = () => {
                 </IonButton>
               )}
 
-              {hiddenFecha && hasPendingLocalExport && (
+              {hiddenFecha && (
                 <IonItem onClick={() => exportJsontoApi()}>
                   <IonLabel className="ion-text-wrap">
-                    Tu última actualización es del día {moment(fechaActualizacion).format("YYYY-MM-DD")}
+                    Tu última actualización es del día{" "}
+                    {moment(fechaActualizacion).format("YYYY-MM-DD")}
                   </IonLabel>
-                  {!loading && (
-                    <IonIcon icon={downloadOutline} color={colorLogo ? "success" : "danger"}></IonIcon>
-                  )}
+                  <IonIcon
+                    icon={downloadOutline}
+                    color={colorLogo ? "success" : "danger"}
+                  ></IonIcon>
                 </IonItem>
               )}
 
@@ -643,51 +771,12 @@ const Main: React.FC<any> = () => {
           </IonRow>
         </IonGrid>
 
-        <IonModal isOpen={exportModal.isOpen} backdropDismiss={false}>
-          <IonContent className="ion-padding">
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-              {exportModal.phase !== "done" && exportModal.phase !== "error" && (
-                <IonSpinner name="crescent" />
-              )}
-              <div>
-                <strong>{exportModal.message}</strong>
-                {exportModal.error && (
-                  <div style={{ marginTop: 8 }}>
-                    <IonNote color="danger">{exportModal.error}</IonNote>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <IonItemDivider>
-              <IonLabel>
-                Procesado: {exportModal.processedRows} / {exportModal.totalRows}
-              </IonLabel>
-            </IonItemDivider>
-
-            <div style={{ marginTop: 12 }}>
-              {exportModal.tableSummaries.map((table) => (
-                <IonItem key={table.name}>
-                  <IonLabel>
-                    {table.name}
-                    <p>{table.count} registros</p>
-                  </IonLabel>
-                </IonItem>
-              ))}
-            </div>
-
-            {(exportModal.phase === "done" || exportModal.phase === "error") && (
-              <div style={{ marginTop: 16 }}>
-                <IonButton
-                  expand="block"
-                  onClick={() => setExportModal(emptyExportModal())}
-                >
-                  Cerrar
-                </IonButton>
-              </div>
-            )}
-          </IonContent>
-        </IonModal>
+        <SyncProgressModal
+          state={syncProgress}
+          onClose={() =>
+            setSyncProgress((prev) => ({ ...prev, isOpen: false }))
+          }
+        />
       </IonContent>
     </IonPage>
   );
