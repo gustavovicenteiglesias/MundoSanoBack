@@ -26,21 +26,19 @@ ${toNumber(totalItems)},
 );
 });
 }
-async finishBatch(args: {
-syncBatchId: string;
-estado: string;
-fechaFin: string;
-totalItems: number;
-okCount: number;
-rejectedCount: number;
-conflictCount: number;
-mensaje?: string | null;
-}): Promise<void> {
-await withSyncLogsDb(async (db) => {
-await db.execute(
-`UPDATE sync_batch_log_local
+  async finishBatch(args: {
+    syncBatchId: string;
+    estado: string;
+    fechaFin: string;
+    totalItems: number;
+    okCount: number;
+    rejectedCount: number;
+    conflictCount: number;
+    mensaje?: string | null;
+  }): Promise<void> {
+    await withSyncLogsDb(async (db) => {
+      const sql = `UPDATE sync_batch_log_local
  SET fecha_fin = '${esc(args.fechaFin)}',
-3
  estado = '${esc(args.estado)}',
  total_items = ${toNumber(args.totalItems)},
  ok_count = ${toNumber(args.okCount)},
@@ -48,10 +46,21 @@ await db.execute(
  conflict_count = ${toNumber(args.conflictCount)},
  mensaje = ${args.mensaje ? `'${esc(args.mensaje)}'` : "NULL"},
  last_modified = strftime('%s','now')
- WHERE sync_batch_id = '${esc(args.syncBatchId)}'`
-);
-});
-}
+ WHERE sync_batch_id = '${esc(args.syncBatchId)}'`;
+      try {
+        const res = await db.execute(sql);
+        console.log(
+          `[finishBatch] syncBatchId=${args.syncBatchId} estado=${args.estado} changes=${res?.changes?.changes}`
+        );
+      } catch (err) {
+        console.error(
+          `[finishBatch] ERROR al cerrar batch ${args.syncBatchId}:`,
+          err
+        );
+        throw err;
+      }
+    });
+  }
 async listAll(): Promise<SyncBatchLogLocal[]> {
 return withSyncLogsDb(async (db) => {
 const res: any = await db.query(

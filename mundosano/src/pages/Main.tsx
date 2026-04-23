@@ -9,6 +9,7 @@ import {
   IonPage,
   IonRow,
   useIonViewWillEnter,
+  useIonToast,
 } from "@ionic/react";
 import { useState } from "react";
 import { downloadOutline } from "ionicons/icons";
@@ -29,6 +30,7 @@ import {
   enrichPartialExportWithAncestors,
   JsonExportPayload,
   SyncMeta,
+  SYNCABLE_TABLES,
 } from "../utils/exportWithDependencies";
 import { SyncBatchLogLocalRepo } from "../repository/syncBatchLogLocalRepo";
 import { SyncItemLogLocalRepo } from "../repository/syncItemLogLocalRepo";
@@ -67,6 +69,7 @@ const Main: React.FC<any> = () => {
   });
 
   const history = useHistory();
+  const [presentToast] = useIonToast();
 
   const unsubscribe = Network.addListener("networkStatusChange", (status) => {
     if (status.connected) {
@@ -149,7 +152,8 @@ const Main: React.FC<any> = () => {
     try {
       const exported: any = await db.exportToJson("partial");
       const payload: JsonExportPayload | undefined = exported?.export;
-      const tableSummaries = summarizePayloadTables(payload);
+      const tableSummaries = summarizePayloadTables(payload)
+        .filter((t) => SYNCABLE_TABLES.has(t.name));
       const hasPending = tableSummaries.length > 0;
 
       return {
@@ -246,7 +250,7 @@ const Main: React.FC<any> = () => {
         setHayExport(true);
         sethiddenFecha(false);
         setPendingSummaries([]);
-        alert("No hay datos pendientes para exportar.");
+        presentToast({ message: "No hay datos pendientes para exportar.", duration: 3000, color: "success", position: "top" });
         return false;
       }
 
@@ -262,7 +266,7 @@ const Main: React.FC<any> = () => {
 
       return true;
     } catch (_error: any) {
-      alert("No se pudo preparar la exportación.");
+      presentToast({ message: "No se pudo preparar la exportación.", duration: 4000, color: "danger", position: "top" });
       return false;
     } finally {
       await safeCloseDb(db);
@@ -583,7 +587,7 @@ const exportJsontoApi = async () => {
       const info = await getPendingExportInfo(db);
 
       if (info.hasPending) {
-        alert("No se puede importar: hay datos locales sin exportar.");
+        presentToast({ message: "No se puede importar: hay datos locales sin exportar.", duration: 4000, color: "warning", position: "top" });
         return;
       }
 
@@ -671,7 +675,7 @@ const exportJsontoApi = async () => {
         status: "error",
         canClose: true,
       }));
-      alert("No se pudo importar.");
+      presentToast({ message: "No se pudo importar.", duration: 4000, color: "danger", position: "top" });
     } finally {
       setLoadingImport(false);
       await safeCloseDb(db);

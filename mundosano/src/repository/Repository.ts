@@ -289,7 +289,8 @@ export class Repository<T extends object> {
         try {
             const db = await dbdb();
             await db.open();
-            //const id = (entity as any).id_persona; // Assuming id_persona field is present in all interfaces
+            // Inyectar last_modified
+            (entity as any).last_modified = Math.floor(Date.now() / 1000);
             const cleanEntity = this.sanitizeEntity(entity as Record<string, any>);
             const updates = Object.entries(cleanEntity).map(([key, value]) => {
                 return `${key} = ${this.toSqlValue(value)}`;
@@ -320,7 +321,8 @@ export class Repository<T extends object> {
         try {
             const db = await dbdb();
         await db.open();
-        //const id = (entity as any).id_persona; // Assuming id_persona field is present in all interfaces
+        // Inyectar last_modified
+        (entity as any).last_modified = Math.floor(Date.now() / 1000);
         const cleanEntity = this.sanitizeEntity(entity as Record<string, any>);
         const updates = Object.entries(cleanEntity).map(([key, value]) => {
             return `${key} = ${this.toSqlValue(value)}`;
@@ -346,7 +348,8 @@ export class Repository<T extends object> {
         try {
             const db = await dbdb();
         await db.open();
-        //const id = (entity as any).id_persona; // Assuming id_persona field is present in all interfaces
+        // Inyectar last_modified
+        (entity as any).last_modified = Math.floor(Date.now() / 1000);
         const cleanEntity = this.sanitizeEntity(entity as Record<string, any>);
         const updates = Object.entries(cleanEntity).map(([key, value]) => {
             return `${key} = ${this.toSqlValue(value)}`;

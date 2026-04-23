@@ -1,4 +1,4 @@
-import { IonBackButton, IonButton, IonButtons, IonContent, IonHeader, IonInput, IonItem, IonLabel, IonPage, IonTitle, IonToolbar, IonSelect, IonSelectOption } from "@ionic/react";
+import { IonBackButton, IonButton, IonButtons, IonContent, IonHeader, IonInput, IonItem, IonLabel, IonPage, IonTitle, IonToolbar, IonSelect, IonSelectOption, useIonToast } from "@ionic/react";
 import { useHistory, useLocation } from "react-router";
 import { useEffect, useState } from "react";
 import moment from "moment";
@@ -12,6 +12,7 @@ import { Geolocation } from "@capacitor/geolocation";
 const EditarPersona: React.FC = () => {
   const location = useLocation<any>();
   const history = useHistory();
+  const [presentToast] = useIonToast();
   const paciente = location.state;
 
   const [form, setForm] = useState({
@@ -48,12 +49,13 @@ const EditarPersona: React.FC = () => {
 
   const save = async () => {
     if (!form.id_pais || !form.id_area || !form.id_paraje) {
-      alert("Debe seleccionar país, área y paraje");
+      presentToast({ message: "Debe seleccionar país, área y paraje", duration: 3000, color: "warning", position: "top" });
       return;
     }
     const db = await getDb();
     await db.open();
-    await db.execute(`UPDATE personas SET nombre='${form.nombre}', apellido='${form.apellido}', documento='${form.documento}', fecha_nacimiento='${moment(form.fecha_nacimiento).format("YYYY-MM-DD")}' WHERE id_persona=${paciente.id_persona}`);
+    const lastMod = Math.floor(Date.now() / 1000);
+    await db.execute(`UPDATE personas SET nombre='${form.nombre}', apellido='${form.apellido}', documento='${form.documento}', fecha_nacimiento='${moment(form.fecha_nacimiento).format("YYYY-MM-DD")}', last_modified=${lastMod} WHERE id_persona=${paciente.id_persona}`);
 
     const ubic = await db.query(`SELECT * FROM ubicaciones WHERE id_persona=${paciente.id_persona} LIMIT 1`);
     if (ubic.values && ubic.values.length > 0) {

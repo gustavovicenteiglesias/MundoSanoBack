@@ -40,7 +40,7 @@ type TableMeta = {
 
 type RowObject = Record<string, any>;
 
-const SYNCABLE_TABLES = new Set([
+export const SYNCABLE_TABLES = new Set([
   "personas",
   "controles",
   "ubicaciones",

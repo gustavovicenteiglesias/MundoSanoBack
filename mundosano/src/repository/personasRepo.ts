@@ -217,8 +217,10 @@ export class PersonasRepository {
   async crear(personas: Personas): Promise<any> {
     const db = await getDb()
     await db.open()
-    const res = await db.execute("INSERT INTO personas (id_persona,apellido,nombre,documento,fecha_nacimiento,id_origen,nacionalidad,sexo,madre,alta,nacido_vivo)" +
-      `VALUES (${personas.id_persona},"${personas.apellido}","${personas.nombre}","${personas.documento}","${moment(personas.fecha_nacimiento).format("YYYY-MM-DD")}",${personas.id_origen},${personas.nacionalidad},"${personas.sexo}",${personas.madre},${personas.alta},${personas.nacido_vivo})`)
+    const uuid = (personas as any).uuid || crypto.randomUUID();
+    const lastMod = Math.floor(Date.now() / 1000);
+    const res = await db.execute("INSERT INTO personas (id_persona,apellido,nombre,documento,fecha_nacimiento,id_origen,nacionalidad,sexo,madre,alta,nacido_vivo,uuid,last_modified)" +
+      `VALUES (${personas.id_persona},"${personas.apellido}","${personas.nombre}","${personas.documento}","${moment(personas.fecha_nacimiento).format("YYYY-MM-DD")}",${personas.id_origen},${personas.nacionalidad},"${personas.sexo}",${personas.madre},${personas.alta},${personas.nacido_vivo},"${uuid}",${lastMod})`)
     console.log("insert " + JSON.stringify(res.changes))
     await db.close()
     return true
@@ -227,7 +229,8 @@ export class PersonasRepository {
   async update(personas: Personas): Promise<any> {
     const db = await getDb()
     await db.open()
-    let res = await db.execute(`UPDATE personas SET apellido = "${personas.apellido}", nombre = "${personas.nombre}", documento = "${personas.documento}", fecha_nacimiento = "${moment(personas.fecha_nacimiento).format("YYYY-MM-DD")}", id_origen = ${personas.id_origen}, nacionalidad = ${personas.nacionalidad}, sexo = "${personas.sexo}", madre=${personas.madre}, alta=${personas.alta}, nacido_vivo=${personas.nacido_vivo} WHERE id_persona=${personas.id_persona}`)
+    const lastMod = Math.floor(Date.now() / 1000);
+    let res = await db.execute(`UPDATE personas SET apellido = "${personas.apellido}", nombre = "${personas.nombre}", documento = "${personas.documento}", fecha_nacimiento = "${moment(personas.fecha_nacimiento).format("YYYY-MM-DD")}", id_origen = ${personas.id_origen}, nacionalidad = ${personas.nacionalidad}, sexo = "${personas.sexo}", madre=${personas.madre}, alta=${personas.alta}, nacido_vivo=${personas.nacido_vivo}, last_modified=${lastMod} WHERE id_persona=${personas.id_persona}`)
     console.log("update " + JSON.stringify(res.changes))
     await db.close()
     return true

@@ -1,4 +1,4 @@
-﻿import axios from "axios";
+import axios from "axios";
 import { sqlite } from "../App";
 import { SQLiteDBConnection } from "react-sqlite-hook";
 import { BASE_URL, NOMBRE_BB_DD } from "../utils/constantes";
@@ -36,12 +36,11 @@ export type CargarBaseProgress = {
 
 type CargarBaseOptions = {
   mode?: SyncMode;
-  since?: number | null;
   timeoutMs?: number;
   onProgress?: (progress: CargarBaseProgress) => void;
 };
 
-type CargarBaseArg = CargarBaseOptions | number | null | undefined;
+type CargarBaseArg = CargarBaseOptions | undefined;
 
 const emitProgress = (
   options: CargarBaseOptions | undefined,
@@ -94,22 +93,13 @@ const ensureLocalSyncTable = async (db: SQLiteDBConnection) => {
 export async function CargarBase(arg?: CargarBaseArg) {
   let db: SQLiteDBConnection | null = null;
 
-  const options: CargarBaseOptions =
-    typeof arg === "number" || arg === null || arg === undefined
-      ? { since: arg }
-      : arg;
+  const options: CargarBaseOptions = arg ?? {};
 
-  const mode: SyncMode =
-    options?.mode ??
-    (options?.since !== undefined && options?.since !== null ? "partial" : "full");
+  const mode: SyncMode = options?.mode ?? "full";
 
   const endpoint =
     mode === "partial"
-      ? `${BASE_URL}/data/json3/partial${
-          options?.since !== undefined && options?.since !== null
-            ? `?since=${options.since}`
-            : ""
-        }`
+      ? `${BASE_URL}/data/json3/partial`
       : `${BASE_URL}/data/json3`;
 
   const timeoutMs = options?.timeoutMs ?? (mode === "full" ? 0 : 60000);
