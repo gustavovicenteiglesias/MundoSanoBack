@@ -25,6 +25,7 @@ import { animationBuilder } from "../components/AnimationBuilder";
 import FilterComponent from '../components/FilterComponent';
 import { PersonasRepository } from '../repository/personasRepo';
 import "./Personas.css";
+import { chevronBackOutline } from 'ionicons/icons';
 
 type SyncStatus = 'ok' | 'pending' | 'error' | 'unknown';
 
@@ -43,59 +44,67 @@ const Personas: React.FC = () => {
 
   const isRiesgo = (row: any): boolean => row.id_etmi !== null || (row.id_app !== 10 && row.id_app !== null);
 
- const getSyncStatusMap = async (rows: any[]): Promise<Record<number, SyncStatus>> => {
-  const statusMap: Record<number, SyncStatus> = {};
-  const lastSyncUnix = await repository.getLastSyncUnix();
+  const getSyncStatusMap = async (rows: any[]): Promise<Record<number, SyncStatus>> => {
+    const statusMap: Record<number, SyncStatus> = {};
 
-  const raw = localStorage.getItem(LAST_SYNC_RESULT_KEY);
-  let errorPersonIds = new Set<number>();
+    // 1. Obtener fecha de sync y normalizarla a número
+    const rawSyncDate = await repository.getLastSyncUnix();
+    //console.log("rawSyncDate", rawSyncDate);
+    // Si es ISO, Date.parse lo convierte a ms, si es Unix "1777..." lo manejamos
+    const lastSyncUnix = !rawSyncDate
+      ? 0
+      : typeof rawSyncDate === 'number'
+        ? rawSyncDate
+        : isNaN(Number(rawSyncDate))
+          ? Date.parse(rawSyncDate) / 1000
+          : Number(rawSyncDate);
+    const raw = localStorage.getItem(LAST_SYNC_RESULT_KEY);
+    let errorPersonIds = new Set<number>();
 
-  if (raw) {
-    try {
-      const parsed = JSON.parse(raw);
-      const ids = Array.isArray(parsed?.errorPersonIds) ? parsed.errorPersonIds : [];
-      errorPersonIds = new Set(
-        ids.map((value: any) => Number(value)).filter((value: number) => Number.isFinite(value))
-      );
-    } catch (_error) {
-      errorPersonIds = new Set<number>();
-    }
-  }
-
-  const personIds = rows
-    .map((row: any) => Number(row?.id_persona))
-    .filter((value: number) => Number.isFinite(value));
-
-  const maxLastModifiedByPersona =
-    await repository.getSyncStatusByPersonIds(personIds);
-
-  for (const row of rows) {
-    const idPersona = Number(row?.id_persona);
-
-    if (!Number.isFinite(idPersona)) continue;
-
-    if (errorPersonIds.has(idPersona)) {
-      statusMap[idPersona] = "error";
-      continue;
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        const ids = Array.isArray(parsed?.errorPersonIds) ? parsed.errorPersonIds : [];
+        errorPersonIds = new Set(ids.map((v: any) => Number(v)).filter((v: number) => Number.isFinite(v)));
+      } catch { }
     }
 
-    if (!lastSyncUnix) {
-      statusMap[idPersona] = "unknown";
-      continue;
+    const personIds = rows.map((row: any) => Number(row?.id_persona)).filter((v: number) => Number.isFinite(v));
+    const maxLastModifiedByPersona = await repository.getSyncStatusByPersonIds(personIds);
+
+    for (const row of rows) {
+      const idPersona = Number(row?.id_persona);
+      if (!Number.isFinite(idPersona)) continue;
+
+      const maxLastModified = Number(maxLastModifiedByPersona[idPersona]);
+      //console.log("maxLastModified", maxLastModified);
+      //console.log("lastSyncUnix", lastSyncUnix);
+
+      // --- NUEVA LÓGICA DE PRIORIDADES ---
+
+      // 1. ¿Tiene cambios pendientes? (Esto manda sobre el error)
+      // Si el usuario modificó algo, la nube DEBE ser Ámbar (pending) aunque antes haya fallado.
+      if (maxLastModified > lastSyncUnix) {
+        statusMap[idPersona] = "pending";
+        continue;
+      }
+
+      // 2. Si no tiene cambios nuevos, ¿el último envío dio error?
+      if (errorPersonIds.has(idPersona)) {
+        statusMap[idPersona] = "error";
+        continue;
+      }
+
+      // 3. Si no tiene cambios y no hay error, está sincronizado
+      if (lastSyncUnix > 0 && maxLastModified <= lastSyncUnix) {
+        statusMap[idPersona] = "ok";
+      } else {
+        statusMap[idPersona] = "unknown";
+      }
     }
-
-    const maxLastModified = Number(maxLastModifiedByPersona[idPersona]);
-
-    if (!Number.isFinite(maxLastModified)) {
-      statusMap[idPersona] = "unknown";
-      continue;
-    }
-
-    statusMap[idPersona] = maxLastModified > lastSyncUnix ? "pending" : "ok";
-  }
-
-  return statusMap;
-};
+    //console.log("statusMap", statusMap);
+    return statusMap;
+  };
 
   useEffect(() => {
     sessionStorage.setItem("personas_filter", filterText);
@@ -197,7 +206,9 @@ const Personas: React.FC = () => {
         <IonToolbar>
           <IonTitle slot="end">Paciente</IonTitle>
           <IonButtons slot="start" >
-            <IonBackButton defaultHref="/" routerAnimation={animationBuilder} />
+            <IonButton onClick={() => history.push("/")}>
+              <IonIcon icon={chevronBackOutline} />
+            </IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
