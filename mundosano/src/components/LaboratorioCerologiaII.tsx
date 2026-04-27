@@ -4,7 +4,7 @@ import { useState } from "react"
 
 
 
-const LaboratorioCerologia: React.FC<any> = ({titulo,radio,radioname,radioOpcionName,radioOpcion,radioOpcionValue,inputvalue,inputname}) => {
+const LaboratorioCerologia: React.FC<any> = ({titulo,radio,radioname,radioOpcionName,radioOpcion,radioOpcionValue,inputvalue,inputname,checkedResp}) => {
 
     const [show,setshow]=useState<boolean>(false);
     const handleInputChange = (e: any) => {
@@ -38,7 +38,7 @@ const LaboratorioCerologia: React.FC<any> = ({titulo,radio,radioname,radioOpcion
                 </IonItem>
             </IonCol>
             {show&&<IonCol sizeXs="6">
-                <IonRadioGroup  name={radioOpcionName} onIonChange={e => handleInputChange(e)}>
+                <IonRadioGroup  name={radioOpcionName} onIonChange={e => handleInputChange(e)} value={checkedResp}>
                     <IonItem>
                         <IonLabel>Solicitado</IonLabel>
                         <IonRadio slot="end" value={radioOpcion[0]}></IonRadio>

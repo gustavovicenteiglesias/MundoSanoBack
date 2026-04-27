@@ -1,4 +1,4 @@
-import { IonBackButton, IonButton, IonButtons, IonCard, IonCardHeader, IonCardTitle, IonCol, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonRadio, IonRadioGroup, IonRow, IonSelect, IonSelectOption, IonTextarea, IonToolbar, useIonViewWillEnter } from "@ionic/react";
+import { IonBackButton, IonButton, IonButtons, IonCard, IonCardHeader, IonCardTitle, IonCheckbox, IonCol, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonRadio, IonRadioGroup, IonRow, IonSelect, IonSelectOption, IonTextarea, IonToolbar, useIonViewWillEnter } from "@ionic/react";
 import moment from "moment";
 import { useEffect, useState } from "react";
 import { useHistory, useLocation } from "react-router";
@@ -252,24 +252,29 @@ const EditControlEmbrazada: React.FC = () => {
     }, [])
 
     
-    useEffect(()=>{
-        let contolemb=datos?.data.data.controlembarazada;
-        if (datos?.data.paciente.antecedentes.fum !== null) {
-            contolemb.edad_gestacional= hoy.diff(datos?.data.paciente.antecedentes.fum, "weeks") ;
-            setEdadGestacional(hoy.diff(datos?.data.paciente.antecedentes.fum, "weeks"))
-            
-        }else if(datos.data.paciente.antecedentes.fpp !== null){
-            setEdadGestacional((hoy.diff(datos?.data.paciente.antecedentes?.fpp, 'weeks')+40))
-            
-           
+    useEffect(() => {
+        const pac = datos?.data?.paciente || paciente;
+        const fum = pac?.antecedentes?.fum;
+        const fpp = pac?.antecedentes?.fpp;
+
+        let semanas = 0;
+        if (fum && fum !== "null") {
+            semanas = hoy.diff(moment(fum), "weeks");
+        } else if (fpp && fpp !== "null") {
+            semanas = hoy.diff(moment(fpp), "weeks") + 40;
         }
-        
-        else {
-            
-           contolemb.edad_gestacional= 0;
-           setEdadGestacional(contolemb.edad_gestacional)
-        }
-    },[])
+
+        // Aseguramos que no sean negativas y actualizamos estados
+        semanas = semanas < 0 ? 0 : semanas;
+        setEdadGestacional(semanas);
+        setControl((prev: any) => ({ ...prev, edad_gestacional: semanas }));
+    }, [datos, paciente]);
+
+    const getTrimestre = (semanas: number) => {
+        if (semanas <= 13) return 1;
+        if (semanas <= 27) return 2;
+        return 3;
+    };
 
     const fechaNacimiento = (e: any) => {
         const dia = moment(e.detail.value).format("YYYY-MM-DD")
@@ -324,10 +329,40 @@ const EditControlEmbrazada: React.FC = () => {
 
     }
 
+    const handleEcoCheck = (e: any) => {
+        const checked = e.detail.checked;
+        setControl((prev: any) => {
+            const next = { ...prev, ECO_CHECKED: checked };
+            if (checked && prev.ecografia === "N") {
+                next.ecografia = "S";
+            } else if (!checked) {
+                next.ecografia = "N";
+                setShowEcografia(false);
+            }
+            return next;
+        });
+    }
+
     const handleInpuTChecks = (e: any) => {
         const name = e.target.name;
         const value = e.detail.checked
-        setControl((prevProps: any) => ({ ...prevProps, [name]: value }));
+        setControl((prevProps: any) => {
+            const next = { ...prevProps, [name]: value };
+            
+            // Lógica para marcar como Solicitada automáticamente
+            const respKey = "resp_" + name.toLowerCase();
+            if (value && (prevProps[respKey] === "N" || !prevProps[respKey])) {
+                next[respKey] = "S";
+            }
+            
+            // Casos especiales de nombres de campos que no siguen el patrón resp_nombre
+            if (name === "SIFILIS" && value && prevProps.resp_sifilis === "N") next.resp_sifilis = "S";
+            if (name === "HIV" && value && prevProps.resp_hiv === "N") next.resp_hiv = "S";
+            if (name === "CHAGAS" && value && prevProps.resp_chagas === "N") next.resp_chagas = "S";
+            if (name === "VHB" && value && prevProps.resp_vhb === "N") next.resp_vhb = "S";
+            
+            return next;
+        });
     }
 
     const OnSubmit = async (e: any) => {
@@ -500,7 +535,7 @@ const EditControlEmbrazada: React.FC = () => {
         if (control.SIFILIS) {
             let newLaboratoriosRealizados: Laboratorios_Realizados = {
                 fecha_resultados: control.resp_sifilis==="S"?null:fecha1,
-                resultado: control.resp_sifilis==="S"?null:control.resp_sifilis,
+                resultado: control.resp_sifilis,
                 sql_deleted: 0,
                 last_modified: Math.floor(new Date().getTime() / 1000)
             }
@@ -528,10 +563,10 @@ const EditControlEmbrazada: React.FC = () => {
                 newLaboratoriosRealizados.id_persona = paciente.data.id_persona
                 newLaboratoriosRealizados.id_control = paciente.data.id_control
                 newLaboratoriosRealizados.id_laboratorio = 1
-                newLaboratoriosRealizados.trimestre = 1
+                newLaboratoriosRealizados.trimestre = getTrimestre(toInt(edadGestacional))
                 newLaboratoriosRealizados.fecha_realizado = fecha1
                 newLaboratoriosRealizados.fecha_resultados = control.resp_sifilis==="S" || control.resp_sifilis===undefined ?null:fecha1
-                newLaboratoriosRealizados.resultado = control.resp_sifilis===undefined||control.resp_sifilis==="S"?null:control.resp_sifilis
+                newLaboratoriosRealizados.resultado = control.resp_sifilis===undefined?null:control.resp_sifilis
                 newLaboratoriosRealizados.id_etmi = 3
                 newLaboratoriosRealizados.sql_deleted = 0
                 newLaboratoriosRealizados.last_modified = Math.floor(new Date().getTime() / 1000)
@@ -560,7 +595,7 @@ const EditControlEmbrazada: React.FC = () => {
         if (control.HIV) {
             let newLaboratoriosRealizados: Laboratorios_Realizados = {
                 fecha_resultados: control.resp_hiv==="S"?null:fecha1,
-                resultado: control.resp_hiv==="S"?null:control.resp_hiv,
+                resultado: control.resp_hiv,
                 sql_deleted: 0,
                 last_modified: Math.floor(new Date().getTime() / 1000)
             }
@@ -585,10 +620,10 @@ const EditControlEmbrazada: React.FC = () => {
                 newLaboratoriosRealizados.id_persona = paciente.data.id_persona
                 newLaboratoriosRealizados.id_control = paciente.data.id_control
                 newLaboratoriosRealizados.id_laboratorio = 2
-                newLaboratoriosRealizados.trimestre = 1
+                newLaboratoriosRealizados.trimestre = getTrimestre(toInt(edadGestacional))
                 newLaboratoriosRealizados.fecha_realizado = fecha1
                 newLaboratoriosRealizados.fecha_resultados = control.resp_hiv==="S" || control.resp_hiv===undefined?null:fecha1
-                newLaboratoriosRealizados.resultado = control.resp_hiv===undefined||control.resp_hiv==="S"?null:control.resp_hiv
+                newLaboratoriosRealizados.resultado = control.resp_hiv===undefined?null:control.resp_hiv
                 newLaboratoriosRealizados.id_etmi = 2
                 newLaboratoriosRealizados.sql_deleted = 0
                 newLaboratoriosRealizados.last_modified = Math.floor(new Date().getTime() / 1000)
@@ -619,7 +654,7 @@ const EditControlEmbrazada: React.FC = () => {
         if (control.CHAGAS) {
             let newLaboratoriosRealizados: Laboratorios_Realizados = {
                 fecha_resultados: control.resp_chagas==="S"?null:fecha1,
-                resultado: control.resp_chagas==="S"?null:control.resp_chagas,
+                resultado: control.resp_chagas,
                 sql_deleted: 0,
                 last_modified: Math.floor(new Date().getTime() / 1000)
             }
@@ -644,10 +679,10 @@ const EditControlEmbrazada: React.FC = () => {
                 newLaboratoriosRealizados.id_persona = paciente.data.id_persona
                 newLaboratoriosRealizados.id_control = paciente.data.id_control
                 newLaboratoriosRealizados.id_laboratorio = 4
-                newLaboratoriosRealizados.trimestre = 1
+                newLaboratoriosRealizados.trimestre = getTrimestre(toInt(edadGestacional))
                 newLaboratoriosRealizados.fecha_realizado = fecha1
                 newLaboratoriosRealizados.fecha_resultados = control.resp_chagas==="S" || control.resp_chagas===undefined?null:fecha1
-                newLaboratoriosRealizados.resultado = control.resp_chagas===undefined||control.resp_chagas==="S"?null:control.resp_chagas
+                newLaboratoriosRealizados.resultado = control.resp_chagas===undefined?null:control.resp_chagas
                 newLaboratoriosRealizados.id_etmi = 1
                 newLaboratoriosRealizados.sql_deleted = 0
                 newLaboratoriosRealizados.last_modified = Math.floor(new Date().getTime() / 1000)
@@ -674,7 +709,7 @@ const EditControlEmbrazada: React.FC = () => {
         if (control.VHB) {
             let newLaboratoriosRealizados: Laboratorios_Realizados = {
                 fecha_resultados: control.resp_vhb==="S"?null:fecha1,
-                resultado: control.resp_vhb==="S"?null:control.resp_vhb,
+                resultado: control.resp_vhb,
                 sql_deleted: 0,
                 last_modified: Math.floor(new Date().getTime() / 1000)
             }
@@ -699,10 +734,10 @@ const EditControlEmbrazada: React.FC = () => {
                 newLaboratoriosRealizados.id_persona = paciente.data.id_persona
                 newLaboratoriosRealizados.id_control = paciente.data.id_control
                 newLaboratoriosRealizados.id_laboratorio = 5
-                newLaboratoriosRealizados.trimestre = 1
+                newLaboratoriosRealizados.trimestre = getTrimestre(toInt(edadGestacional))
                 newLaboratoriosRealizados.fecha_realizado = fecha1
                 newLaboratoriosRealizados.fecha_resultados = control.resp_vhb==="S" || control.resp_vhb===undefined?null:fecha1
-                newLaboratoriosRealizados.resultado = control.resp_vhb===undefined||control.resp_vhb==="S"?null:control.resp_vhb
+                newLaboratoriosRealizados.resultado = control.resp_vhb===undefined?null:control.resp_vhb
                 newLaboratoriosRealizados.id_etmi = 4
                 newLaboratoriosRealizados.sql_deleted = 0
                 newLaboratoriosRealizados.last_modified = Math.floor(new Date().getTime() / 1000)
@@ -730,7 +765,7 @@ const EditControlEmbrazada: React.FC = () => {
         if (control.ESTREPTOCOCO_BETA_HEMOLÍTICO) {
             let newLaboratoriosRealizados: Laboratorios_Realizados = {
                 fecha_resultados: control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO==="S"?null:fecha1,
-                resultado: control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO==="S"?null:control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO,
+                resultado: control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO,
                 sql_deleted: 0,
                 last_modified: Math.floor(new Date().getTime() / 1000)
             }
@@ -752,10 +787,10 @@ const EditControlEmbrazada: React.FC = () => {
                 newLaboratoriosRealizados.id_persona = paciente.data.id_persona
                 newLaboratoriosRealizados.id_control = paciente.data.id_control
                 newLaboratoriosRealizados.id_laboratorio = 8
-                newLaboratoriosRealizados.trimestre = 1
+                newLaboratoriosRealizados.trimestre = getTrimestre(toInt(edadGestacional))
                 newLaboratoriosRealizados.fecha_realizado = fecha1
                 newLaboratoriosRealizados.fecha_resultados = control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO==="S" || control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO===undefined?null:fecha1
-                newLaboratoriosRealizados.resultado = control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO===undefined||control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO==="S"?null:control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO
+                newLaboratoriosRealizados.resultado = control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO===undefined?null:control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO
                 newLaboratoriosRealizados.id_etmi = 0
                 newLaboratoriosRealizados.sql_deleted = 0
                 newLaboratoriosRealizados.last_modified = Math.floor(new Date().getTime() / 1000)
@@ -782,7 +817,7 @@ const EditControlEmbrazada: React.FC = () => {
             let id_laboratorio = await repositoryLaboratoriosRealizados.getIDlaboratoriosRealizados(6, paciente.data.id_persona, paciente.data.id_control)
             console.log("id_laboratorio " + id_laboratorio)
             if (id_laboratorio !== 0) {
-                let respuesta = control.resp_hb === "S" ? null : control.valor_hb
+                let respuesta = control.resp_hb === "S" ? "S" : control.valor_hb
                 newLaboratoriosRealizados.resultado = respuesta
                 let resp_HB = await repositoryLaboratoriosRealizados.updateLaboratoriosRealizados(newLaboratoriosRealizados, paciente.data.id_persona, paciente.data.id_control, id_laboratorio)
                 if (resp_HB) console.log("Se actualizo laboratorio HB")
@@ -790,11 +825,11 @@ const EditControlEmbrazada: React.FC = () => {
             } else {
                 console.log("no  hay id ")
 
-                let respuesta = control.resp_hb === "S" ?null : control.valor_hb
+                let respuesta = control.resp_hb === "S" ? "S" : control.valor_hb
                 newLaboratoriosRealizados.id_persona = paciente.data.id_persona
                 newLaboratoriosRealizados.id_control = paciente.data.id_control
                 newLaboratoriosRealizados.id_laboratorio = 6
-                newLaboratoriosRealizados.trimestre = 1
+                newLaboratoriosRealizados.trimestre = getTrimestre(toInt(edadGestacional))
                 newLaboratoriosRealizados.fecha_realizado = fecha1
                 newLaboratoriosRealizados.fecha_resultados = control.resp_hb === "S" || respuesta===undefined?null:fecha1
                 newLaboratoriosRealizados.resultado = respuesta===undefined?null:respuesta
@@ -824,7 +859,7 @@ const EditControlEmbrazada: React.FC = () => {
             }
             let id_laboratorio = await repositoryLaboratoriosRealizados.getIDlaboratoriosRealizados(7, paciente.data.id_persona, paciente.data.id_control)
             if (id_laboratorio !== 0) {
-                let respuesta = control.resp_glucemia === "S" ? null : control.valor_glucemia
+                let respuesta = control.resp_glucemia === "S" ? "S" : control.valor_glucemia
                 newLaboratoriosRealizados.resultado = respuesta
                 let resp_GLUCEMIA = await repositoryLaboratoriosRealizados.updateLaboratoriosRealizados(newLaboratoriosRealizados, paciente.data.id_persona, paciente.data.id_control, id_laboratorio)
                 if (resp_GLUCEMIA) console.log("Se actualizo laboratorio GLUCEMIA")
@@ -832,11 +867,11 @@ const EditControlEmbrazada: React.FC = () => {
 
             } else {
                 console.log("no  hay id ")
-                let respuesta = control.resp_glucemia === "S" ? null : control.valor_glucemia
+                let respuesta = control.resp_glucemia === "S" ? "S" : control.valor_glucemia
                 newLaboratoriosRealizados.id_persona = paciente.data.id_persona
                 newLaboratoriosRealizados.id_control = paciente.data.id_control
                 newLaboratoriosRealizados.id_laboratorio = 7
-                newLaboratoriosRealizados.trimestre = 1
+                newLaboratoriosRealizados.trimestre = getTrimestre(toInt(edadGestacional))
                 newLaboratoriosRealizados.fecha_realizado = fecha1
                 newLaboratoriosRealizados.fecha_resultados = control.resp_glucemia === "S" || respuesta===undefined ?null:fecha1
                 newLaboratoriosRealizados.resultado =respuesta===undefined?null:respuesta
@@ -863,7 +898,7 @@ const EditControlEmbrazada: React.FC = () => {
             }
             let id_laboratorio = await repositoryLaboratoriosRealizados.getIDlaboratoriosRealizados(9, paciente.data.id_persona, paciente.data.id_control)
             if (id_laboratorio !== 0) {
-                let respuesta = control.resp_grupo_factor === "S" ? null : control.valor_grupo_factor
+                let respuesta = control.resp_grupo_factor === "S" ? "S" : control.valor_grupo_factor
                 newLaboratoriosRealizados.resultado = respuesta
                 let resp_GRUPO_FACTOR = await repositoryLaboratoriosRealizados.updateLaboratoriosRealizados(newLaboratoriosRealizados, paciente.data.id_persona, paciente.data.id_control, id_laboratorio)
                 if (resp_GRUPO_FACTOR) console.log("Se actualizo laboratorio GRUPO_FACTOR")
@@ -875,7 +910,7 @@ const EditControlEmbrazada: React.FC = () => {
                 newLaboratoriosRealizados.id_persona = paciente.data.id_persona
                 newLaboratoriosRealizados.id_control = paciente.data.id_control
                 newLaboratoriosRealizados.id_laboratorio = 9
-                newLaboratoriosRealizados.trimestre = 1
+                newLaboratoriosRealizados.trimestre = getTrimestre(toInt(edadGestacional))
                 newLaboratoriosRealizados.fecha_realizado = fecha1
                 newLaboratoriosRealizados.fecha_resultados = control.resp_grupo_factor === "S" || respuesta===undefined ?null:fecha1
                 newLaboratoriosRealizados.resultado = respuesta===undefined?null:respuesta
@@ -904,7 +939,7 @@ const EditControlEmbrazada: React.FC = () => {
                         <IonButtons slot="start" >
                             <IonBackButton defaultHref="/personas" disabled={isLoading} routerAnimation={animationBuilder} />
                         </IonButtons>
-                        <IonLabel >Control {control?.id_control_embarazo} de {paciente?.paciente.nombre} {paciente?.paciente.apellido} / Fecha: {moment(paciente?.data.fecha).format("LL")}</IonLabel>
+                        <IonLabel >Control {control?.id_control_embarazo} de {paciente?.paciente?.nombre} {paciente?.paciente?.apellido} / Fecha: {moment(fecha1).format("LL")}</IonLabel>
                     </IonToolbar>
                 </IonHeader>
                 <IonContent>
@@ -945,60 +980,58 @@ const EditControlEmbrazada: React.FC = () => {
                         {/* Ecografia */}
                         <IonCard>
                             <IonCardHeader>
-                                <IonCardTitle>Ecografía</IonCardTitle>
+                                <IonItem lines="none">
+                                    <IonCheckbox slot="start" checked={control?.ecografia !== "N"} onIonChange={handleEcoCheck}></IonCheckbox>
+                                    <IonCardTitle>Ecografía</IonCardTitle>
+                                </IonItem>
                             </IonCardHeader>
-                            <IonRow>
-                                <IonCol>
-                                    <IonList>
-
-                                        <IonRadioGroup onIonChange={e => handleInputChangeEcografia(e)} name="ecografia" value={control?.ecografia}>
-                                            <IonItem>
-                                                <IonLabel>Si</IonLabel>
-                                                <IonRadio slot="end" value="T"></IonRadio>
-                                            </IonItem>
-
-                                            <IonItem>
-                                                <IonLabel>No</IonLabel>
-                                                <IonRadio slot="end" value="N"></IonRadio>
-                                            </IonItem>
-                                            <IonItem>
-                                                <IonLabel>Solicitada</IonLabel>
-                                                <IonRadio slot="end" value="S"></IonRadio>
-                                            </IonItem>
-
-
-                                        </IonRadioGroup>
-                                    </IonList>
-                                </IonCol>
-                                <IonCol>
-                                    {showEcografia &&
+                            {(control?.ecografia !== "N" || control?.ECO_CHECKED) && (
+                                <IonRow>
+                                    <IonCol>
                                         <IonList>
-                                            <IonRadioGroup onIonChange={e => handleInputChangeEco_Observa(e)} name="ecografia_resultado" value={control?.ecografia_resultado}>
+                                            <IonRadioGroup onIonChange={e => handleInputChangeEcografia(e)} name="ecografia" value={control?.ecografia}>
                                                 <IonItem>
-                                                    <IonLabel>Normal</IonLabel>
-                                                    <IonRadio slot="end" value="R"></IonRadio>
+                                                    <IonLabel>Solicitada</IonLabel>
+                                                    <IonRadio slot="end" value="S"></IonRadio>
                                                 </IonItem>
-
                                                 <IonItem>
-                                                    <IonLabel color="danger">Patológica</IonLabel>
-                                                    <IonRadio slot="end" value="P"></IonRadio>
+                                                    <IonLabel>Realizada (Si)</IonLabel>
+                                                    <IonRadio slot="end" value="T"></IonRadio>
                                                 </IonItem>
-
-
+                                                <IonItem>
+                                                    <IonLabel>No</IonLabel>
+                                                    <IonRadio slot="end" value="N"></IonRadio>
+                                                </IonItem>
                                             </IonRadioGroup>
-                                        </IonList>}
-                                </IonCol>
-                                <IonCol>
-                                    { showEcografia &&
-                                        <IonList>
-                                            <IonItem>
-                                                <IonLabel position="floating">Observaciones</IonLabel>
-                                                <IonInput name="eco_observaciones" onIonChange={e => handleInputChange(e)} value={control.eco_observaciones}></IonInput>
-                                            </IonItem>
                                         </IonList>
-                                    }
-                                </IonCol>
-                            </IonRow>
+                                    </IonCol>
+                                    <IonCol>
+                                        {showEcografia &&
+                                            <IonList>
+                                                <IonRadioGroup onIonChange={e => handleInputChangeEco_Observa(e)} name="ecografia_resultado" value={control?.ecografia_resultado}>
+                                                    <IonItem>
+                                                        <IonLabel>Normal</IonLabel>
+                                                        <IonRadio slot="end" value="R"></IonRadio>
+                                                    </IonItem>
+                                                    <IonItem>
+                                                        <IonLabel color="danger">Patológica</IonLabel>
+                                                        <IonRadio slot="end" value="P"></IonRadio>
+                                                    </IonItem>
+                                                </IonRadioGroup>
+                                            </IonList>}
+                                    </IonCol>
+                                    <IonCol>
+                                        { showEcografia &&
+                                            <IonList>
+                                                <IonItem>
+                                                    <IonLabel position="floating">Observaciones</IonLabel>
+                                                    <IonInput name="eco_observaciones" onIonChange={e => handleInputChange(e)} value={control.eco_observaciones}></IonInput>
+                                                </IonItem>
+                                            </IonList>
+                                        }
+                                    </IonCol>
+                                </IonRow>
+                            )}
                         </IonCard>
                         <IonCard>
                             <IonCardHeader>

@@ -241,14 +241,27 @@ export class PersonasRepository {
   await db.open()
   try {
     const res: any = await db.query(
-      "SELECT MAX(CAST(sync_date AS INTEGER)) AS sync_date FROM sync_table"
+      "SELECT sync_date FROM sync_table LIMIT 1"
     )
-    const value = res?.values?.[0]?.sync_date
+    const value = res?.values?.[0]?.sync_date;
     if (value === null || value === undefined) {
-      return null
+      return null;
     }
-    const parsed = Number(value)
-    return Number.isFinite(parsed) ? parsed : null
+    
+    if (typeof value === 'number') {
+      return value;
+    }
+    
+    if (typeof value === 'string') {
+      if (value.includes('T')) {
+        const ms = Date.parse(value);
+        return isNaN(ms) ? null : Math.floor(ms / 1000);
+      }
+      const parsed = parseFloat(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+    
+    return null;
   } catch (_error) {
     return null
   } finally {

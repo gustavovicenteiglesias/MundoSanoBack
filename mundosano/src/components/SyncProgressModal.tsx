@@ -54,66 +54,80 @@ const SyncProgressModal: React.FC<{
   const hasTables = Array.isArray(state.tableSummaries) && state.tableSummaries.length > 0;
 
   return (
-    <IonModal isOpen={state.isOpen} backdropDismiss={false}>
-      <IonContent className="ion-padding">
-        <h2>{state.title}</h2>
-        {state.subtitle ? <p>{state.subtitle}</p> : null}
+    <IonModal 
+      isOpen={state.isOpen} 
+      backdropDismiss={false}
+      style={{
+        "--height": "auto",
+        "--width": "90%",
+        "--max-width": "400px",
+        "--border-radius": "16px",
+        "--box-shadow": "0 28px 48px rgba(0,0,0,0.4)"
+      }}
+    >
+      <div className="ion-padding" style={{ background: "var(--ion-background-color, #1e1e1e)", color: "var(--ion-text-color, #fff)", borderRadius: "16px" }}>
+        <h2 style={{ fontSize: "1.4rem", margin: "0 0 8px 0", fontWeight: "700", color: "var(--ion-text-color)" }}>{state.title}</h2>
+        {state.subtitle ? <p style={{ fontSize: "0.9rem", color: "var(--ion-color-medium)", margin: "0 0 16px 0" }}>{state.subtitle}</p> : null}
 
-        {state.phase ? (
-          <IonText color={statusColor(state.status)}>
-            <p>
-              <strong>{state.phase}</strong>
-            </p>
-          </IonText>
-        ) : null}
+        <div style={{ background: "var(--ion-color-step-100, #2a2a2a)", padding: "16px", borderRadius: "12px", marginBottom: "16px" }}>
+          {state.phase ? (
+            <IonText color={statusColor(state.status)}>
+              <p style={{ margin: "0 0 8px 0", textTransform: "uppercase", fontSize: "0.75rem", letterSpacing: "1px", fontWeight: "bold" }}>
+                {state.phase}
+              </p>
+            </IonText>
+          ) : null}
 
-        {state.detail ? <p>{state.detail}</p> : null}
+          {state.detail ? <p style={{ fontSize: "0.85rem", margin: "0 0 12px 0", minHeight: "2.4em" }}>{state.detail}</p> : null}
 
-        {typeof state.progress === "number" ? (
-          <>
-            <IonProgressBar
-              value={Math.max(0, Math.min(1, state.progress))}
-              color={statusColor(state.status)}
-            />
-            <p>{Math.round(state.progress * 100)}%</p>
-          </>
-        ) : (
-          <IonProgressBar type="indeterminate" color={statusColor(state.status)} />
-        )}
+          {typeof state.progress === "number" ? (
+            <>
+              <IonProgressBar
+                value={Math.max(0, Math.min(1, state.progress))}
+                color={statusColor(state.status)}
+                style={{ height: "8px", borderRadius: "4px" }}
+              />
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: "4px", fontSize: "0.75rem", color: "var(--ion-color-medium)" }}>
+                <span>{Math.round(state.progress * 100)}% Completado</span>
+                {(state.loadedBytes || state.totalBytes) ? (
+                  <span>{formatBytes(state.loadedBytes)} / {formatBytes(state.totalBytes)}</span>
+                ) : null}
+              </div>
+            </>
+          ) : (
+            <IonProgressBar type="indeterminate" color={statusColor(state.status)} style={{ height: "6px", borderRadius: "3px" }} />
+          )}
+        </div>
 
-        {(state.loadedBytes || state.totalBytes) ? (
-          <p>
-            Descargado: {formatBytes(state.loadedBytes)}
-            {state.totalBytes ? ` / ${formatBytes(state.totalBytes)}` : ""}
-          </p>
-        ) : null}
-
-        {typeof state.totalItems === "number" ? (
-          <p>
-            Procesados: {state.processedItems ?? 0} / {state.totalItems}
-          </p>
+        {typeof state.totalItems === "number" && state.totalItems > 0 ? (
+          <div style={{ background: "var(--ion-color-step-100, #2a2a2a)", padding: "12px", borderRadius: "12px", marginBottom: "16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: "0.8rem", color: "var(--ion-color-medium)" }}>Registros totales:</span>
+            <span style={{ fontSize: "1.1rem", fontWeight: "bold", color: "var(--ion-text-color)" }}>
+               {state.processedItems ?? 0} / {state.totalItems}
+            </span>
+          </div>
         ) : null}
 
         {hasTables ? (
-          <div style={{ marginTop: 16 }}>
-            <p>
-              <strong>Tablas involucradas</strong>
-            </p>
+          <div style={{ maxHeight: "150px", overflowY: "auto", background: "var(--ion-color-step-50, #161616)", borderRadius: "12px", padding: "8px" }}>
             {state.tableSummaries!.map((table) => (
-              <IonItem key={table.name}>
-                <IonLabel>
-                  {table.name}
-                  <p>{table.count} registros</p>
-                </IonLabel>
-              </IonItem>
+              <div key={table.name} style={{ display: "flex", justifyContent: "space-between", padding: "8px", borderBottom: "1px solid var(--ion-color-step-200)", fontSize: "0.8rem" }}>
+                <span style={{ color: "var(--ion-text-color)" }}>{table.name}</span>
+                <span style={{ color: "var(--ion-color-success)", fontWeight: "bold" }}>{table.count}</span>
+              </div>
             ))}
           </div>
         ) : null}
 
-        <IonButton expand="block" onClick={onClose} disabled={!state.canClose}>
-          Cerrar
+        <IonButton 
+          expand="block" 
+          onClick={onClose} 
+          disabled={!state.canClose}
+          style={{ marginTop: "20px", "--border-radius": "10px", "--background": "#3880ff" }}
+        >
+          {state.status === "success" ? "Finalizar" : "Cerrar"}
         </IonButton>
-      </IonContent>
+      </div>
     </IonModal>
   );
 };

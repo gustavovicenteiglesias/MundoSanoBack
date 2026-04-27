@@ -1,4 +1,4 @@
-import { IonBackButton, IonButton, IonButtons, IonCard, IonCardHeader, IonCardTitle, IonCol, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonRadio, IonRadioGroup, IonRow, IonSelect, IonSelectOption, IonTextarea, IonToolbar, useIonViewWillEnter } from "@ionic/react";
+import { IonBackButton, IonButton, IonButtons, IonCard, IonCardHeader, IonCardTitle, IonCheckbox, IonCol, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonRadio, IonRadioGroup, IonRow, IonSelect, IonSelectOption, IonTextarea, IonToolbar, useIonViewWillEnter } from "@ionic/react";
 import { useEffect, useState } from "react";
 import { animationBuilder } from "../components/AnimationBuilder"
 import { useHistory, useLocation } from "react-router"
@@ -56,8 +56,8 @@ const inicial_control = {
     resp_glucemia: "S",
     motivo: 9,
     derivada: 0,
-    gestas: 0
-
+    gestas: 0,
+    ECO_CHECKED: false
 }
 
 const NuevaEmbarazadaControl: React.FC = () => {
@@ -93,16 +93,35 @@ const NuevaEmbarazadaControl: React.FC = () => {
    
     
     let history = useHistory()
+    const getTrimestre = (semanas: number) => {
+        if (semanas <= 13) return 1;
+        if (semanas <= 27) return 2;
+        return 3;
+    };
+
+    const toInt = (value: any, fallback: number = 0): number => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : fallback;
+    };
+
+    const strOrEmpty = (value: any): string => value === undefined || value === null ? "" : String(value);
+
+    // Lógica Gestacional Dinámica (Igual a NuevoControl)
     useEffect(() => {
-        if (paciente.control?.fum !== null) {
-            setEdadGestacional(hoy.diff(paciente.control?.fum, "weeks"));
-        }else if (paciente.control?.fpp !== null){
-            setEdadGestacional((hoy.diff(paciente.control?.fpp, "weeks"))+40);
-        }else{
-            setEdadGestacional(0);
+        const fum = paciente?.control?.fum;
+        const fpp = paciente?.control?.fpp;
+
+        let semanas = 0;
+        if (fum && fum !== "null") {
+            semanas = hoy.diff(moment(fum), "weeks");
+        } else if (fpp && fpp !== "null") {
+            semanas = hoy.diff(moment(fpp), "weeks") + 40;
         }
 
-    }, [])
+        semanas = semanas < 0 ? 0 : semanas;
+        setEdadGestacional(semanas);
+        setControl((prev: any) => ({ ...prev, edad_gestacional: semanas }));
+    }, [paciente]);
 
     useEffect(()=>{
         setFecha1(hoy.format("YYYY-MM-DD"))
@@ -182,44 +201,54 @@ const NuevaEmbarazadaControl: React.FC = () => {
 
     }
 
+    const handleEcoCheck = (e: any) => {
+        const checked = e.detail.checked;
+        setControl((prev: any) => {
+            const next = { ...prev, ECO_CHECKED: checked };
+            if (checked && prev.ecografia === "N") {
+                next.ecografia = "S";
+            } else if (!checked) {
+                next.ecografia = "N";
+                setShowEcografia(false);
+            }
+            return next;
+        });
+    }
+
     const handleInpuTChecks = (e: any) => {
         const name = e.target.name;
         const value = e.detail.checked
-        setControl((prevProps: any) => ({ ...prevProps, [name]: value }));
+        setControl((prevProps: any) => {
+            const next = { ...prevProps, [name]: value };
+            
+            // Lógica para marcar como Solicitada automáticamente
+            const respKey = "resp_" + name.toLowerCase();
+            if (value && (prevProps[respKey] === "N" || !prevProps[respKey])) {
+                next[respKey] = "S";
+            }
+            
+            // Casos especiales
+            if (name === "SIFILIS" && value && prevProps.resp_sifilis === "N") next.resp_sifilis = "S";
+            if (name === "HIV" && value && prevProps.resp_hiv === "N") next.resp_hiv = "S";
+            if (name === "CHAGAS" && value && prevProps.resp_chagas === "N") next.resp_chagas = "S";
+            if (name === "VHB" && value && prevProps.resp_vhb === "N") next.resp_vhb = "S";
+            
+            return next;
+        });
     }
 
     const OnSubmit = async (e: any) => {
         e.preventDefault()
         setLoading(true)
 
-        /*Tabla control_embarazo */
-        const control_embarazo: any = {};
-        control_embarazo.edad_gestacional = edadGestacional;
-        if (control.ecografia === "S") {
-            control_embarazo.eco = "S"
-        } else {
-            control_embarazo.eco = control.ecografia === "N" ? "N" : control.ecografia_resultado;
-        }
+        const now = Math.floor(Date.now() / 1000);
 
-        control_embarazo.detalle_eco = control.eco_observaciones;
-        control_embarazo.hpv = control.hpv === "N" ? "N" : control.hpv_resultado;
-        control_embarazo.pap = control.pap === "N" ? "N" : control.pap_resultado;
-        control_embarazo.sistolica = control.sistolica;
-        control_embarazo.diastolica = control.diastolica;
-        control_embarazo.clinico = control.clinico;
-        control_embarazo.observaciones = control.observaciones;
-        control_embarazo.motivo = control.motivo
-        control_embarazo.derivada = control.derivada
+        // Insert tabla personas
+        let ultimo_id_persona = await repositoryPersonas.getLastRowId("id_persona")
+        const current_id_persona = toInt(ultimo_id_persona) + 1;
 
-
-        /*Laboratorio y cerologia */
-        const laboratorios: any = {};
-        //laboratorios.sifilis
-        //Insert tabla personas
- 
-        let ultimo_id_persona = await repositoryPersonas.getLastRowId("id_persona") //consulta(`SELECT id_persona FROM personas WHERE id_persona BETWEEN  ${minimo} AND ${maximo} ORDER BY id_persona DESC LIMIT 1`)
-        const newPersona:Personas={
-            id_persona: ultimo_id_persona + 1,
+        const newPersona: Personas = {
+            id_persona: current_id_persona,
             apellido: paciente.paciente.apellido,
             nombre: paciente.paciente.nombre,
             documento: paciente.paciente.documento,
@@ -231,20 +260,17 @@ const NuevaEmbarazadaControl: React.FC = () => {
             alta: paciente.paciente.alta,
             nacido_vivo: paciente.paciente.nacido_vivo,
             sql_deleted: 0,
-            last_modified: Math.floor(new Date().getTime() / 1000),
-           // usuario_modified: currentuser?.id_usuario===undefined?0:currentuser.id_usuario
+            last_modified: now,
         }
-        ultimo_id_persona=ultimo_id_persona+1//ultimo id_persona
-        const insertPersonas=await repositoryPersonas.create(newPersona)
-        if(insertPersonas)console.log("Persona insertada")
-       
+        await repositoryPersonas.create(newPersona)
+        console.log("Persona insertada ID:", current_id_persona);
 
-        
-        let ultimo_id_ubicacion = await repositoryUbicacion.getLastRowId("id_ubicacion")//consulta(`SELECT id_ubicacion FROM ubicaciones WHERE id_persona BETWEEN ${minimo} AND ${maximo} ORDER BY id_persona DESC LIMIT 1`)
-        let ubicacionGeo=paciente.paciente.latitud+" "+ paciente.paciente.longitud
-        const newUbicacion:Ubicaciones={
-            id_ubicacion: ultimo_id_ubicacion + 1,
-            id_persona: ultimo_id_persona,
+        // Ubicacion
+        let ultimo_id_ubicacion = await repositoryUbicacion.getLastRowId("id_ubicacion")
+        let ubicacionGeo = paciente.paciente.latitud + " " + paciente.paciente.longitud
+        const newUbicacion: Ubicaciones = {
+            id_ubicacion: toInt(ultimo_id_ubicacion) + 1,
+            id_persona: current_id_persona,
             id_paraje: paciente.paciente.paraje_residencia,
             id_area: paciente.paciente.area_residencia,
             num_vivienda: "",
@@ -252,22 +278,19 @@ const NuevaEmbarazadaControl: React.FC = () => {
             georeferencia: ubicacionGeo,
             id_pais: paciente.paciente.pais_residencia,
             sql_deleted: 0,
-            last_modified: Math.floor(new Date().getTime() / 1000),
-            //usuario_modified: currentuser?.id_usuario===undefined?0:currentuser.id_usuario
+            last_modified: now,
         }
-        ultimo_id_ubicacion=ultimo_id_ubicacion+1
-        const insertUbicaciones=await repositoryUbicacion.create(newUbicacion)
-        if(insertUbicaciones)console.log("Ubicacion insertada");
-       console.log("id_persona "+(ultimo_id_persona-1))
-        
-        
-        let ultimo_id_control = await repositoryControles.getLastRowId("id_control")//consulta(`SELECT id_control FROM controles WHERE id_control BETWEEN ${minimo} AND ${maximo} ORDER BY id_control DESC LIMIT 1`)
-        ultimo_id_control = ultimo_id_control + 1
+        await repositoryUbicacion.create(newUbicacion)
+        console.log("Ubicacion insertada");
 
-        const newControles:Controles={
-            id_control: ultimo_id_control,
+        // Control
+        let ultimo_id_control = await repositoryControles.getLastRowId("id_control")
+        const current_id_control = toInt(ultimo_id_control) + 1;
+
+        const newControles: Controles = {
+            id_control: current_id_control,
             fecha: fecha1,
-            id_persona: ultimo_id_persona,
+            id_persona: current_id_persona,
             control_numero: 1,
             id_estado: 1,
             id_seguimiento_chagas: null,
@@ -282,278 +305,220 @@ const NuevaEmbarazadaControl: React.FC = () => {
             id_tipos_fin_embarazos: null,
             georeferencia: null,
             sql_deleted: 0,
-            last_modified: Math.floor(new Date().getTime() / 1000),
-            //usuario_modified: currentuser?.id_usuario===undefined?0:currentuser.id_usuario
+            last_modified: now,
         }
+        await repositoryControles.create(newControles);
+        console.log("Control insertado ID:", current_id_control);
 
-       
-            const insertControl=await repositoryControles.create(newControles);
-            if(insertControl)console.log("Control insertado");
-            
-        
+        // Antecedentes
+        let ultimo_id_antecedentes = await repositoryAntecedentes.getLastRowId("id_antecedente")
+        let insertfum = paciente.control?.fum === null ? null : moment(paciente.control.fum).format("YYYY-MM-DD")
+        let insertfpp = paciente.control?.fpp === null ? null : moment(paciente.control.fpp).format("YYYY-MM-DD")
+        let insert_fecha_ultimo_embarazo = paciente?.control.fecha_ultimo_embarazo === null || paciente?.control.fecha_ultimo_embarazo === "null" ? null : paciente?.control.fecha_ultimo_embarazo
 
-        //insert antecedentes
-        ultimo_id_control = newControles.id_control//await consulta(`SELECT id_control FROM controles WHERE id_control BETWEEN ${minimo} AND ${maximo} ORDER BY id_control DESC LIMIT 1`)
-        let ultimo_id_antecedentes = await repositoryAntecedentes.getLastRowId("id_antecedente")//consulta(`SELECT id_antecedente FROM antecedentes WHERE id_antecedente BETWEEN ${minimo} AND ${maximo} ORDER BY id_antecedente DESC LIMIT 1`)
-        let insertfum=paciente.control?.fum === null ? null : moment(paciente.control.fum).format("YYYY-MM-DD")
-        console.log("insert "+insertfum)
-        let insert_fecha_ultimo_embarazo = paciente?.control.fecha_ultimo_embarazo === null || paciente?.control.fecha_ultimo_embarazo === "null" ? null :  paciente?.control.fecha_ultimo_embarazo 
-        let insertfpp=paciente.control?.fpp === null ? null : moment(paciente.control.fpp).format("YYYY-MM-DD")
-        const newAntecedentes:Antecedentes={
-            id_antecedente: ultimo_id_antecedentes+1, 
-            id_persona: ultimo_id_persona,
-            id_control: ultimo_id_control,
-            edad_primer_embarazo: Number(paciente.control.edad_primer_embarazo),
+        const newAntecedentes: Antecedentes = {
+            id_antecedente: toInt(ultimo_id_antecedentes) + 1,
+            id_persona: current_id_persona,
+            id_control: current_id_control,
+            edad_primer_embarazo: toInt(paciente.control.edad_primer_embarazo),
             fecha_ultimo_embarazo: insert_fecha_ultimo_embarazo,
-            gestas: Number(paciente.control.gestas),
-            partos:Number(paciente.control.partos) ,
-            cesareas:Number(paciente.control.cesareas) ,
-            abortos:Number(paciente.control.abortos) ,
+            gestas: toInt(paciente.control.gestas),
+            partos: toInt(paciente.control.partos),
+            cesareas: toInt(paciente.control.cesareas),
+            abortos: toInt(paciente.control.abortos),
             planificado: paciente.control.planificado,
             fum: insertfum,
             fpp: insertfpp,
             sql_deleted: 0,
-            last_modified: Math.floor(new Date().getTime() / 1000),
-            //usuario_modified: currentuser?.id_usuario===undefined?0:currentuser.id_usuario
+            last_modified: now,
         }
-        let insertAntecedentes = await repositoryAntecedentes.create(newAntecedentes)//consulta(`INSERT INTO antecedentes(id_antecedente,id_persona,id_control,edad_primer_embarazo,
-          
-        if(insertAntecedentes )console.log("Insertar antecedentes")
+        await repositoryAntecedentes.create(newAntecedentes)
+        const current_id_antecedente = newAntecedentes.id_antecedente;
 
-        //si hay macs insertar en la tabla de antecedentes_apps
-        
-        ultimo_id_antecedentes =Number(newAntecedentes.id_antecedente) 
-        const newAntecedentesApss:Antecedentes_Apps={
-            id_antecedente: ultimo_id_antecedentes,
-            id_app: paciente.control.app,
-            last_modified: Math.floor(new Date().getTime() / 1000),
+        // Antecedentes Apps
+        const newAntecedentesApss: Antecedentes_Apps = {
+            id_antecedente: toInt(current_id_antecedente),
+            id_app: paciente.control.app || 10,
+            last_modified: now,
             sql_deleted: 0
-           
         }
-        if (paciente.control.app !== undefined) {
-           //await consulta(`SELECT id_antecedente FROM antecedentes WHERE id_antecedente BETWEEN ${minimo} AND ${maximo} ORDER BY id_antecedente DESC LIMIT 1`)
-           
-            let apps_antecedentes = await repositoryAntecedentesApps.create(newAntecedentesApss)
-            if (apps_antecedentes) console.log("Insertar antecedentes apps")
-        } else {
-           newAntecedentesApss.id_app=10
-            let apps_antecedentes = await repositoryAntecedentesApps.create(newAntecedentesApss)
-            if (apps_antecedentes) console.log("Insertar antecedentes apps")
-        }
+        await repositoryAntecedentesApps.create(newAntecedentesApss)
 
-        //si hay macs insertar en la tabla de antecedentes_macs
-        const newAntecedentesMacs:Antecedentes_Macs={
-            id_antecedente: ultimo_id_antecedentes,
-            id_mac: paciente.control.mac,
+        // Antecedentes Macs
+        const newAntecedentesMacs: Antecedentes_Macs = {
+            id_antecedente: toInt(current_id_antecedente),
+            id_mac: paciente.control.mac || 6,
             sql_deleted: 0,
-            last_modified: Math.floor(new Date().getTime() / 1000),
-            //usuario_modified: currentuser?.id_usuario===undefined?0:currentuser.id_usuario
+            last_modified: now,
         }
-        if (paciente.control.mac !== undefined) {
-            let macs_antecedente = await repositoryAntecedentesMacs.create(newAntecedentesMacs);
-            if (macs_antecedente) console.log("Insertar antecedentes macs")
+        await repositoryAntecedentesMacs.create(newAntecedentesMacs);
 
-        } else {
-            newAntecedentesMacs.id_mac = 6
-            let macs_antecedente = await await repositoryAntecedentesMacs.create(newAntecedentesMacs);
-            if (macs_antecedente) console.log("Insertar antecedentes macs")
-
-        }
-
-
-
-        //insert control embarazada
-        let ultimo_id_control_embarazada = await repositoryControlEmbarazo.getLastRowId("id_control_embarazo")//consulta(`SELECT id_control_embarazo FROM control_embarazo WHERE id_control_embarazo BETWEEN ${minimo} AND ${maximo} ORDER BY id_control_embarazo DESC LIMIT 1`)
-        const newControlEmbarazo:Control_Embarazo={
-            id_control_embarazo: ultimo_id_control_embarazada + 1,
-            id_control: ultimo_id_control,
-            edad_gestacional: control_embarazo.edad_gestacional,
-            eco: control_embarazo.eco,
-            detalle_eco: control_embarazo.detalle_eco,
-            hpv: control_embarazo.hpv,
-            pap: control_embarazo.pap,
-            sistolica: control_embarazo.sistolica,
-            diastolica: control_embarazo.diastolica,
-            clinico: control_embarazo.clinico,
-            observaciones:control_embarazo.observaciones,
-            motivo: control_embarazo.motivo,
-            derivada: control_embarazo.derivada,
+        // Control Embarazo
+        let ultimo_id_control_embarazada = await repositoryControlEmbarazo.getLastRowId("id_control_embarazo")
+        const newControlEmbarazo: Control_Embarazo = {
+            id_control_embarazo: toInt(ultimo_id_control_embarazada) + 1,
+            id_control: current_id_control,
+            edad_gestacional: toInt(edadGestacional),
+            eco: control.ecografia === "S" ? "S" : (control.ecografia === "N" ? "N" : control.ecografia_resultado),
+            detalle_eco: strOrEmpty(control.eco_observaciones),
+            hpv: control.hpv === "N" ? "N" : control.hpv_resultado,
+            pap: control.pap === "N" ? "N" : control.pap_resultado,
+            sistolica: toInt(control.sistolica),
+            diastolica: toInt(control.diastolica),
+            clinico: strOrEmpty(control.clinico),
+            observaciones: strOrEmpty(control.observaciones),
+            motivo: toInt(control.motivo),
+            derivada: toInt(control.derivada),
             sql_deleted: 0,
-            last_modified: Math.floor(new Date().getTime() / 1000),
-            //usuario_modified: currentuser?.id_usuario===undefined?0:currentuser.id_usuario
+            last_modified: now,
         }
-        let resp_control_embrarazo = await repositoryControlEmbarazo.create(newControlEmbarazo)
-        if (resp_control_embrarazo) console.log("Insertar Control Embarazo")
+        await repositoryControlEmbarazo.create(newControlEmbarazo)
 
-        //Insert inmunizaciones
-        const newInmunizacionesControl:Inmunizaciones_Control={
-            id_persona: ultimo_id_persona,
-            id_control: ultimo_id_control,
+        // Inmunizaciones
+        const newInmunizacionesControl: Inmunizaciones_Control = {
+            id_persona: current_id_persona,
+            id_control: current_id_control,
             id_inmunizacion: 2,
             estado: control.agripal,
             sql_deleted: 0,
-            last_modified: Math.floor(new Date().getTime() / 1000),
-            //usuario_modified: currentuser?.id_usuario===undefined?0:currentuser.id_usuario
+            last_modified: now,
         }
-        let AGRIPAL = await repositoryInmunizacionesControl.create(newInmunizacionesControl)
-        if (AGRIPAL) console.log("Insertar Inmunizaciones Control")
+        await repositoryInmunizacionesControl.create(newInmunizacionesControl) // AGRIPAL
 
-        newInmunizacionesControl.id_inmunizacion=3
-        newInmunizacionesControl.estado=control.db
-        let DB = await repositoryInmunizacionesControl.create(newInmunizacionesControl)
-        if (DB) console.log("Insertar Inmunizaciones Control")
+        newInmunizacionesControl.id_inmunizacion = 3
+        newInmunizacionesControl.estado = control.db
+        await repositoryInmunizacionesControl.create(newInmunizacionesControl) // DB
 
-        newInmunizacionesControl.id_inmunizacion=1
-        newInmunizacionesControl.estado=control.tba
-        let TBA = await repositoryInmunizacionesControl.create(newInmunizacionesControl)
-        if (TBA) console.log("Insertar Inmunizaciones Control")
+        newInmunizacionesControl.id_inmunizacion = 1
+        newInmunizacionesControl.estado = control.tba
+        await repositoryInmunizacionesControl.create(newInmunizacionesControl) // TBA
 
-        newInmunizacionesControl.id_inmunizacion=4
-        newInmunizacionesControl.estado=control.vhb
-        let VHB =  await repositoryInmunizacionesControl.create(newInmunizacionesControl)
-        if (VHB) console.log("Insertar Inmunizaciones Control")
+        newInmunizacionesControl.id_inmunizacion = 4
+        newInmunizacionesControl.estado = control.vhb
+        await repositoryInmunizacionesControl.create(newInmunizacionesControl) // VHB
 
-
-
-
-
-        //Insert Laboratorio
-        const newLaboratoriosRealizados:Laboratorios_Realizados={
-            id_persona: ultimo_id_persona,
-            id_control: ultimo_id_control,
+        // Laboratorios
+        const currentTrimestre = getTrimestre(toInt(edadGestacional));
+        const baseLab: Laboratorios_Realizados = {
+            id_persona: current_id_persona,
+            id_control: current_id_control,
             id_laboratorio: 1,
-            trimestre: 1,
+            trimestre: currentTrimestre,
             fecha_realizado: fecha1,
-            
-           
             id_etmi: 3,
             sql_deleted: 0,
-            last_modified: Math.floor(new Date().getTime() / 1000),
-            //usuario_modified: currentuser?.id_usuario===undefined?0:currentuser.id_usuario
+            last_modified: now,
         }
 
-        const newEtmisPersonas:Etmis_Personas={
-            id_persona: ultimo_id_persona,
+        const baseEtmi: Etmis_Personas = {
+            id_persona: current_id_persona,
             id_etmi: 3,
-            id_control: ultimo_id_control,
+            id_control: current_id_control,
             confirmada: 0,
             sql_deleted: 0,
-            last_modified: Math.floor(new Date().getTime() / 1000),
-            //usuario_modified: currentuser?.id_usuario===undefined?0:currentuser.id_usuario
+            last_modified: now,
         }
-        //Sifilis
 
+        // Sifilis
         if (control.SIFILIS) {
-            newLaboratoriosRealizados.resultado=control.resp_sifilis==="S"?null:control.resp_sifilis
-            newLaboratoriosRealizados.fecha_resultados=control.resp_sifilis==="S"?null:fecha1
-            let Resp_Sifilis = await repositoryLaboratoriosRealizados.create(newLaboratoriosRealizados)
-            if (Resp_Sifilis) console.log("Insertar Laboratorios Realizados")
-
+            await repositoryLaboratoriosRealizados.create({
+                ...baseLab,
+                id_laboratorio: 1,
+                id_etmi: 3,
+                resultado: control.resp_sifilis,
+                fecha_resultados: control.resp_sifilis === "S" ? null : fecha1
+            });
             if (control.resp_sifilis === "P") {
-                let etmis = await repositoryEtmisPersonas.create(newEtmisPersonas);
-                if (etmis) console.log("Insertar Etmis Personas Sifilis")
-
+                await repositoryEtmisPersonas.create({ ...baseEtmi, id_etmi: 3 });
             }
         }
-        //HIV
-        
+
+        // HIV
         if (control.HIV) {
-            newLaboratoriosRealizados.id_laboratorio=2;
-            newLaboratoriosRealizados.id_etmi=2
-            newLaboratoriosRealizados.resultado = control.resp_hiv==="S"?null:control.resp_hiv;
-            let resp_HIV = await repositoryLaboratoriosRealizados.create(newLaboratoriosRealizados)
-            if (resp_HIV) console.log("Insertar Laboratorios Realizados HIV")
-
+            await repositoryLaboratoriosRealizados.create({
+                ...baseLab,
+                id_laboratorio: 2,
+                id_etmi: 2,
+                resultado: control.resp_hiv,
+                fecha_resultados: control.resp_hiv === "S" ? null : fecha1
+            });
             if (control.resp_hiv === "P") {
-                newEtmisPersonas.id_etmi=2
-                let etmis = await repositoryEtmisPersonas.create(newEtmisPersonas);
-                if (etmis) console.log("Insertar Etmis Personas HIV")
+                await repositoryEtmisPersonas.create({ ...baseEtmi, id_etmi: 2 });
             }
         }
-        //CHAGAS
+
+        // CHAGAS
         if (control.CHAGAS) {
-            newLaboratoriosRealizados.id_laboratorio=4;
-            newLaboratoriosRealizados.id_etmi=1
-            newLaboratoriosRealizados.resultado = control.resp_chagas==="S"?null:control.resp_chagas;
-            newLaboratoriosRealizados.fecha_resultados=control.resp_chagas==="S"?null:fecha1
-            let resp_CHAGAS = await repositoryLaboratoriosRealizados.create(newLaboratoriosRealizados);
-            if (resp_CHAGAS) console.log("Insertar Laboratorios Realizados CHAGAS")
-
+            await repositoryLaboratoriosRealizados.create({
+                ...baseLab,
+                id_laboratorio: 4,
+                id_etmi: 1,
+                resultado: control.resp_chagas,
+                fecha_resultados: control.resp_chagas === "S" ? null : fecha1
+            });
             if (control.resp_chagas === "P") {
-                newEtmisPersonas.id_etmi=1
-                let etmis = await repositoryEtmisPersonas.create(newEtmisPersonas);
-                if (etmis) console.log("Insertar Etmis Personas CHAGAS")
+                await repositoryEtmisPersonas.create({ ...baseEtmi, id_etmi: 1 });
             }
         }
-        //VHB
+
+        // VHB
         if (control.VHB) {
-            newLaboratoriosRealizados.id_laboratorio=5;
-            newLaboratoriosRealizados.id_etmi=4
-            newLaboratoriosRealizados.resultado = control.resp_vhb==="S"?null:control.resp_vhb;
-            newLaboratoriosRealizados.fecha_resultados=control.resp_vhb==="S"?null:fecha1
-            let resp_VHB = await repositoryLaboratoriosRealizados.create(newLaboratoriosRealizados);
-            if (resp_VHB) console.log("Insertar Laboratorios Realizados VHB")
-
+            await repositoryLaboratoriosRealizados.create({
+                ...baseLab,
+                id_laboratorio: 5,
+                id_etmi: 4,
+                resultado: control.resp_vhb,
+                fecha_resultados: control.resp_vhb === "S" ? null : fecha1
+            });
             if (control.resp_vhb === "P") {
-                newEtmisPersonas.id_etmi=4
-                let etmis = await repositoryEtmisPersonas.create(newEtmisPersonas); 
-                if (etmis) console.log("Insertar Etmis Personas VHB")
+                await repositoryEtmisPersonas.create({ ...baseEtmi, id_etmi: 4 });
             }
         }
 
-        //ESTREPTOCOCO_BETA_HEMOLÍTICO
-
+        // Otros Labs
         if (control.ESTREPTOCOCO_BETA_HEMOLÍTICO) {
-            newLaboratoriosRealizados.id_laboratorio=8;
-            newLaboratoriosRealizados.id_etmi=0
-            newLaboratoriosRealizados.resultado = control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO==="S"?null:control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO;
-            newLaboratoriosRealizados.fecha_resultados=control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO==="S"?null:fecha1
-            let resp_EBH =  await repositoryLaboratoriosRealizados.create(newLaboratoriosRealizados); 
-            if (resp_EBH) console.log("Insertar Etmis Personas ESTREPTOCOCO_BETA_HEMOLÍTICO");
-
+            await repositoryLaboratoriosRealizados.create({
+                ...baseLab,
+                id_laboratorio: 8,
+                id_etmi: 0,
+                resultado: control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO,
+                fecha_resultados: control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO === "S" ? null : fecha1
+            });
         }
 
-        //Hb
         if (control.HB) {
-            let respuesta = control.resp_hb === "S" ? null : control.valor_hb
-            newLaboratoriosRealizados.id_laboratorio=7;
-            newLaboratoriosRealizados.id_etmi=0
-            newLaboratoriosRealizados.resultado=respuesta
-            newLaboratoriosRealizados.fecha_resultados=control.resp_hb==="S"?null:fecha1
-            let resp_HB =  await repositoryLaboratoriosRealizados.create(newLaboratoriosRealizados);
-            if (resp_HB) console.log("Insertar Etmis Personas HB");
-
+            await repositoryLaboratoriosRealizados.create({
+                ...baseLab,
+                id_laboratorio: 7,
+                id_etmi: 0,
+                resultado: control.resp_hb === "S" ? "S" : control.valor_hb,
+                fecha_resultados: control.resp_hb === "S" ? null : fecha1
+            });
         }
 
-        //Glucemia resp_glucemia
         if (control.GLUCEMIA) {
-            let respuesta = control.resp_glucemia === "S" ? null : control.valor_glucemia
-            newLaboratoriosRealizados.id_laboratorio=6;
-            newLaboratoriosRealizados.id_etmi=0
-            newLaboratoriosRealizados.resultado=respuesta
-            newLaboratoriosRealizados.fecha_resultados=control.resp_glucemia==="S"?null:fecha1
-            let resp_GLUCEMIA =  await repositoryLaboratoriosRealizados.create(newLaboratoriosRealizados);
-            if (resp_GLUCEMIA) console.log("Insertar Etmis Personas GLUCEMIA");
-
+            await repositoryLaboratoriosRealizados.create({
+                ...baseLab,
+                id_laboratorio: 6,
+                id_etmi: 0,
+                resultado: control.resp_glucemia === "S" ? "S" : control.valor_glucemia,
+                fecha_resultados: control.resp_glucemia === "S" ? null : fecha1
+            });
         }
-        //GRUPO_FACTOR
+
         if (control.GRUPO_FACTOR) {
-            let respuesta = control.resp_grupo_factor === "S" ? null : control.valor_grupo_factor
-            newLaboratoriosRealizados.id_laboratorio=9;
-            newLaboratoriosRealizados.id_etmi=0
-            newLaboratoriosRealizados.resultado=respuesta
-            newLaboratoriosRealizados.fecha_resultados=control.resp_grupo_factor==="S"?null:fecha1
-            let resp_GRUPO_FACTOR = await repositoryLaboratoriosRealizados.create(newLaboratoriosRealizados);
-            if (resp_GRUPO_FACTOR) console.log("Insertar Etmis Personas GRUPO_FACTOR");
-
+            await repositoryLaboratoriosRealizados.create({
+                ...baseLab,
+                id_laboratorio: 9,
+                id_etmi: 0,
+                resultado: control.resp_grupo_factor === "S" ? "S" : control.valor_grupo_factor,
+                fecha_resultados: control.resp_grupo_factor === "S" ? null : fecha1
+            });
         }
 
-
-     
+        setLoading(false);
+        return true;
     }
-
-    
-   
 
     return (
         <IonPage>
@@ -566,15 +531,10 @@ const NuevaEmbarazadaControl: React.FC = () => {
                 </IonToolbar>
             </IonHeader>
             <IonContent>
-                <form onSubmit={(e:any)=>{
-                        OnSubmit(e)
-                        .then(()=>{
-                            history.push("/personas")
-                            window.location.reload()
-                            setLoading(false)
-                        })
-
-                        }}>
+                <form onSubmit={async (e: any) => {
+                    const ok = await OnSubmit(e);
+                    if (ok) history.push("/personas");
+                }}>
                     <IonItem>
                         <IonLabel position="floating">Edad Gestacional ({edadGestacional } Semanas )</IonLabel>
                         <IonInput type="number"  value={edadGestacional} name="edad_gestacional" onIonChange={e => handleEdadGestacional(e)} ></IonInput>
@@ -605,250 +565,72 @@ const NuevaEmbarazadaControl: React.FC = () => {
                     {/* Ecografia */}
                     <IonCard>
                         <IonCardHeader>
-                            <IonCardTitle>Ecografía</IonCardTitle>
+                            <IonItem lines="none">
+                                <IonCheckbox slot="start" checked={control?.ecografia !== "N"} onIonChange={handleEcoCheck}></IonCheckbox>
+                                <IonCardTitle>Ecografía</IonCardTitle>
+                            </IonItem>
                         </IonCardHeader>
-                        <IonRow>
-                            <IonCol>
-                                <IonList>
-
-                                    <IonRadioGroup onIonChange={e => handleInputChangeEcografia(e)} name="ecografia" value={control.ecografia}>
-                                        <IonItem>
-                                            <IonLabel>Si</IonLabel>
-                                            <IonRadio slot="end" value="T"></IonRadio>
-                                        </IonItem>
-
-                                        <IonItem>
-                                            <IonLabel>No</IonLabel>
-                                            <IonRadio slot="end" value="N"></IonRadio>
-                                        </IonItem>
-                                        <IonItem>
-                                            <IonLabel>Solicitada</IonLabel>
-                                            <IonRadio slot="end" value="S"></IonRadio>
-                                        </IonItem>
-
-
-                                    </IonRadioGroup>
-                                </IonList>
-                            </IonCol>
-                            <IonCol>
-                                {showEcografia &&
+                        {(control?.ecografia !== "N" || control?.ECO_CHECKED) && (
+                            <IonRow>
+                                <IonCol>
                                     <IonList>
-                                        <IonRadioGroup onIonChange={e => handleInputChangeEco_Observa(e)} name="ecografia_resultado" value={control.ecografia_resultado}>
+                                        <IonRadioGroup onIonChange={e => handleInputChangeEcografia(e)} name="ecografia" value={control.ecografia}>
                                             <IonItem>
-                                                <IonLabel>Normal</IonLabel>
-                                                <IonRadio slot="end" value="R"></IonRadio>
+                                                <IonLabel>Si</IonLabel>
+                                                <IonRadio slot="end" value="T"></IonRadio>
                                             </IonItem>
-
                                             <IonItem>
-                                                <IonLabel color="danger">Patológica</IonLabel>
-                                                <IonRadio slot="end" value="P"></IonRadio>
+                                                <IonLabel>No</IonLabel>
+                                                <IonRadio slot="end" value="N"></IonRadio>
                                             </IonItem>
-
-
+                                            <IonItem>
+                                                <IonLabel>Solicitada</IonLabel>
+                                                <IonRadio slot="end" value="S"></IonRadio>
+                                            </IonItem>
                                         </IonRadioGroup>
-                                    </IonList>}
-                            </IonCol>
-                            <IonCol>
-                                {eco_observa && showEcografia &&
-                                    <IonList>
-                                        <IonItem>
-                                            <IonLabel position="floating">Observaciones</IonLabel>
-                                            <IonInput name="eco_observaciones" onIonChange={e => handleInputChange(e)}></IonInput>
-                                        </IonItem>
                                     </IonList>
-                                }
-                            </IonCol>
-                        </IonRow>
+                                </IonCol>
+                                <IonCol>
+                                    {showEcografia &&
+                                        <IonList>
+                                            <IonRadioGroup onIonChange={e => handleInputChangeEco_Observa(e)} name="ecografia_resultado" value={control.ecografia_resultado}>
+                                                <IonItem>
+                                                    <IonLabel>Normal</IonLabel>
+                                                    <IonRadio slot="end" value="R"></IonRadio>
+                                                </IonItem>
+                                                <IonItem>
+                                                    <IonLabel color="danger">Patológica</IonLabel>
+                                                    <IonRadio slot="end" value="P"></IonRadio>
+                                                </IonItem>
+                                            </IonRadioGroup>
+                                        </IonList>}
+                                </IonCol>
+                                <IonCol>
+                                    {eco_observa && showEcografia &&
+                                        <IonList>
+                                            <IonItem>
+                                                <IonLabel position="floating">Observaciones</IonLabel>
+                                                <IonInput name="eco_observaciones" onIonChange={e => handleInputChange(e)}></IonInput>
+                                            </IonItem>
+                                        </IonList>
+                                    }
+                                </IonCol>
+                            </IonRow>
+                        )}
                     </IonCard>
-                    <IonCard>
-                        <IonCardHeader>
-                            <IonCardTitle>TESTS</IonCardTitle>
-                        </IonCardHeader>
-                        <IonRow>
-                            <IonCol>
-                                <IonList>
-                                    <IonListHeader>
-                                        <IonLabel>HPV</IonLabel>
-                                    </IonListHeader>
-                                    <IonRadioGroup onIonChange={e => handleInputChangeHpv(e)} name="hpv" value={control.hpv}>
-                                        <IonItem>
-                                            <IonLabel>Si</IonLabel>
-                                            <IonRadio slot="end" value="S"></IonRadio>
-                                        </IonItem>
 
-                                        <IonItem>
-                                            <IonLabel>No</IonLabel>
-                                            <IonRadio slot="end" value="N"></IonRadio>
-                                        </IonItem>
-
-                                    </IonRadioGroup>
-                                </IonList>
-                            </IonCol>
-                            <IonCol>
-                                {showHpv &&
-                                    <IonList>
-                                        <IonListHeader>
-                                            <IonLabel></IonLabel>
-                                        </IonListHeader>
-                                        <IonRadioGroup onIonChange={e => handleInputChange(e)} name="hpv_resultado" value={control.hpv_resultado}>
-                                            <IonItem>
-                                                <IonLabel>Normal</IonLabel>
-                                                <IonRadio slot="end" value="R"></IonRadio>
-                                            </IonItem>
-
-                                            <IonItem>
-                                                <IonLabel color="danger">Patológica</IonLabel>
-                                                <IonRadio slot="end" value="P"></IonRadio>
-                                            </IonItem>
-
-
-                                        </IonRadioGroup>
-                                    </IonList>}
-                            </IonCol>
-                        </IonRow>
-                        <IonRow>
-                            <IonCol>
-                                <IonList>
-                                    <IonListHeader>
-                                        <IonLabel>PAP</IonLabel>
-                                    </IonListHeader>
-                                    <IonRadioGroup onIonChange={e => handleInputChangePap(e)} name="pap" value={control.pap}>
-                                        <IonItem>
-                                            <IonLabel>Si</IonLabel>
-                                            <IonRadio slot="end" value="S"></IonRadio>
-                                        </IonItem>
-
-                                        <IonItem>
-                                            <IonLabel>No</IonLabel>
-                                            <IonRadio slot="end" value="N"></IonRadio>
-                                        </IonItem>
-
-                                    </IonRadioGroup>
-                                </IonList>
-                            </IonCol>
-                            <IonCol>
-                                {showPap &&
-                                    <IonList>
-                                        <IonListHeader>
-                                            <IonLabel></IonLabel>
-                                        </IonListHeader>
-                                        <IonRadioGroup onIonChange={e => handleInputChange(e)} name="pap_resultado" value={control.pap_resultado}>
-                                            <IonItem>
-                                                <IonLabel>Normal</IonLabel>
-                                                <IonRadio slot="end" value="R"></IonRadio>
-                                            </IonItem>
-
-                                            <IonItem>
-                                                <IonLabel color="danger">Patológica</IonLabel>
-                                                <IonRadio slot="end" value="P"></IonRadio>
-                                            </IonItem>
-
-
-                                        </IonRadioGroup>
-                                    </IonList>}
-                            </IonCol>
-                        </IonRow>
-                    </IonCard>
-                    <IonCard>
-                        <IonCardHeader>
-                            <IonCardTitle>Inmunizaciones</IonCardTitle>
-                        </IonCardHeader>
-                        <IonRow>
-                            <IonCol >
-                                <IonList>
-                                    <IonListHeader>
-                                        <IonLabel>A GRIPAL</IonLabel>
-                                    </IonListHeader>
-                                    <IonRadioGroup onIonChange={e => handleInputChange(e)} name="agripal" value={control.agripal}>
-                                        <IonItem>
-                                            <IonLabel>Si</IonLabel>
-                                            <IonRadio slot="end" value="S"></IonRadio>
-                                        </IonItem>
-
-                                        <IonItem>
-                                            <IonLabel>No</IonLabel>
-                                            <IonRadio slot="end" value="N"></IonRadio>
-                                        </IonItem>
-
-                                    </IonRadioGroup>
-                                </IonList>
-                            </IonCol>
-                            <IonCol>
-                                <IonList>
-                                    <IonListHeader>
-                                        <IonLabel>DB</IonLabel>
-                                    </IonListHeader>
-                                    <IonRadioGroup onIonChange={e => handleInputChange(e)} name="db" value={control.db}>
-                                        <IonItem>
-                                            <IonLabel>Previa</IonLabel>
-                                            <IonRadio slot="end" value="P"></IonRadio>
-                                        </IonItem>
-                                        <IonItem>
-                                            <IonLabel>Colocada</IonLabel>
-                                            <IonRadio slot="end" value="C"></IonRadio>
-                                        </IonItem>
-                                        <IonItem>
-                                            <IonLabel>No</IonLabel>
-                                            <IonRadio slot="end" value="N"></IonRadio>
-                                        </IonItem>
-
-                                    </IonRadioGroup>
-                                </IonList>
-                            </IonCol>
-                            <IonCol>
-                                <IonList>
-                                    <IonListHeader>
-                                        <IonLabel>TBA</IonLabel>
-                                    </IonListHeader>
-                                    <IonRadioGroup onIonChange={e => handleInputChange(e)} name="tba" value={control.tba}>
-                                        <IonItem>
-                                            <IonLabel>Si</IonLabel>
-                                            <IonRadio slot="end" value="S"></IonRadio>
-                                        </IonItem>
-
-                                        <IonItem>
-                                            <IonLabel>No</IonLabel>
-                                            <IonRadio slot="end" value="N"></IonRadio>
-                                        </IonItem>
-                                    </IonRadioGroup>
-                                </IonList>
-                            </IonCol>
-                            <IonCol>
-                                <IonList>
-                                    <IonListHeader>
-                                        <IonLabel>VHB</IonLabel>
-                                    </IonListHeader>
-                                    <IonRadioGroup onIonChange={e => handleInputChange(e)} name="vhb" value={control.vhb}>
-                                        <IonItem>
-                                            <IonLabel>Previa</IonLabel>
-                                            <IonRadio slot="end" value="P"></IonRadio>
-                                        </IonItem>
-                                        <IonItem>
-                                            <IonLabel>Colocada</IonLabel>
-                                            <IonRadio slot="end" value="C"></IonRadio>
-                                        </IonItem>
-                                        <IonItem>
-                                            <IonLabel>No</IonLabel>
-                                            <IonRadio slot="end" value="N"></IonRadio>
-                                        </IonItem>
-
-                                    </IonRadioGroup>
-                                </IonList>
-                            </IonCol>
-                        </IonRow>
-                    </IonCard>
                     <IonCard color="light">
                         <IonCardHeader>
                             <IonCardTitle>Cargar Laboratorios / Serologías del:</IonCardTitle>
                         </IonCardHeader>
-                        <LaboratorioCerologia titulo="SIFILIS" radio={(e: any) => handleInpuTChecks(e)} radioname="SIFILIS" radioOpcion={["S", "P", "N"]} radioOpcionName="resp_sifilis" radioOpcionValue={(e: any) => handleInputChange(e)} />
-                        <LaboratorioCerologia titulo="HIV" radio={(e: any) => handleInpuTChecks(e)} radioname="HIV" radioOpcion={["S", "P", "N"]} radioOpcionName="resp_hiv" radioOpcionValue={(e: any) => handleInputChange(e)} />
-                        <LaboratorioCerologia titulo="CHAGAS" radio={(e: any) => handleInpuTChecks(e)} radioname="CHAGAS" radioOpcion={["S", "P", "N"]} radioOpcionName="resp_chagas" radioOpcionValue={(e: any) => handleInputChange(e)} />
-                        <LaboratorioCerologia titulo="VHB" radio={(e: any) => handleInpuTChecks(e)} radioname="VHB" radioOpcion={["S", "P", "N"]} radioOpcionName="resp_vhb" radioOpcionValue={(e: any) => handleInputChange(e)} />
-                        <LaboratorioCerologia titulo="ESTREPTOCOCO BETA HEMOLÍTICO" radio={(e: any) => handleInpuTChecks(e)} radioname="ESTREPTOCOCO_BETA_HEMOLÍTICO" radioOpcion={["S", "P", "N"]} radioOpcionName="resp_ESTREPTOCOCO_BETA_HEMOLÍTICO" radioOpcionValue={(e: any) => handleInputChange(e)} />
-                        <LaboratorioCerologiaII titulo="Hb" radio={(e: any) => handleInpuTChecks(e)} radioname="HB" radioOpcion={["S", "R"]} radioOpcionName="resp_hb" radioOpcionValue={(e: any) => handleInputChange(e)} inputname="valor_hb" inputvalue={(e: any) => handleInputChange(e)} />
-                        <LaboratorioCerologiaII titulo="GLUCEMIA" radio={(e: any) => handleInpuTChecks(e)} radioname="GLUCEMIA" radioOpcion={["S", "R"]} radioOpcionName="resp_glucemia" radioOpcionValue={(e: any) => handleInputChange(e)} inputname="valor_glucemia" inputvalue={(e: any) => handleInputChange(e)} />
-                        <LaboratorioCerologiaIII titulo="GRUPO Y FACTOR" radio={(e: any) => handleInpuTChecks(e)} radioname="GRUPO_FACTOR" radioOpcion={["S", "R"]} radioOpcionName="resp_grupo_factor" radioOpcionValue={(e: any) => handleInputChange(e)} inputname="valor_grupo_factor" inputvalue={(e: any) => handleInputChange(e)} />
+                        <LaboratorioCerologia titulo="SIFILIS" radio={(e: any) => handleInpuTChecks(e)} radioname="SIFILIS" radioOpcion={["S", "P", "N"]} radioOpcionName="resp_sifilis" radioOpcionValue={(e: any) => handleInputChange(e)} checkedResp={control?.resp_sifilis} />
+                        <LaboratorioCerologia titulo="HIV" radio={(e: any) => handleInpuTChecks(e)} radioname="HIV" radioOpcion={["S", "P", "N"]} radioOpcionName="resp_hiv" radioOpcionValue={(e: any) => handleInputChange(e)} checkedResp={control?.resp_hiv} />
+                        <LaboratorioCerologia titulo="CHAGAS" radio={(e: any) => handleInpuTChecks(e)} radioname="CHAGAS" radioOpcion={["S", "P", "N"]} radioOpcionName="resp_chagas" radioOpcionValue={(e: any) => handleInputChange(e)} checkedResp={control?.resp_chagas} />
+                        <LaboratorioCerologia titulo="VHB" radio={(e: any) => handleInpuTChecks(e)} radioname="VHB" radioOpcion={["S", "P", "N"]} radioOpcionName="resp_vhb" radioOpcionValue={(e: any) => handleInputChange(e)} checkedResp={control?.resp_vhb} />
+                        <LaboratorioCerologia titulo="ESTREPTOCOCO BETA HEMOLÍTICO" radio={(e: any) => handleInpuTChecks(e)} radioname="ESTREPTOCOCO_BETA_HEMOLÍTICO" radioOpcion={["S", "P", "N"]} radioOpcionName="resp_ESTREPTOCOCO_BETA_HEMOLÍTICO" radioOpcionValue={(e: any) => handleInputChange(e)} checkedResp={control?.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO} />
+                        <LaboratorioCerologiaII titulo="Hb" radio={(e: any) => handleInpuTChecks(e)} radioname="HB" radioOpcion={["S", "R"]} radioOpcionName="resp_hb" radioOpcionValue={(e: any) => handleInputChange(e)} inputname="valor_hb" inputvalue={(e: any) => handleInputChange(e)} checkedResp={control?.resp_hb} />
+                        <LaboratorioCerologiaII titulo="GLUCEMIA" radio={(e: any) => handleInpuTChecks(e)} radioname="GLUCEMIA" radioOpcion={["S", "R"]} radioOpcionName="resp_glucemia" radioOpcionValue={(e: any) => handleInputChange(e)} inputname="valor_glucemia" inputvalue={(e: any) => handleInputChange(e)} checkedResp={control?.resp_glucemia} />
+                        <LaboratorioCerologiaIII titulo="GRUPO Y FACTOR" radio={(e: any) => handleInpuTChecks(e)} radioname="GRUPO_FACTOR" radioOpcion={["S", "R"]} radioOpcionName="resp_grupo_factor" radioOpcionValue={(e: any) => handleInputChange(e)} inputname="valor_grupo_factor" inputvalue={(e: any) => handleInputChange(e)} checkedResp={control?.resp_grupo_factor} />
                     </IonCard>
                     <IonCard>
                         <IonCardHeader>

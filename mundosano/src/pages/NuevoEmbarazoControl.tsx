@@ -382,7 +382,7 @@ const NuevoEmbarazadaControl: React.FC = () => {
         //Sifilis
 
         if (control.SIFILIS) {
-            newLaboratoriosRealizados.resultado=control.resp_sifilis==="S"?null:control.resp_sifilis
+            newLaboratoriosRealizados.resultado = control.resp_sifilis;
             newLaboratoriosRealizados.fecha_resultados=control.resp_sifilis==="S"?null:fecha1
             let Resp_Sifilis = await repositoryLaboratoriosRealizados.create(newLaboratoriosRealizados)
             if (Resp_Sifilis) console.log("Insertar Laboratorios Realizados")
@@ -398,7 +398,7 @@ const NuevoEmbarazadaControl: React.FC = () => {
         if (control.HIV) {
             newLaboratoriosRealizados.id_laboratorio=2;
             newLaboratoriosRealizados.id_etmi=2
-            newLaboratoriosRealizados.resultado = control.resp_hiv==="S"?null:control.resp_hiv;
+            newLaboratoriosRealizados.resultado = control.resp_hiv;
             let resp_HIV = await repositoryLaboratoriosRealizados.create(newLaboratoriosRealizados)
             if (resp_HIV) console.log("Insertar Laboratorios Realizados HIV")
 
@@ -412,7 +412,7 @@ const NuevoEmbarazadaControl: React.FC = () => {
         if (control.CHAGAS) {
             newLaboratoriosRealizados.id_laboratorio=4;
             newLaboratoriosRealizados.id_etmi=1
-            newLaboratoriosRealizados.resultado = control.resp_chagas==="S"?null:control.resp_chagas;
+            newLaboratoriosRealizados.resultado = control.resp_chagas;
             newLaboratoriosRealizados.fecha_resultados=control.resp_chagas==="S"?null:fecha1
             let resp_CHAGAS = await repositoryLaboratoriosRealizados.create(newLaboratoriosRealizados);
             if (resp_CHAGAS) console.log("Insertar Laboratorios Realizados CHAGAS")
@@ -427,7 +427,7 @@ const NuevoEmbarazadaControl: React.FC = () => {
         if (control.VHB) {
             newLaboratoriosRealizados.id_laboratorio=5;
             newLaboratoriosRealizados.id_etmi=4
-            newLaboratoriosRealizados.resultado = control.resp_vhb==="S"?null:control.resp_vhb;
+            newLaboratoriosRealizados.resultado = control.resp_vhb;
             newLaboratoriosRealizados.fecha_resultados=control.resp_vhb==="S"?null:fecha1
             let resp_VHB = await repositoryLaboratoriosRealizados.create(newLaboratoriosRealizados);
             if (resp_VHB) console.log("Insertar Laboratorios Realizados VHB")
@@ -444,7 +444,7 @@ const NuevoEmbarazadaControl: React.FC = () => {
         if (control.ESTREPTOCOCO_BETA_HEMOLÍTICO) {
             newLaboratoriosRealizados.id_laboratorio=8;
             newLaboratoriosRealizados.id_etmi=0
-            newLaboratoriosRealizados.resultado = control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO==="S"?null:control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO;
+            newLaboratoriosRealizados.resultado = control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO;
             newLaboratoriosRealizados.fecha_resultados=control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO==="S"?null:fecha1
             let resp_EBH =  await repositoryLaboratoriosRealizados.create(newLaboratoriosRealizados); 
             if (resp_EBH) console.log("Insertar Etmis Personas ESTREPTOCOCO_BETA_HEMOLÍTICO");
@@ -453,7 +453,7 @@ const NuevoEmbarazadaControl: React.FC = () => {
 
         //Hb
         if (control.HB) {
-            let respuesta = control.resp_hb === "S" ? null : control.valor_hb
+            let respuesta = control.resp_hb === "S" ? "S" : control.valor_hb
             newLaboratoriosRealizados.id_laboratorio=7;
             newLaboratoriosRealizados.id_etmi=0
             newLaboratoriosRealizados.resultado=respuesta
@@ -465,7 +465,7 @@ const NuevoEmbarazadaControl: React.FC = () => {
 
         //Glucemia resp_glucemia
         if (control.GLUCEMIA) {
-            let respuesta = control.resp_glucemia === "S" ? null : control.valor_glucemia
+            let respuesta = control.resp_glucemia === "S" ? "S" : control.valor_glucemia
             newLaboratoriosRealizados.id_laboratorio=6;
             newLaboratoriosRealizados.id_etmi=0
             newLaboratoriosRealizados.resultado=respuesta
@@ -476,7 +476,7 @@ const NuevoEmbarazadaControl: React.FC = () => {
         }
         //GRUPO_FACTOR
         if (control.GRUPO_FACTOR) {
-            let respuesta = control.resp_grupo_factor === "S" ? null : control.valor_grupo_factor
+            let respuesta = control.resp_grupo_factor === "S" ? "S" : control.valor_grupo_factor
             newLaboratoriosRealizados.id_laboratorio=9;
             newLaboratoriosRealizados.id_etmi=0
             newLaboratoriosRealizados.resultado=respuesta

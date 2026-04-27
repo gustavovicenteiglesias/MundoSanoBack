@@ -122,7 +122,7 @@ const App: React.FC = () => {
         }
 
       } else {
-        await CargarBase({ mode: "partial" });
+        // partial sync disabled
         await sqlite.createConnection(NOMBRE_BB_DD)
         console.log("ya tiene  base ")
         setExistConn(true)

@@ -1237,9 +1237,10 @@ public class ExportControler {
         }
 
         json.put("mode", MODE_PARTIAL);
-        if (effectiveSince != null) {
-            json.put("since", effectiveSince);
-        }
+        // IMPORTANTE: Devolvemos el tiempo actual del SERVIDOR.
+        // Esto evita que desfases de reloj entre el celular y el server pierdan datos.
+        json.put("since", (int) (System.currentTimeMillis() / 1000L));
+        
         return json;
     }
 

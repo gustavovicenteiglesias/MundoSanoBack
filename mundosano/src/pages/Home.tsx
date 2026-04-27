@@ -11,8 +11,6 @@ import {
 import { Network } from "@capacitor/network";
 import { useEffect, useRef, useState } from "react";
 import * as CryptoJS from "crypto-js";
-import { SQLiteDBConnection } from "react-sqlite-hook";
-
 import { sqlite } from "../App";
 import { UsuariosRepo } from "../repository/UsuariosRepo";
 import { Usuarios } from "../models/Usuarios";
@@ -44,17 +42,6 @@ const Home: React.FC = () => {
   const logCurrentNetworkStatus = async () => {
     const status = await Network.getStatus();
     console.log("Network status:", status);
-  };
-
-  const dbdb = async (): Promise<SQLiteDBConnection> => {
-    const ret = await sqlite.checkConnectionsConsistency();
-    const isConn = (await sqlite.isConnection(NOMBRE_BB_DD)).result;
-
-    if (ret.result && isConn) {
-      return await sqlite.retrieveConnection(NOMBRE_BB_DD);
-    }
-
-    return await sqlite.createConnection(NOMBRE_BB_DD);
   };
 
   const formatImportProgress = (
@@ -94,12 +81,12 @@ const Home: React.FC = () => {
         progress.phase === "done"
           ? "success"
           : progress.phase === "error"
-          ? "error"
-          : "running",
+            ? "error"
+            : "running",
       canClose: progress.phase === "done" || progress.phase === "error",
-      tableSummaries,
-      processedItems: 0,
-      totalItems: progress.tableCount,
+      tableSummaries: (progress as any).tableSummaries ?? tableSummaries,
+      processedItems: (progress as any).processedItems ?? 0,
+      totalItems: (progress as any).totalItems ?? progress.tableCount,
     };
   };
 
@@ -173,14 +160,11 @@ const Home: React.FC = () => {
 
   const handleManualImport = async () => {
     try {
-      const existeActual: any = await sqlite.isDatabase(NOMBRE_BB_DD);
+      console.log("Home: Iniciando reimportación manual full...");
 
-      if (!existeActual.result) {
-        await runImport("full", "Importación desde inicio");
-        return;
-      }
-
-      await runImport("partial", "Actualización desde inicio");
+      // IMPORTANTE:
+      // No borramos la base acá. El borrado real queda centralizado en CargarBase({ mode: "full" }).
+      await runImport("full", "Reimportación completa");
     } catch (error: any) {
       setImportError(error?.message || "No se pudo iniciar la importación.");
     }
@@ -259,8 +243,7 @@ const Home: React.FC = () => {
             </IonButton>
 
             <IonNote color="medium">
-              Si no hay base local, se hará importación completa. Si ya existe,
-              se traerán solo cambios.
+              Se realizará una importación completa de la base de datos sincronizada.
             </IonNote>
           </form>
 

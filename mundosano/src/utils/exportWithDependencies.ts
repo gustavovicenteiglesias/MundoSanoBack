@@ -79,6 +79,25 @@ function rowKey(table: string, row: RowObject, meta: TableMeta): string {
   return `${table}#json#${JSON.stringify(row)}`;
 }
 
+const MANUAL_DEPENDENCIES: Record<string, ForeignKeyRow[]> = {
+  "controles": [{ table: "personas", from: "id_persona", to: "id_persona" }],
+  "control_embarazo": [{ table: "controles", from: "id_control", to: "id_control" }],
+  "inmunizaciones_control": [
+    { table: "personas", from: "id_persona", to: "id_persona" },
+    { table: "controles", from: "id_control", to: "id_control" }
+  ],
+  "laboratorios_realizados": [
+    { table: "personas", from: "id_persona", to: "id_persona" },
+    { table: "controles", from: "id_control", to: "id_control" }
+  ],
+  "etmis_personas": [
+    { table: "personas", from: "id_persona", to: "id_persona" },
+    { table: "controles", from: "id_control", to: "id_control" }
+  ],
+  "antecedentes": [{ table: "personas", from: "id_persona", to: "id_persona" }],
+  "ubicaciones": [{ table: "personas", from: "id_persona", to: "id_persona" }],
+};
+
 async function loadTableMeta(db: any, table: string): Promise<TableMeta> {
   const tableInfoRes = await db.query(`PRAGMA table_info(${table})`);
   const fkRes = await db.query(`PRAGMA foreign_key_list(${table})`);
@@ -92,11 +111,15 @@ async function loadTableMeta(db: any, table: string): Promise<TableMeta> {
     .sort((a, b) => Number(a.pk) - Number(b.pk))
     .map((r) => r.name);
 
-  const foreignKeys: ForeignKeyRow[] = fksRaw.map((r: any) => ({
-    table: r.table,
-    from: r.from,
-    to: r.to,
-  }));
+  // Combinamos FKs reales (si existen) con las manuales para asegurar exportación de ancestros
+  const foreignKeys: ForeignKeyRow[] = [
+    ...fksRaw.map((r: any) => ({
+      table: r.table,
+      from: r.from,
+      to: r.to,
+    })),
+    ...(MANUAL_DEPENDENCIES[table] || [])
+  ];
 
   return {
     table,

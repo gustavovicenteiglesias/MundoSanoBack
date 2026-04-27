@@ -1,4 +1,4 @@
-import { IonBackButton, IonButton, IonButtons, IonCard, IonCardHeader, IonCardTitle, IonCol, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonRadio, IonRadioGroup, IonRow, IonSelect, IonSelectOption, IonTextarea, IonToolbar, useIonViewWillEnter } from "@ionic/react";
+import { IonBackButton, IonButton, IonButtons, IonCard, IonCardHeader, IonCardTitle, IonCheckbox, IonCol, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonRadio, IonRadioGroup, IonRow, IonSelect, IonSelectOption, IonTextarea, IonToolbar, useIonViewWillEnter } from "@ionic/react";
 import { useEffect, useState } from "react";
 import { animationBuilder } from "../components/AnimationBuilder"
 import { useHistory, useLocation } from "react-router"
@@ -13,6 +13,7 @@ import { Control_Embarazo } from "../models/Control_Embarazo";
 import { Inmunizaciones_Control } from "../models/Inmunizaciones_Control";
 import { Laboratorios_Realizados } from "../models/Laboratorios_Realizados";
 import { Etmis_Personas } from "../models/Etmis_Personas";
+import { Personas } from "../models/PersonasModels";
 interface antecedentes {
     id_antecedente?: number,
     id_persona?: number,
@@ -86,28 +87,36 @@ const NuevoControl: React.FC = () => {
     const repositoryInmunizacionesControl = new Repository<Inmunizaciones_Control>("inmunizaciones_control")
     const repositoryLaboratoriosRealizados = new Repository<Laboratorios_Realizados>("laboratorios_realizados")
     const repositoryEtmisPersonas = new Repository<Etmis_Personas>("etmis_personas")
+    const repositoryPersonas = new Repository<Personas>("personas");
 
     const hoy = moment()
 
      
     let history = useHistory()
     
+    const [edadGestacional, setEdadGestacional] = useState<any>()
+
     useEffect(() => {
-        if (paciente?.antecedentes?.fum !== null) {
-            setControl((prevProps: any) => ({ ...prevProps, gestas: hoy.diff(paciente?.antecedentes?.fum, "weeks") }));
-        }else if(paciente?.antecedentes?.fpp !== null){
-            setControl((prevProps: any) => ({
-                ...prevProps,
-                gestas: (hoy.diff(paciente?.antecedentes?.fpp, 'weeks')+40),
-              }));
-        }
-        
-        else {
-            setControl((prevProps: any) => ({ ...prevProps, gestas: 0 }));
+        const fum = paciente?.antecedentes?.fum;
+        const fpp = paciente?.antecedentes?.fpp;
+
+        let semanas = 0;
+        if (fum && fum !== "null") {
+            semanas = hoy.diff(moment(fum), "weeks");
+        } else if (fpp && fpp !== "null") {
+            semanas = hoy.diff(moment(fpp), "weeks") + 40;
         }
 
+        semanas = semanas < 0 ? 0 : semanas;
+        setEdadGestacional(semanas);
+        setControl((prev: any) => ({ ...prev, edad_gestacional: semanas }));
+    }, [paciente]);
 
-    }, [])
+    const getTrimestre = (semanas: number) => {
+        if (semanas <= 13) return 1;
+        if (semanas <= 27) return 2;
+        return 3;
+    };
 
     useIonViewWillEnter(() => {
         setFecha1(hoy.format("YYYY-MM-DD"))
@@ -182,10 +191,40 @@ const NuevoControl: React.FC = () => {
 
     }
 
+    const handleEcoCheck = (e: any) => {
+        const checked = e.detail.checked;
+        setControl((prev: any) => {
+            const next = { ...prev, ECO_CHECKED: checked };
+            if (checked && prev.ecografia === "N") {
+                next.ecografia = "S";
+            } else if (!checked) {
+                next.ecografia = "N";
+                setShowEcografia(false);
+            }
+            return next;
+        });
+    }
+
     const handleInpuTChecks = (e: any) => {
         const name = e.target.name;
         const value = e.detail.checked
-        setControl((prevProps: any) => ({ ...prevProps, [name]: value }));
+        setControl((prevProps: any) => {
+            const next = { ...prevProps, [name]: value };
+            
+            // Lógica para marcar como Solicitada automáticamente
+            const respKey = "resp_" + name.toLowerCase();
+            if (value && (prevProps[respKey] === "N" || !prevProps[respKey])) {
+                next[respKey] = "S";
+            }
+            
+            // Casos especiales de nombres de campos que no siguen el patrón resp_nombre
+            if (name === "SIFILIS" && value && prevProps.resp_sifilis === "N") next.resp_sifilis = "S";
+            if (name === "HIV" && value && prevProps.resp_hiv === "N") next.resp_hiv = "S";
+            if (name === "CHAGAS" && value && prevProps.resp_chagas === "N") next.resp_chagas = "S";
+            if (name === "VHB" && value && prevProps.resp_vhb === "N") next.resp_vhb = "S";
+            
+            return next;
+        });
     }
 
     const OnSubmit = async (e: any) => {
@@ -199,7 +238,7 @@ const NuevoControl: React.FC = () => {
 
         /*Tabla control_embarazo */
         const control_embarazo: any = {};
-        control_embarazo.edad_gestacional = control.gestas;
+        control_embarazo.edad_gestacional = toInt(edadGestacional);
         if (control.ecografia === "S") {
             control_embarazo.eco = "S"
         } else {
@@ -216,22 +255,30 @@ const NuevoControl: React.FC = () => {
         control_embarazo.motivo = control.motivo
         control_embarazo.derivada = control.derivada
 
+        const now = Math.floor(Date.now() / 1000);
+        const idPersona = toInt(paciente?.id_persona);
 
+        if (!idPersona) {
+            console.error("No se pudo obtener el ID de la persona");
+            setLoading(false);
+            return;
+        }
 
-        //Insert control
+        // Insert control
+        // Actualizamos al padre para que el Partial Sync lo incluya y no haya rechazos
+        await repositoryPersonas.update({ last_modified: now } as any, "id_persona", idPersona);
 
-
-
-        let resp_numero_control = await repositoryMotivosControl.getLastMaxControl(Number(paciente.id_persona));
+        let resp_numero_control = await repositoryMotivosControl.getLastMaxControl(idPersona);
 
         let ultimo_id_control = await repositoryControles.getLastRowId("id_control")
 
         let c = toInt(ultimo_id_control) + 1
+        const actual_id_control = c;
         let n = toInt(resp_numero_control) + 1
-        let newControles: Controles = {
+        const newControles: Controles = {
             id_control: c,
             fecha: fecha1,
-            id_persona: toInt(paciente.id_persona),
+            id_persona: idPersona,
             control_numero: n,
             id_estado: 1,
             id_seguimiento_chagas: null,
@@ -246,17 +293,11 @@ const NuevoControl: React.FC = () => {
             id_tipos_fin_embarazos: null,
             georeferencia: null,
             sql_deleted: 0,
-            last_modified: Math.floor(new Date().getTime() / 1000)
-        }
-        if (resp_numero_control === 0) {
+            last_modified: now
+        };
 
-            let insert_control = await repositoryControles.create(newControles)
-            if (insert_control) console.log("Se inserto Control 1")
-        } else {
-            newControles.control_numero = n
-            let insert_control = await repositoryControles.create(newControles)
-
-        }
+        let insert_control = await repositoryControles.create(newControles);
+        if (insert_control) console.log("Se inserto el control nro " + n);
 
         setTimeout(() => {
 
@@ -266,11 +307,10 @@ const NuevoControl: React.FC = () => {
         //antecedentes_insert(paciente?.antecedente,Number(ultimo_id_control[0].id_control))
 
         //insert control embarazada
-        ultimo_id_control = await repositoryControles.getLastRowId("id_control")
         let ultimo_id_control_embarazada = await repositoryControlEmbarazo.getLastRowId("id_control_embarazo")
         let newControlEmbarazo: Control_Embarazo = {
             id_control_embarazo: toInt(ultimo_id_control_embarazada) + 1,
-            id_control: toInt(ultimo_id_control),
+            id_control: actual_id_control,
             edad_gestacional: toInt(control_embarazo.edad_gestacional),
             eco: strOrEmpty(control_embarazo.eco),
             detalle_eco: strOrEmpty(control_embarazo.detalle_eco),
@@ -283,19 +323,19 @@ const NuevoControl: React.FC = () => {
             motivo: toInt(control_embarazo.motivo),
             derivada: toInt(control_embarazo.derivada),
             sql_deleted: 0,
-            last_modified: Math.floor(new Date().getTime() / 1000)
+            last_modified: now
         }
         let resp_control_embrarazo = await repositoryControlEmbarazo.create(newControlEmbarazo)
 
         //Insert inmunizaciones
 
         const newInmunizacionesControl: Inmunizaciones_Control = {
-            id_persona: toInt(paciente.id_persona),
-            id_control: ultimo_id_control,
+            id_persona: idPersona,
+            id_control: actual_id_control,
             id_inmunizacion: 2,
             estado: control.agripal,
             sql_deleted: 0,
-            last_modified: Math.floor(new Date().getTime() / 1000),
+            last_modified: now,
             //usuario_modified: currentuser?.id_usuario===undefined?0:currentuser.id_usuario
         }
         let AGRIPAL = await repositoryInmunizacionesControl.create(newInmunizacionesControl)
@@ -303,16 +343,19 @@ const NuevoControl: React.FC = () => {
 
         newInmunizacionesControl.id_inmunizacion = 3
         newInmunizacionesControl.estado = control.db
+        newInmunizacionesControl.last_modified = now;
         let DB = await repositoryInmunizacionesControl.create(newInmunizacionesControl)
         if (DB) console.log("Insertar Inmunizaciones Control")
 
         newInmunizacionesControl.id_inmunizacion = 1
         newInmunizacionesControl.estado = control.tba
+        newInmunizacionesControl.last_modified = now;
         let TBA = await repositoryInmunizacionesControl.create(newInmunizacionesControl)
         if (TBA) console.log("Insertar Inmunizaciones Control")
 
         newInmunizacionesControl.id_inmunizacion = 4
         newInmunizacionesControl.estado = control.vhb
+        newInmunizacionesControl.last_modified = now;
         let VHB = await repositoryInmunizacionesControl.create(newInmunizacionesControl)
         if (VHB) console.log("Insertar Inmunizaciones Control")
 
@@ -323,32 +366,32 @@ const NuevoControl: React.FC = () => {
 
         //Insert Laboratorio
         const newLaboratoriosRealizados: Laboratorios_Realizados = {
-            id_persona: Number(paciente.id_persona),
-            id_control: ultimo_id_control,
+            id_persona: idPersona,
+            id_control: actual_id_control,
             id_laboratorio: 1,
-            trimestre: 1,
+            trimestre: getTrimestre(toInt(edadGestacional)),
             fecha_realizado: fecha1,
             
             
             id_etmi: 3,
             sql_deleted: 0,
-            last_modified: Math.floor(new Date().getTime() / 1000),
+            last_modified: now,
             //usuario_modified: currentuser?.id_usuario===undefined?0:currentuser.id_usuario
         }
 
         const newEtmisPersonas: Etmis_Personas = {
-            id_persona: Number(paciente.id_persona),
+            id_persona: idPersona,
             id_etmi: 3,
-            id_control: ultimo_id_control,
+            id_control: actual_id_control,
             confirmada: 1,
             sql_deleted: 0,
-            last_modified: Math.floor(new Date().getTime() / 1000),
+            last_modified: now,
             //usuario_modified: currentuser?.id_usuario===undefined?0:currentuser.id_usuario
         }
         //Sifilis
 
         if (control.SIFILIS) {
-            newLaboratoriosRealizados.resultado=control.resp_sifilis==="S"?null:control.resp_sifilis
+            newLaboratoriosRealizados.resultado = control.resp_sifilis;
             newLaboratoriosRealizados.fecha_resultados= control.resp_sifilis==="S"?null:fecha1
             let Resp_Sifilis = await repositoryLaboratoriosRealizados.create(newLaboratoriosRealizados)
             if (Resp_Sifilis) console.log("Insertar Laboratorios Realizados")
@@ -365,7 +408,7 @@ const NuevoControl: React.FC = () => {
             newLaboratoriosRealizados.id_laboratorio = 2;
             newLaboratoriosRealizados.id_etmi = 2
             newLaboratoriosRealizados.fecha_resultados=control.resp_hiv==="S"?null:fecha1
-            newLaboratoriosRealizados.resultado = control.resp_hiv==="S"?null:control.resp_hiv;
+            newLaboratoriosRealizados.resultado = control.resp_hiv;
             let resp_HIV = await repositoryLaboratoriosRealizados.create(newLaboratoriosRealizados)
             if (resp_HIV) console.log("Insertar Laboratorios Realizados HIV")
 
@@ -379,7 +422,7 @@ const NuevoControl: React.FC = () => {
         if (control.CHAGAS) {
             newLaboratoriosRealizados.id_laboratorio = 4;
             newLaboratoriosRealizados.id_etmi = 1
-            newLaboratoriosRealizados.resultado = control.resp_chagas==="S"?null:control.resp_chagas;
+            newLaboratoriosRealizados.resultado = control.resp_chagas;
             newLaboratoriosRealizados.fecha_resultados=control.resp_chagas==="S"?null:fecha1;
             let resp_CHAGAS = await repositoryLaboratoriosRealizados.create(newLaboratoriosRealizados);
             if (resp_CHAGAS) console.log("Insertar Laboratorios Realizados CHAGAS")
@@ -394,7 +437,7 @@ const NuevoControl: React.FC = () => {
         if (control.VHB) {
             newLaboratoriosRealizados.id_laboratorio = 5;
             newLaboratoriosRealizados.id_etmi = 4
-            newLaboratoriosRealizados.resultado = control.resp_vhb==="S"?null:control.resp_vhb;
+            newLaboratoriosRealizados.resultado = control.resp_vhb;
             newLaboratoriosRealizados.fecha_resultados=control.resp_vhb==="S"?null:fecha1
             let resp_VHB = await repositoryLaboratoriosRealizados.create(newLaboratoriosRealizados);
             if (resp_VHB) console.log("Insertar Laboratorios Realizados VHB")
@@ -411,7 +454,7 @@ const NuevoControl: React.FC = () => {
         if (control.ESTREPTOCOCO_BETA_HEMOLÍTICO) {
             newLaboratoriosRealizados.id_laboratorio = 8;
             newLaboratoriosRealizados.id_etmi = 0
-            newLaboratoriosRealizados.resultado = control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO==="S"?null:control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO;
+            newLaboratoriosRealizados.resultado = control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO;
             newLaboratoriosRealizados.fecha_resultados=control.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO==="S"?null:fecha1
             let resp_EBH = await repositoryLaboratoriosRealizados.create(newLaboratoriosRealizados);
             if (resp_EBH) console.log("Insertar Etmis Personas ESTREPTOCOCO_BETA_HEMOLÍTICO");
@@ -420,7 +463,7 @@ const NuevoControl: React.FC = () => {
 
         //Hb
         if (control.HB) {
-            let respuesta = control.resp_hb === "S" ? null : control.valor_hb
+            let respuesta = control.resp_hb === "S" ? "S" : control.valor_hb
             newLaboratoriosRealizados.id_laboratorio = 7;
             newLaboratoriosRealizados.id_etmi = 0
             newLaboratoriosRealizados.resultado = respuesta
@@ -432,7 +475,7 @@ const NuevoControl: React.FC = () => {
 
         //Glucemia resp_glucemia
         if (control.GLUCEMIA) {
-            let respuesta = control.resp_glucemia === "S" ? null : control.valor_glucemia
+            let respuesta = control.resp_glucemia === "S" ? "S" : control.valor_glucemia
             newLaboratoriosRealizados.id_laboratorio = 6;
             newLaboratoriosRealizados.id_etmi = 0
             newLaboratoriosRealizados.resultado = respuesta
@@ -443,7 +486,7 @@ const NuevoControl: React.FC = () => {
         }
         //GRUPO_FACTOR
         if (control.GRUPO_FACTOR) {
-            let respuesta = control.resp_grupo_factor === "S" ? null : control.valor_grupo_factor
+            let respuesta = control.resp_grupo_factor === "S" ? "S" : control.valor_grupo_factor
             newLaboratoriosRealizados.id_laboratorio = 9;
             newLaboratoriosRealizados.id_etmi = 0
             newLaboratoriosRealizados.resultado = respuesta
@@ -479,7 +522,7 @@ const NuevoControl: React.FC = () => {
                         }}>
                     <IonItem>
                         <IonLabel position="floating">Edad Gestacional (FUM {moment(paciente?.antecedentes?.fum).format("LL")})</IonLabel>
-                        <IonInput type="number" defaultValue={diferencia} value={control?.gestas} name="gestas" onIonChange={e => handleInputChange(e)} ></IonInput>
+                        <IonInput type="number" value={edadGestacional} name="edad_gestacional" onIonChange={e => setEdadGestacional(e.detail.value)} ></IonInput>
                     </IonItem>
                      {/* === ION DATE TIME === */}
                      <IonItem>
@@ -508,31 +551,31 @@ const NuevoControl: React.FC = () => {
                     {/* Ecografia */}
                     <IonCard>
                         <IonCardHeader>
-                            <IonCardTitle>Ecografía</IonCardTitle>
+                            <IonItem lines="none">
+                                <IonCheckbox slot="start" checked={control?.ecografia !== "N"} onIonChange={handleEcoCheck}></IonCheckbox>
+                                <IonCardTitle>Ecografía</IonCardTitle>
+                            </IonItem>
                         </IonCardHeader>
-                        <IonRow>
-                            <IonCol>
-                                <IonList>
-
-                                    <IonRadioGroup onIonChange={e => handleInputChangeEcografia(e)} name="ecografia" value={control.ecografia}>
-                                        <IonItem>
-                                            <IonLabel>Si</IonLabel>
-                                            <IonRadio slot="end" value="T"></IonRadio>
-                                        </IonItem>
-
-                                        <IonItem>
-                                            <IonLabel>No</IonLabel>
-                                            <IonRadio slot="end" value="N"></IonRadio>
-                                        </IonItem>
-                                        <IonItem>
-                                            <IonLabel>Solicitada</IonLabel>
-                                            <IonRadio slot="end" value="S"></IonRadio>
-                                        </IonItem>
-
-
-                                    </IonRadioGroup>
-                                </IonList>
-                            </IonCol>
+                        {(control?.ecografia !== "N" || control?.ECO_CHECKED) && (
+                            <IonRow>
+                                <IonCol>
+                                    <IonList>
+                                        <IonRadioGroup onIonChange={e => handleInputChangeEcografia(e)} name="ecografia" value={control.ecografia}>
+                                            <IonItem>
+                                                <IonLabel>Solicitada</IonLabel>
+                                                <IonRadio slot="end" value="S"></IonRadio>
+                                            </IonItem>
+                                            <IonItem>
+                                                <IonLabel>Realizada (Si)</IonLabel>
+                                                <IonRadio slot="end" value="T"></IonRadio>
+                                            </IonItem>
+                                            <IonItem>
+                                                <IonLabel>No</IonLabel>
+                                                <IonRadio slot="end" value="N"></IonRadio>
+                                            </IonItem>
+                                        </IonRadioGroup>
+                                    </IonList>
+                                </IonCol>
                             <IonCol>
                                 {showEcografia &&
                                     <IonList>
@@ -562,6 +605,7 @@ const NuevoControl: React.FC = () => {
                                 }
                             </IonCol>
                         </IonRow>
+                        )}
                     </IonCard>
                     <IonCard>
                         <IonCardHeader>
@@ -744,14 +788,14 @@ const NuevoControl: React.FC = () => {
                         <IonCardHeader>
                             <IonCardTitle>Cargar Laboratorios / Serologías del:</IonCardTitle>
                         </IonCardHeader>
-                        <LaboratorioCerologia titulo="SIFILIS" radio={(e: any) => handleInpuTChecks(e)} radioname="SIFILIS" radioOpcion={["S", "P", "N"]} radioOpcionName="resp_sifilis" radioOpcionValue={(e: any) => handleInputChange(e)} />
-                        <LaboratorioCerologia titulo="HIV" radio={(e: any) => handleInpuTChecks(e)} radioname="HIV" radioOpcion={["S", "P", "N"]} radioOpcionName="resp_hiv" radioOpcionValue={(e: any) => handleInputChange(e)} />
-                        <LaboratorioCerologia titulo="CHAGAS" radio={(e: any) => handleInpuTChecks(e)} radioname="CHAGAS" radioOpcion={["S", "P", "N"]} radioOpcionName="resp_chagas" radioOpcionValue={(e: any) => handleInputChange(e)} />
-                        <LaboratorioCerologia titulo="VHB" radio={(e: any) => handleInpuTChecks(e)} radioname="VHB" radioOpcion={["S", "P", "N"]} radioOpcionName="resp_vhb" radioOpcionValue={(e: any) => handleInputChange(e)} />
-                        <LaboratorioCerologia titulo="ESTREPTOCOCO BETA HEMOLÍTICO" radio={(e: any) => handleInpuTChecks(e)} radioname="ESTREPTOCOCO_BETA_HEMOLÍTICO" radioOpcion={["S", "P", "N"]} radioOpcionName="resp_ESTREPTOCOCO_BETA_HEMOLÍTICO" radioOpcionValue={(e: any) => handleInputChange(e)} />
-                        <LaboratorioCerologiaII titulo="Hb" radio={(e: any) => handleInpuTChecks(e)} radioname="HB" radioOpcion={["S", "R"]} radioOpcionName="resp_hb" radioOpcionValue={(e: any) => handleInputChange(e)} inputname="valor_hb" inputvalue={(e: any) => handleInputChange(e)} />
-                        <LaboratorioCerologiaII titulo="GLUCEMIA" radio={(e: any) => handleInpuTChecks(e)} radioname="GLUCEMIA" radioOpcion={["S", "R"]} radioOpcionName="resp_glucemia" radioOpcionValue={(e: any) => handleInputChange(e)} inputname="valor_glucemia" inputvalue={(e: any) => handleInputChange(e)} />
-                        <LaboratorioCerologiaIII titulo="GRUPO Y FACTOR" radio={(e: any) => handleInpuTChecks(e)} radioname="GRUPO_FACTOR" radioOpcion={["S", "R"]} radioOpcionName="resp_grupo_factor" radioOpcionValue={(e: any) => handleInputChange(e)} inputname="valor_grupo_factor" inputvalue={(e: any) => handleInputChange(e)} />
+                        <LaboratorioCerologia titulo="SIFILIS" radio={(e: any) => handleInpuTChecks(e)} radioname="SIFILIS" radioOpcion={["S", "P", "N"]} radioOpcionName="resp_sifilis" radioOpcionValue={(e: any) => handleInputChange(e)} checkedResp={control?.resp_sifilis} />
+                        <LaboratorioCerologia titulo="HIV" radio={(e: any) => handleInpuTChecks(e)} radioname="HIV" radioOpcion={["S", "P", "N"]} radioOpcionName="resp_hiv" radioOpcionValue={(e: any) => handleInputChange(e)} checkedResp={control?.resp_hiv} />
+                        <LaboratorioCerologia titulo="CHAGAS" radio={(e: any) => handleInpuTChecks(e)} radioname="CHAGAS" radioOpcion={["S", "P", "N"]} radioOpcionName="resp_chagas" radioOpcionValue={(e: any) => handleInputChange(e)} checkedResp={control?.resp_chagas} />
+                        <LaboratorioCerologia titulo="VHB" radio={(e: any) => handleInpuTChecks(e)} radioname="VHB" radioOpcion={["S", "P", "N"]} radioOpcionName="resp_vhb" radioOpcionValue={(e: any) => handleInputChange(e)} checkedResp={control?.resp_vhb} />
+                        <LaboratorioCerologia titulo="ESTREPTOCOCO BETA HEMOLÍTICO" radio={(e: any) => handleInpuTChecks(e)} radioname="ESTREPTOCOCO_BETA_HEMOLÍTICO" radioOpcion={["S", "P", "N"]} radioOpcionName="resp_ESTREPTOCOCO_BETA_HEMOLÍTICO" radioOpcionValue={(e: any) => handleInputChange(e)} checkedResp={control?.resp_ESTREPTOCOCO_BETA_HEMOLÍTICO} />
+                        <LaboratorioCerologiaII titulo="Hb" radio={(e: any) => handleInpuTChecks(e)} radioname="HB" radioOpcion={["S", "R"]} radioOpcionName="resp_hb" radioOpcionValue={(e: any) => handleInputChange(e)} inputname="valor_hb" inputvalue={(e: any) => handleInputChange(e)} checkedResp={control?.resp_hb} />
+                        <LaboratorioCerologiaII titulo="GLUCEMIA" radio={(e: any) => handleInpuTChecks(e)} radioname="GLUCEMIA" radioOpcion={["S", "R"]} radioOpcionName="resp_glucemia" radioOpcionValue={(e: any) => handleInputChange(e)} inputname="valor_glucemia" inputvalue={(e: any) => handleInputChange(e)} checkedResp={control?.resp_glucemia} />
+                        <LaboratorioCerologiaIII titulo="GRUPO Y FACTOR" radio={(e: any) => handleInpuTChecks(e)} radioname="GRUPO_FACTOR" radioOpcion={["S", "R"]} radioOpcionName="resp_grupo_factor" radioOpcionValue={(e: any) => handleInputChange(e)} inputname="valor_grupo_factor" inputvalue={(e: any) => handleInputChange(e)} checkedResp={control?.resp_grupo_factor} />
                     </IonCard>
                     <IonCard>
                         <IonCardHeader>

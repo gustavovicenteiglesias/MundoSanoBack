@@ -13,7 +13,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: #556b82;
+  color: var(--ion-color-medium-shade, #556b82);
   font-size: 0.78rem;
 }
 
@@ -23,26 +23,26 @@
   --inner-padding-start: 10px;
   --inner-padding-end: 10px;
   --border-radius: 14px;
-  --background: #ffffff;
+  --background: var(--ion-item-background, #ffffff);
   margin: 6px 0;
-  border: 1px solid #d8dde7;
-  box-shadow: 0 1px 6px rgba(11, 43, 72, 0.07);
+  border: 1px solid var(--ion-color-step-150, #d8dde7);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .persona-item-risk {
-  --background: #fff4f4;
-  border-left: 5px solid #cf1f1f;
+  --background: rgba(255, 68, 90, 0.08);
+  border-left: 5px solid var(--ion-color-danger);
 }
 
 .persona-item h2 {
   font-weight: 700;
-  color: #1b2e43;
+  color: var(--ion-text-color);
   margin-bottom: 4px;
 }
 
 .persona-item p {
   margin: 2px 0;
-  color: #556b82;
+  color: var(--ion-color-step-600);
   font-size: 0.84rem;
 }
 

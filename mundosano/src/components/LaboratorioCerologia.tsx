@@ -10,7 +10,7 @@ interface Props{
     
 }
 
-const LaboratorioCerologia: React.FC<any> = ({titulo,radio,radioname,radioOpcionName,radioOpcion,radioOpcionValue}) => {
+const LaboratorioCerologia: React.FC<any> = ({titulo,radio,radioname,radioOpcionName,radioOpcion,radioOpcionValue,checkedResp}) => {
 
     const [show,setshow]=useState<boolean>(false);
 
@@ -42,7 +42,7 @@ const LaboratorioCerologia: React.FC<any> = ({titulo,radio,radioname,radioOpcion
                 </IonItem>
             </IonCol>
             {show&& <IonCol sizeXs="6">
-                <IonRadioGroup  name={radioOpcionName} onIonChange={e => handleInputChange(e)} >
+                <IonRadioGroup  name={radioOpcionName} onIonChange={e => handleInputChange(e)} value={checkedResp}>
                     <IonItem>
                         <IonLabel>Solicitado</IonLabel>
                         <IonRadio slot="end" value={radioOpcion[0]}></IonRadio>
