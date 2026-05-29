@@ -14,10 +14,12 @@ import {
   IonSegmentButton,
   IonTitle,
   IonToolbar,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
   useIonAlert,
   useIonViewWillEnter
 } from '@ionic/react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 import { IoAddCircleOutline } from 'react-icons/io5';
 import { chevronForwardOutline, cloudDoneOutline, cloudOfflineOutline, cloudOutline, cloudUploadOutline } from 'ionicons/icons';
@@ -30,6 +32,7 @@ import { chevronBackOutline } from 'ionicons/icons';
 type SyncStatus = 'ok' | 'pending' | 'error' | 'unknown';
 
 const LAST_SYNC_RESULT_KEY = "sync_last_result_v1";
+const PAGE_LIMIT = 20;
 
 const Personas: React.FC = () => {
   const history = useHistory();
@@ -39,6 +42,9 @@ const Personas: React.FC = () => {
   const [filterText, setFilterText] = useState(() => sessionStorage.getItem("personas_filter") || '');
   const [isPendientes, setIsPendientes] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const [infiniteDisabled, setInfiniteDisabled] = useState(false);
+  const [totalFiltered, setTotalFiltered] = useState(0);
   const [segmentEstado, setSegmentEstado] = useState<'todas' | 'embarazadas' | 'puerperas'>('todas');
   const repository = new PersonasRepository();
 
@@ -110,9 +116,15 @@ const Personas: React.FC = () => {
     sessionStorage.setItem("personas_filter", filterText);
   }, [filterText]);
 
-  const loadPersonas = async (): Promise<boolean> => {
+  const loadPersonas = async (reset: boolean = false): Promise<boolean> => {
     try {
-      setLoading(true);
+      if (reset) {
+        setLoading(true);
+        setOffset(0);
+        setInfiniteDisabled(false);
+      }
+
+      const currentOffset = reset ? 0 : offset;
       const res = await repository.getTodos();
       const pendiente = await repository.getPendientes();
 
@@ -125,53 +137,79 @@ const Personas: React.FC = () => {
           index === self.findIndex((t: any) => t.id_persona === thing.id_persona)
       );
 
-      const rows = isPendientes ? dedupByPersona : res;
-      setPersonas(rows);
-      setSyncStatusByPersona(await getSyncStatusMap(rows));
-      setLoading(false);
+      const baseRows = isPendientes ? dedupByPersona : res;
+
+      // Aplicamos los filtros aquí para poder paginar el resultado antes de guardarlo en el estado
+      const filtered = baseRows.filter((item: any) => {
+        const term = filterText.toLowerCase().trim();
+        const nombre = (item.nombre || '').toLowerCase();
+        const apellido = (item.apellido || '').toLowerCase();
+        const nombreCompleto = `${nombre} ${apellido}`.trim();
+
+        const matchTexto = (
+          nombre.includes(term) ||
+          apellido.includes(term) ||
+          nombreCompleto.includes(term) ||
+          (item.nombre_pais && item.nombre_pais.toLowerCase().includes(term)) ||
+          (item.etmi && item.etmi.toLowerCase().includes(term)) ||
+          (item.nombre_area && item.nombre_area.toLowerCase().includes(term)) ||
+          (item.nombre_paraje && item.nombre_paraje.toLowerCase().includes(term)) ||
+          (item.documento && item.documento.toLowerCase().includes(term))
+        );
+
+        const estado = item.id_estado ?? item.estado;
+        const matchEstado =
+          segmentEstado === 'todas' ||
+          estado === undefined || estado === null ||
+          (segmentEstado === 'embarazadas' && (estado === 1 || estado === 'Embarazada' || estado === 'EMBARAZADA')) ||
+          (segmentEstado === 'puerperas' && (estado === 2 || estado === 'Puerpera' || estado === 'PUERPERA'));
+
+        return matchTexto && matchEstado;
+      });
+
+      setTotalFiltered(filtered.length);
+
+      // Tomamos solo el "pedazo" (chunk) que corresponde a la página actual
+      const chunk = filtered.slice(currentOffset, currentOffset + PAGE_LIMIT);
+      
+      if (reset) {
+        setPersonas(chunk);
+        setSyncStatusByPersona(await getSyncStatusMap(chunk));
+      } else {
+        setPersonas(prev => [...prev, ...chunk]);
+        const newStatuses = await getSyncStatusMap(chunk);
+        setSyncStatusByPersona(prev => ({ ...prev, ...newStatuses }));
+      }
+
+      const nextOffset = currentOffset + PAGE_LIMIT;
+      setOffset(nextOffset);
+      
+      // Si ya mostramos todo, desactivamos el scroll infinito
+      if (nextOffset >= filtered.length) {
+        setInfiniteDisabled(true);
+      }
+
       return true;
     } catch (_error: any) {
-      setLoading(false);
       presentAlert({ header: "Error", message: "No se pudieron cargar las personas", buttons: ["OK"] });
       return false;
+    } finally {
+      setLoading(false);
     }
   };
 
+  const loadMore = async (ev: any) => {
+    await loadPersonas(false);
+    ev.target.complete();
+  };
+
   useEffect(() => {
-    loadPersonas();
-  }, [isPendientes]);
+    sessionStorage.setItem("personas_filter", filterText);
+    loadPersonas(true); // Recargar desde cero cuando cambien los filtros
+  }, [isPendientes, segmentEstado, filterText]);
 
   useIonViewWillEnter(() => {
-    loadPersonas();
-  });
-
-  const filteredItems = personas.filter((item: any) => {
-    const term = filterText.toLowerCase().trim();
-    if (!term && segmentEstado === 'todas') return true;
-
-    const nombre = (item.nombre || '').toLowerCase();
-    const apellido = (item.apellido || '').toLowerCase();
-    const nombreCompleto = `${nombre} ${apellido}`.trim();
-
-    const matchTexto = (
-      nombre.includes(term) ||
-      apellido.includes(term) ||
-      nombreCompleto.includes(term) ||
-      (item.nombre_pais && item.nombre_pais.toLowerCase().includes(term)) ||
-      (item.etmi && item.etmi.toLowerCase().includes(term)) ||
-      (item.nombre_area && item.nombre_area.toLowerCase().includes(term)) ||
-      (item.nombre_paraje && item.nombre_paraje.toLowerCase().includes(term)) ||
-      (item.documento && item.documento.toLowerCase().includes(term))
-    );
-
-    const estado = item.id_estado ?? item.estado;
-    const matchEstado =
-      segmentEstado === 'todas' ||
-      estado === undefined || estado === null ||
-      (segmentEstado === 'embarazadas' && (estado === 1 || estado === 'Embarazada' || estado === 'EMBARAZADA')) ||
-      (segmentEstado === 'puerperas' && (estado === 2 || estado === 'Puerpera' || estado === 'PUERPERA'));
-
-    return matchTexto && matchEstado;
+    loadPersonas(true);
   });
 
   const handleClear = () => {
@@ -193,12 +231,14 @@ const Personas: React.FC = () => {
     return { icon: cloudOutline, label: 'Desconocido', className: 'sync-unknown' };
   };
 
-  const subHeaderComponentMemo = useMemo(() => (
+  const subHeaderComponent = (
     <div style={{ width: "100%" }}>
       <FilterComponent onFilter={(e: any) => setFilterText(e.target.value)} onClear={handleClear} filterText={filterText} />
-      <IonLabel color="medium" style={{ paddingLeft: 8 }}>Mostrando {filteredItems.length} de {personas.length}</IonLabel>
+      <IonLabel color="medium" style={{ paddingLeft: 12, fontSize: '0.9em', fontWeight: 500 }}>
+        Mostrando {personas.length} de {totalFiltered} registros
+      </IonLabel>
     </div>
-  ), [filterText, filteredItems.length, personas.length]);
+  );
 
   return (
     <IonPage>
@@ -213,11 +253,21 @@ const Personas: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent>
-        <IonItem>
-          <IonButton onClick={() => setIsPendientes(true)} fill="clear" slot='end'><IoAddCircleOutline size={30} />{" "}Pendientes</IonButton>
-          <IonButton onClick={() => setIsPendientes(false)} fill="clear" slot='end'><IoAddCircleOutline size={30} />{" "}Ver Todos</IonButton>
-          <IonButton href='/nuevaembarazada' fill="clear" slot='start'><IoAddCircleOutline size={30} />{" "}Nueva Embarazada</IonButton>
-        </IonItem>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', borderBottom: '1px solid #eee' }}>
+          <IonButton href='/nuevaembarazada' fill="clear" style={{ '--padding-start': '4px' }}>
+            <IoAddCircleOutline size={26} />
+            <span style={{ marginLeft: '6px', fontSize: '13px', fontWeight: 'bold', textTransform: 'none' }}>Nueva Embarazada</span>
+          </IonButton>
+          <div style={{ display: 'flex' }}>
+            <IonButton onClick={() => setIsPendientes(true)} fill="clear" color={isPendientes ? "primary" : "dark"}>
+              <span style={{ fontSize: '13px', textTransform: 'none' }}>{isPendientes ? "● " : ""}Pendientes</span>
+            </IonButton>
+            <div style={{ width: '1px', height: '20px', backgroundColor: '#ccc', alignSelf: 'center', margin: '0 2px' }}></div>
+            <IonButton onClick={() => setIsPendientes(false)} fill="clear" color={!isPendientes ? "primary" : "dark"}>
+              <span style={{ fontSize: '13px', textTransform: 'none' }}>{!isPendientes ? "● " : ""}Todos</span>
+            </IonButton>
+          </div>
+        </div>
 
         <IonItem lines="none">
           <IonLabel>Filtrar estado</IonLabel>
@@ -234,7 +284,7 @@ const Personas: React.FC = () => {
           </IonSegment>
         </IonItem>
 
-        {subHeaderComponentMemo}
+        {subHeaderComponent}
 
         <div className="sync-legend">
           <span className="sync-legend-item"><IonIcon icon={cloudDoneOutline} className="sync-cloud sync-ok" /> OK</span>
@@ -250,7 +300,7 @@ const Personas: React.FC = () => {
             </IonItem>
           )}
 
-          {!loading && filteredItems.map((row: any, index: number) => {
+          {!loading && personas.map((row: any, index: number) => {
             const riesgo = isRiesgo(row);
             const syncStatus = syncStatusByPersona[Number(row.id_persona)] ?? 'unknown';
             const syncVisual = getSyncVisual(syncStatus);
@@ -280,12 +330,22 @@ const Personas: React.FC = () => {
             );
           })}
 
-          {!loading && filteredItems.length === 0 && (
+          {!loading && personas.length === 0 && (
             <IonItem>
               <IonLabel color="medium">No hay personas para mostrar con los filtros actuales.</IonLabel>
             </IonItem>
           )}
         </IonList>
+
+        <IonInfiniteScroll
+          threshold="100px"
+          disabled={infiniteDisabled}
+          onIonInfinite={loadMore}
+        >
+          <IonInfiniteScrollContent
+            loadingText="Cargando más personas..."
+          ></IonInfiniteScrollContent>
+        </IonInfiniteScroll>
       </IonContent>
     </IonPage>
   );

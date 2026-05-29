@@ -1,4 +1,4 @@
-import { IonBackButton, IonButton, IonButtons, IonCard, IonCardHeader, IonCardSubtitle, IonCol, IonContent, IonGrid, IonHeader, IonItem, IonLabel, IonList, IonListHeader, IonPage, IonRow, IonSelect, IonSelectOption, IonTitle, IonToolbar, useIonViewDidEnter, useIonViewWillEnter } from '@ionic/react';
+import { IonBackButton, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonPage, IonRow, IonSelect, IonSelectOption, IonTitle, IonToolbar, useIonActionSheet, useIonViewDidEnter, useIonViewWillEnter } from '@ionic/react';
 
 import { capSQLiteOptions, SQLiteDBConnection } from "@capacitor-community/sqlite";
 import { useEffect, useState } from 'react';
@@ -10,7 +10,7 @@ import { useHistory, useLocation } from 'react-router';
 import moment from 'moment'
 import 'moment/locale/es';
 import PacienteDatosPersonales from '../components/PacienteDatosPersonales';
-
+import { ellipsisVerticalOutline, addOutline, createOutline, pencilOutline, chevronForwardOutline } from 'ionicons/icons';
 import './Home.css';
 import ControlesPacientes from '../components/ControlesPaciente';
 
@@ -57,6 +57,7 @@ const DetallePaciente: React.FC = () => {
     const location = useLocation();
     const [paciente, setPaciente] = useState<any>(location.state);
     const [controles, setControles] = useState<controls>([])
+    const [presentActionSheet] = useIonActionSheet();
     const [showdetalle, setShowDetalle] = useState<boolean>(false);
 
     const repositoryPaciente = new Repository<Personas>("personas");
@@ -254,25 +255,64 @@ const DetallePaciente: React.FC = () => {
         }
 
     }
+    
+    const presentActions = () => {
+        presentActionSheet({
+            header: 'Acciones',
+            buttons: [
+                {
+                    text: 'Nuevo Control',
+                    icon: addOutline,
+                    handler: () => {
+                        history.push({ pathname: "/nuevocontrol", state: paciente });
+                    }
+                },
+                {
+                    text: 'Nuevo Embarazo',
+                    icon: createOutline, // Usamos createOutline para "Nuevo Embarazo"
+                    handler: () => {
+                        handleNuevoEmbarazo();
+                    }
+                },
+                {
+                    text: 'Editar datos personales',
+                    icon: pencilOutline,
+                    handler: () => {
+                        history.push({ pathname: "/editarpersona", state: paciente });
+                    }
+                },
+                {
+                    text: 'Editar Antecedentes',
+                    icon: pencilOutline,
+                    handler: () => { history.push({ pathname: "/editantecedentes", state: paciente }) }
+                },
+                { text: 'Cancelar', role: 'cancel' }
+            ]
+        });
+    };
 
 
 
 
     return (
-        <>
-            {showdetalle ? (<IonPage>
+        <IonPage>
+            {showdetalle ? (
+                <>
                 <IonHeader className="ion-no-border">
                     <IonToolbar>
                         <IonTitle slot="end">{paciente?.apellido} {paciente?.nombre}</IonTitle>
                         <IonButtons slot="start" >
-                            <IonBackButton defaultHref="/" routerAnimation={animationBuilder} />
+                            <IonBackButton defaultHref="/personas" routerAnimation={animationBuilder} />
                         </IonButtons>
-
-
+                        <IonButtons slot="end">
+                            <IonButton onClick={presentActions}>
+                                <IonIcon icon={ellipsisVerticalOutline} />
+                            </IonButton>
+                        </IonButtons>
                     </IonToolbar>
                 </IonHeader>
+
                 <IonContent >
-                    <div>
                         {paciente?.controles?.length > 0 && paciente.controles[0].id_estado === 2 && (
                             <IonCard color="warning">
                                 <IonCardHeader>
@@ -280,44 +320,98 @@ const DetallePaciente: React.FC = () => {
                                 </IonCardHeader>
                             </IonCard>
                         )}
-                        <IonButton expand="block" fill="outline" slot='end' onClick={() => history.push({ pathname: "/editarpersona", state: paciente })}>Editar datos personales</IonButton>
-                        <IonButton expand="block" fill="outline" slot='end' onClick={handleNuevoEmbarazo}><IoCreateOutline size={32} />{" "}Nuevo Embarazo</IonButton>
-                    </div>
-                    <div>
-                        <IonButton expand="block" fill="outline" slot='end' onClick={() => { history.push({ pathname: "/editantecedentes", state: paciente }) }}><IoCreateOutline size={32} />{" "}Editar Antecedentes</IonButton>
-                    </div>
-                    <div>
-                        <IonButton expand="block" fill="outline" slot='end' onClick={() => history.push({ pathname: "/nuevocontrol", state: paciente })}><IoCreateOutline size={32} />{" "}Nuevo Control</IonButton>
-                    </div>
-                    <PacienteDatosPersonales paciente={paciente} />
+                        {/* Sección de Antecedentes y Datos Clave */}
+                        <IonCard className="ion-margin-bottom" style={{ borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)', boxShadow: 'none' }}>
+                            <IonGrid className="ion-no-padding ion-padding-vertical">
+                                <IonRow className="ion-padding-horizontal">
+                                    <IonCol size="6">
+                                        <IonLabel color="medium" style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Documento</IonLabel>
+                                        <div style={{ fontSize: '1rem', fontWeight: 'bold', marginTop: '2px' }}>{paciente?.documento || '-'}</div>
+                                    </IonCol>
+                                    <IonCol size="6">
+                                        <IonLabel color="medium" style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Edad</IonLabel>
+                                        <div style={{ fontSize: '1rem', fontWeight: 'bold', marginTop: '2px' }}>
+                                            {paciente?.fecha_nacimiento ? hoy.diff(moment(paciente.fecha_nacimiento), 'years') + ' años' : '-'}
+                                        </div>
+                                    </IonCol>
+                                </IonRow>
+                                
+                                <IonRow className="ion-padding-horizontal ion-margin-top">
+                                    <IonCol size="12">
+                                        <IonLabel color="medium" style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fecha de Nacimiento</IonLabel>
+                                        <div style={{ fontSize: '0.9rem', marginTop: '2px' }}>{paciente?.fecha_nacimiento ? moment(paciente.fecha_nacimiento).format('LL') : '-'}</div>
+                                    </IonCol>
+                                </IonRow>
 
+                                <IonRow className="ion-margin-top" style={{ borderTop: '1px solid var(--ion-color-step-150)', paddingTop: '10px' }}>
+                                    <IonCol size="6" className="ion-padding-start">
+                                        <IonLabel color="medium" style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>FUM</IonLabel>
+                                        <div style={{ color: 'var(--ion-color-primary)', fontWeight: 'bold', fontSize: '1rem', marginTop: '2px' }}>
+                                            {paciente?.antecedentes?.fum && paciente.antecedentes.fum !== "null" ? moment(paciente.antecedentes.fum).format('DD/MM/YYYY') : '—'}
+                                        </div>
+                                    </IonCol>
+                                    <IonCol size="6" className="ion-padding-start">
+                                        <IonLabel color="medium" style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>FPP</IonLabel>
+                                        <div style={{ color: 'var(--ion-color-primary)', fontWeight: 'bold', fontSize: '1rem', marginTop: '2px' }}>
+                                            {paciente?.antecedentes?.fpp && paciente.antecedentes.fpp !== "null" ? moment(paciente.antecedentes.fpp).format('DD/MM/YYYY') : '—'}
+                                        </div>
+                                    </IonCol>
+                                </IonRow>
+                                 <IonRow className="ion-margin-top" style={{ borderTop: '1px solid var(--ion-color-step-150)', paddingTop: '10px' }}>
+                                    <IonCol size="6" className="ion-padding-start">
+                                        <IonLabel color="medium" style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pais</IonLabel>
+                                        <div style={{ color: 'var(--ion-color-primary)', fontWeight: 'bold', fontSize: '1rem', marginTop: '2px' }}>
+                                            {paciente?.ubicacion?.pais ? paciente.ubicacion.pais.toUpperCase() : '—'}
+                                        </div>
+                                    </IonCol>
+                                    <IonCol size="6" className="ion-padding-start">
+                                        <IonLabel color="medium" style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Area</IonLabel>
+                                        <div style={{ color: 'var(--ion-color-primary)', fontWeight: 'bold', fontSize: '1rem', marginTop: '2px' }}>
+                                            {paciente?.ubicacion?.area || '—'}
+                                        </div>
+                                    </IonCol>
+                                    <IonCol size="6" className="ion-padding-start">
+                                        <IonLabel color="medium" style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Paraje</IonLabel>
+                                        <div style={{ color: 'var(--ion-color-primary)', fontWeight: 'bold', fontSize: '1rem', marginTop: '2px' }}>
+                                            {paciente?.ubicacion?.paraje || '—'}
+                                        </div>
+                                    </IonCol>
+                                </IonRow>
+                            </IonGrid>
+                        </IonCard>
+
+                   { /*<PacienteDatosPersonales paciente={paciente} />*/}
                     {paciente.controles?.map((data: any, i: any) => {
                         if (data.id_estado === 2) {
                             return (
-                                <IonCard key={i} color="light">
-                                    <IonCardHeader>
-                                        <IonCardSubtitle>Fecha de control : {moment(data.fecha).format('LL')}</IonCardSubtitle>
+                                <IonCard key={i} className="ion-margin-bottom" style={{ borderRadius: '12px', border: '1px solid var(--ion-color-step-200)', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+                                    <IonCardHeader style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '8px' }}>
+                                        <IonCardSubtitle style={{ margin: 0 }}>Fecha de control : {moment(data.fecha).format('LL')}</IonCardSubtitle>
+                                        <IonIcon icon={chevronForwardOutline} color="medium" />
                                     </IonCardHeader>
-                                    <IonList>
+                                    <IonCardContent className="ion-no-padding">
+                                    <IonList lines="none">
                                         <IonItem>
                                             <IonLabel slot='start'>Estado</IonLabel>
                                             <IonLabel slot='end'>PUÉRPERA</IonLabel>
                                         </IonItem>
                                     </IonList>
+                                    </IonCardContent>
                                 </IonCard>
                             )
                         }
                         else {
                             return (
 
-                                <IonRow key={i}>
+                                <IonRow key={i} className="ion-margin-bottom" onClick={() => history.push({ pathname: "/editcontrol", state: { data: { data, paciente } } })}>
                                     <IonCol>
-                                        <IonCard color="light" >
-                                            <IonCardHeader>
-                                                <IonCardSubtitle >Fecha de control : {moment(data.fecha).format('LL')}</IonCardSubtitle>
-                                                <IonButton fill="outline" expand="block" onClick={() => history.push({ pathname: "/editcontrol", state: { data: { data, paciente } } })}><IoCreateOutline size={32} />{" "}Editar Control</IonButton>
+                                        <IonCard style={{ borderRadius: '12px', border: '1px solid var(--ion-color-step-200)', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+                                            <IonCardHeader style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--ion-color-step-150)', paddingBottom: '10px' }}>
+                                                <IonCardSubtitle style={{ margin: 0, fontWeight: '600' }}>Fecha de control : {moment(data.fecha).format('LL')}</IonCardSubtitle>
+                                                <IonIcon icon={chevronForwardOutline} color="primary" />
                                             </IonCardHeader>
-                                            <IonList>
+                                            <IonCardContent>
+                                            <IonList lines="none">
                                                 <IonItem lines="full" >
                                                     <IonLabel class="ion-text-wrap" slot='start'>ESTADO</IonLabel>
                                                     <IonLabel class="ion-text-wrap" slot='end'>EMBARAZADA</IonLabel>
@@ -340,32 +434,25 @@ const DetallePaciente: React.FC = () => {
                                                 </IonItem>
                                                 <IonItem lines="full">
                                                     <IonLabel class="ion-text-wrap" slot='start'>INMUNIZACIONES</IonLabel>
-                                                    {data.inmunizaciones?.map((datos: any, i: any) => {
-                                                        return (
-                                                            <IonLabel class="ion-text-wrap" slot='end' key={i}>
-                                                                {datos.estado === "S" || datos.estado === "C" ? datos.nombre : ""}
-                                                            </IonLabel>
-                                                        )
-                                                    })}
-
+                                                    <IonLabel class="ion-text-wrap" slot='end'>
+                                                        {data.inmunizaciones?.filter((datos: any) => datos.estado === "S" || datos.estado === "C").map((datos: any) => datos.nombre).join(', ') || '-'}
+                                                    </IonLabel>
                                                 </IonItem>
                                                 <IonItem lines="full">
                                                     <IonLabel class="ion-text-wrap" slot='start'>CONTROL CLÍNICO</IonLabel>
-                                                    <IonLabel class="ion-text-wrap" slot='end'>
-                                                        {data.controlembarazada?.clinico === "N" ? "Normal\n" + data.controlembarazada?.observaciones : "Anormal\n" + data.controlembarazada?.observaciones}
-                                                    </IonLabel>
+                                                    <IonLabel class="ion-text-wrap" slot='end'>{data.controlembarazada?.clinico === "N" ? "Normal" : "Anormal"}{data.controlembarazada?.observaciones && ` (${data.controlembarazada?.observaciones})`}</IonLabel>
                                                 </IonItem>
                                                 <IonItem lines="full">
                                                     <IonLabel class="ion-text-wrap" slot='start'>TENSIÓN ARTERIAL</IonLabel>
                                                     <IonLabel class="ion-text-wrap" slot='end'>{data.controlembarazada?.sistolica}/{data.controlembarazada?.diastolica}</IonLabel>
                                                 </IonItem>
                                             </IonList>
-                                            <IonList >
+                                            <IonList className="ion-margin-top">
 
-                                                <IonItem lines="full" color="secondary">
+                                                <IonItemDivider color="secondary">
                                                     <IonLabel class="ion-text-wrap" slot='start'>LABORATORIO</IonLabel>
                                                     <IonLabel class="ion-text-wrap" slot='end'>RESULTADO</IonLabel>
-                                                </IonItem>
+                                                </IonItemDivider>
                                                 {data.laboratorios?.map((dato: any, i: any) => {
                                                     return (
                                                         <IonItem lines="full" key={i} color={handleColor(dato.resultado)}>
@@ -375,6 +462,7 @@ const DetallePaciente: React.FC = () => {
                                                     )
                                                 })}
                                             </IonList>
+                                            </IonCardContent>
                                         </IonCard>
                                     </IonCol>
                                 </IonRow>
@@ -382,8 +470,9 @@ const DetallePaciente: React.FC = () => {
                         }
                     })}
                 </IonContent>
-            </IonPage>) : null}
-        </>
+                </>
+            ) : null}
+        </IonPage>
     );
 };
 

@@ -1,7 +1,10 @@
 # TAREA UUID-002: Migrar triggers de last_modified a la Lógica de Aplicación
 
 ## Estado
-TODO
+DONE
+
+## Cierre
+- 2026-05-29: cerrado administrativamente durante reconstruccion de estado. `last_modified` queda documentado como parte del contrato incremental y de conflicto.
 
 ## Objetivo
 Eliminar la dependencia de triggers SQL para el seguimiento de cambios y centralizar la actualización de `last_modified` en Java y Typescript.

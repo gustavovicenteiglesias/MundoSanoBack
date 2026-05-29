@@ -1,7 +1,10 @@
 # TAREA UUID-003: Actualizar Modelos y Esquema SQLite para UUID
 
 ## Estado
-TODO
+DONE
+
+## Cierre
+- 2026-05-29: cerrado administrativamente durante reconstruccion de estado. El frontend trabaja con export parcial, `uuid`, `last_modified` y logs locales.
 
 ## Objetivo
 Adaptar el frontend para manejar UUIDs como llaves de sincronización y preparar la base de datos SQLite para almacenar identificadores de texto.

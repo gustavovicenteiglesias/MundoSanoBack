@@ -1,7 +1,10 @@
 # TAREA UUID-005: Protocolo de Sincronización basado en UUID
 
 ## Estado
-TODO
+DONE
+
+## Cierre
+- 2026-05-29: cerrado administrativamente durante reconstruccion de estado. `POST /api/sqlite` procesa payloads por UUID y usa upsert universal.
 
 ## Objetivo
 Refactorizar el sistema de intercambio de datos para que el servidor identifique los registros por su UUID global en lugar de su ID incremental local.

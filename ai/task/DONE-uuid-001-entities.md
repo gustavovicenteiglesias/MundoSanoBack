@@ -1,7 +1,10 @@
 # TAREA UUID-001: Adaptar Entidades y Repositorios al esquema Híbrido (UUID + INT)
 
 ## Estado
-TODO
+DONE
+
+## Cierre
+- 2026-05-29: cerrado administrativamente durante reconstruccion de estado. El proyecto actual contiene `BaseEntity`, repositorios con `findByUuid` y migracion UUID documentada.
 
 ## Objetivo
 Añadir el campo UUID a todas las entidades de Spring Boot y actualizar los repositorios para soportar la identificación global sin perder los IDs numéricos actuales.

@@ -1,7 +1,10 @@
 # TAREA UUID-004: Script de Migración Determinista de IDs a UUID
 
 ## Estado
-TODO
+DONE
+
+## Cierre
+- 2026-05-29: cerrado administrativamente durante reconstruccion de estado. La migracion ID->UUID queda documentada con SQL y endpoint de migracion deterministica.
 
 ## Objetivo
 Crear una utilidad para convertir los ~10,000 registros actuales de enteros a UUIDs sin romper las relaciones de la base de datos.

@@ -2,7 +2,11 @@
 
 ## Estado
 
-TODO
+DONE
+
+## Cierre
+
+- 2026-05-29: confirmado por tareas y archivos actuales. Existen logs locales/server, `syncMeta`, tablas de auditoria y endpoints `GET /api/sync/logs/batches`.
 
 ## Objetivo
 

@@ -1,6 +1,10 @@
 Estado
 
-TODO
+DONE
+
+Cierre
+
+- 2026-05-29: confirmado en `mundosano/src/pages/Personas.tsx`. La pantalla usa cards/items, nubes de sincronizacion, leyenda visual y segmentacion todas/embarazadas/puerperas.
 
 Objetivo
 

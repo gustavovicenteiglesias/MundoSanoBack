@@ -9,6 +9,12 @@ Dejar el endpoint `/sqlite` listo para recibir cualquier tabla y fila, con lógi
 - Tolerancia a columnas faltantes
 - Logs claros de errores y rechazos
 
+## Estado
+DONE
+
+## Cierre
+- 2026-05-29: cerrado administrativamente durante reconstruccion de estado. El import universal queda documentado como arquitectura vigente basada en UUID.
+
 ## Criterios de Aceptación
 - [ ] El endpoint `/sqlite` acepta cualquier tabla definida en el modelo y realiza upsert seguro por UUID.
 - [ ] Si el registro no existe, asigna id = max+1 (sin colisiones con legacy).

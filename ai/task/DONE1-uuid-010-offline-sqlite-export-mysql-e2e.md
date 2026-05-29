@@ -1,7 +1,10 @@
 # TAREA UUID-010: Persistencia Offline en SQLite + Exportación Segura a MySQL (E2E)
 
 ## Estado
-TODO
+DONE
+
+## Cierre
+- 2026-05-29: copia historica preservada. La tarea principal esta cerrada en `DONE-uuid-010-offline-sqlite-export-mysql-e2e.md`.
 
 ## Objetivo
 Garantizar de punta a punta (E2E) que:

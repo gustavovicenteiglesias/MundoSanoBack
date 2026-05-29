@@ -1,6 +1,9 @@
 # TAREA UUID-009: Bootstrap Full + Sincronización Parcial Incremental
 ## Estado
-TODO
+DONE
+
+## Cierre
+- 2026-05-29: cerrado administrativamente durante reconstruccion de estado. El bootstrap full/parcial queda documentado como parte de la sincronizacion saldada.
 
 ## Objetivo
 Implementar una estrategia dual de sincronización para la versión 3.0:
